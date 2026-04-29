@@ -3,9 +3,10 @@
 
 from dataclasses import dataclass, field, asdict
 from radpattern.helpers import io
-from radpattern.geometry.cloud_model import CloudModel
+from radpattern.geometry.cloud_model import CloudModel, AtomSpeciment
 from radpattern.geometry.grids import AngleGrid
 from radpattern.physics.beam import BeamModel
+from radpattern.physics.experimetal_setup import ExperimentalParams
 import numpy as np
 import logging
 import hashlib
@@ -17,6 +18,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class PhysicalRegime: 
     """ Physical regime of the simualtion.  """ 
+    atoms: AtomSpeciment
     geometry: str = "cylinder"
     distribution:str = "gaussian"
 
@@ -42,7 +44,6 @@ class PhysicalRegime:
     # Atom gaussian distributions. 
     transverse_sigma_ratio: float = 0.1  # gaussian distribution sigma on the Lxy plane ratio. Sigma_T / Lxy 
     longitudinal_sigma_ratio: float = 0.3 # Gaussian distribtion along Lz: sigma_l / Lz
-    
     wavelength: float = 1
     # dipole polarization
     p_hat: np.ndarray = field(default_factory=lambda: np.array([1.0, 0.0, 0.0]))
@@ -123,6 +124,7 @@ class PhysicalRegime:
             sigma_x= self.sigma_T,
             sigma_y= self.sigma_T, 
             sigma_z= self.sigma_z, 
+            atoms = self.atoms
         )
         cloud.log_info()
         return cloud
@@ -178,6 +180,7 @@ class SimParams:
     # Angular grid
     n_theta: int = 91
     n_phi: int = 181
+    theta_max : float = np.pi
 
     # Performance / implementation
     chunk_atoms: int = 2000
@@ -196,7 +199,7 @@ class SimParams:
    #     return np.linspace(0.0, self.t_max, self.n_times)
 
     def create_grid(self):
-       return AngleGrid(self.n_theta, self.n_phi )
+       return AngleGrid(self.n_theta, self.n_phi, self.theta_max  )
 
     def sim_metadataSetUp(self, regime, beam): 
         return SetupParams(regime, self, beam)
@@ -208,7 +211,7 @@ def _k_tag(k_hat) -> str:
 @dataclass
 class SetupParams:
     """ Stores metadata and creates run naming """
-    regime: PhysicalRegime
+    regime: ExperimentalParams
     sim: SimParams
     beam: BeamModel
 
@@ -226,7 +229,6 @@ class SetupParams:
         ).hexdigest()[:8]
 
         return (
-            f"rho{round(self.regime.density)}"
             f"_mc{self.sim.n_mc}"
             f"_nt{self.sim.n_times}"
             f"_{_k_tag(self.beam.k_in_hat)}"
