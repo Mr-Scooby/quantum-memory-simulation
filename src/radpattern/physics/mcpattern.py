@@ -162,25 +162,24 @@ def compute_realization_intensity_series(grid, dipole:np.ndarray,  k_out: float,
 
 
 
-def static_AF_calculation(cloud, beam, grid, rng = None): 
+def static_AF_calculation(cloud, beam, exp, grid, rng = None): 
     """ Single shot computation of the cloud and beam """ 
 
-    r_xyz = cloud.make_positions(rng)
-    #w = beam.generate_weights(r_xyz, t=0.0)
-    s = beam.generate_S_profile(r_xyz, cloud )
-    log.info("Creating polarizaation P = w0 * S ... ")
-    log.info("Array factor calcualtion with P = w0 * S" )
+    cloud.generate_cloud(rng)
+    cloud.generate_S_profile(exp.w0_signal) 
+
+    beam.generate_weights(cloud.r_xyz)
+    weights = cloud.S * beam.w 
+
     return array_factor_general(
         n_hat_flat=grid.n_hat_flat,
         grid_shape=grid.shape,
-        k_out= beam.k_in,
-        r_xyz=r_xyz,
-        w=s,
+        k_out= cloud.atoms.k_signal,
+        r_xyz=cloud.r_xyz,
+        w=weights,
         )
 
-grid = AngleGrid()
-
-def mc_static(cloud, beam, grid, runs, seed = 0): 
+def mc_static(cloud, beam,exp, grid, runs, seed = 0): 
 
     log.info("mc_sim: runs=%d",runs )
 
@@ -201,7 +200,7 @@ def mc_static(cloud, beam, grid, runs, seed = 0):
         # Independent RNG for this realization.
         rng = np.random.default_rng(rng_master.integers(0, 2**32))
 
-        AF_mc = static_AF_calculation(cloud, beam, grid, rng= rng)
+        AF_mc = static_AF_calculation(cloud, beam,exp, grid, rng= rng)
         # Intensity acumalation. 
         AF_acc += AF_mc
         AF2_acc += np.abs(AF_mc)**2
@@ -220,9 +219,6 @@ def mc_static(cloud, beam, grid, runs, seed = 0):
     )
 
     return AF_mean, AF2_mean
-
-
-
 
 
 def mc_sim( grid,
