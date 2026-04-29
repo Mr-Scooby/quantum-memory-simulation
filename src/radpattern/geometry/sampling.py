@@ -5,6 +5,7 @@
 
 import numpy as np
 import logging 
+from dataclasses import fields
 
 log = logging.getLogger(__name__)
 
@@ -13,11 +14,10 @@ def sample_axis(rng, cloud, axis)  -> np.ndarray:
 
     half_length = {"x": cloud.Lx/2, "y": cloud.Ly/2, "z":cloud.Lz/2} 
     sigmas = {"x": cloud.sigma_x, "y": cloud.sigma_y, "z":cloud.sigma_z} 
-    n = int(cloud.n_atoms **( 1/3)) # scale teh number of atoms per axis. 
-
-    if cloud.distribution.strip() is "random" :
-        return rng.uniform(-half_length[axis], half_length[axis], size=n)
-    return rng.normal(0.0, sigmas[axis], size=n)
+    
+    if cloud.distribution.strip() == "random" :
+        return rng.uniform(-half_length[axis], half_length[axis], size=cloud.n_atoms)
+    return rng.normal(0.0, sigmas[axis], size=cloud.n_atoms)
 
 
 def generate_candidates_box(cloud, rng) -> np.ndarray:
@@ -99,6 +99,9 @@ def make_positions(cloud, rng=None) -> np.ndarray:
 
     # If distribution is "random", sigmas can still be None on all axes,
     # which means fully uniform.
+    init_kwargs = {f.name: getattr(cloud, f.name) for f in fields(cloud) if f.init}
+    cloud_local = type(cloud)(**init_kwargs)
+
     if cloud.geometry == "box":
         return sample_with_mask(cloud,mask_box, rng)
 
@@ -106,7 +109,6 @@ def make_positions(cloud, rng=None) -> np.ndarray:
         if cloud.R is None:
             raise ValueError("Sphere requires R")
         # bounding box for sphere
-        cloud_local = type(cloud)(**cloud.__dict__)
         cloud_local.Lx = 2.0 * cloud.R
         cloud_local.Ly = 2.0 * cloud.R
         cloud_local.Lz = 2.0 * cloud.R
@@ -115,7 +117,6 @@ def make_positions(cloud, rng=None) -> np.ndarray:
     if cloud.geometry == "cylinder":
         if cloud.R is None or cloud.Lz is None:
             raise ValueError("Cylinder requires R and Lz")
-        cloud_local = type(cloud)(**cloud.__dict__)
         cloud_local.Lx = 2.0 * cloud.R
         cloud_local.Ly = 2.0 * cloud.R
         return sample_with_mask(cloud_local, mask_cylinder, rng)

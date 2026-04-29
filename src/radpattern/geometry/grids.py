@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 class AngleGrid:
     n_theta: int = 91
     n_phi: int = 181
+    theta_max: float = np.pi 
 
     TH: np.ndarray = field(init=False)
     PH: np.ndarray = field(init=False)
@@ -27,6 +28,7 @@ class AngleGrid:
         self.TH, self.PH, self.nx, self.ny, self.nz = helpers.make_angle_grid(
             n_theta=self.n_theta,
             n_phi=self.n_phi,
+            theta_max = self.theta_max, 
         )
         self.n_hat = np.stack([self.nx, self.ny, self.nz], axis=-1)
         self.n_hat_flat = self.n_hat.reshape(-1, 3)
