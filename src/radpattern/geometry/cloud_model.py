@@ -9,15 +9,81 @@ from radpattern.helpers import io
 from .sampling import make_positions
 
 import numpy as np
+import math
 import logging 
 
 log = logging.getLogger(__name__) 
+C = 299_792_458.0  # m/s
 
+@dataclass 
+class AtomSpeciment: 
+    name : str
+    lambda_control_m : float
+    delta_f_hz : float
+    ref_length: float 
+
+    # basic optical quantities
+    @property
+    def f_control(self):
+        return C / self.lambda_control_m
+
+    @property
+    def f_signal(self):
+        """ signal beam frequency"""
+        return self.f_control + self.delta_f_hz
+
+    @property
+    def lambda_signal_m(self):
+        """ signal beam wavelength"""
+        return C / self.f_signal
+
+    @property
+    def k_control_SI(self):
+        return 2.0 * math.pi / self.lambda_control_m
+
+    @property
+    def k_signal_SI(self):
+        return 2.0 * math.pi / self.lambda_signal_m
+
+    @property
+    def k_sw_SI(self):
+        return self.k_signal_SI - self.k_control_SI
+
+    @property
+    def lambda_sw_SI(self) -> float:
+        return 2.0 * math.pi / abs(self.k_sw_SI)
+
+    # wavevectors in chosen units
+    @property
+    def k_control(self) -> float:
+        return self.k_control_SI * self.ref_length 
+
+    @property
+    def k_signal(self) -> float:
+        return self.k_signal_SI * self.ref_length 
+
+    @property
+    def k_sw(self) -> float:
+        return self.k_sw_SI * self.ref_length
+
+    @property
+    def lambda_signal(self) -> float:
+        return self.lambda_signal_m / self.ref_length
+
+    @property
+    def lambda_sw(self) -> float:
+        return self.lambda_sw_SI / self.ref_length
+
+    @property 
+    def mass(self): 
+        masses = {"Cs133":132.90, "Rb87":86.90 }
+        return masses[self.name]
 
 @dataclass
 class CloudModel:
     geometry: str                  # "box", "sphere", ...
     distribution: str              # "lattice", "random", "gaussian"
+    atoms : AtomSpeciment          # Type of atoms and its wavelength, frequencies and such. 
 
     # geometry parameters
     Lx:float   = None
@@ -79,18 +145,127 @@ class CloudModel:
     def spacing(self): 
         return 1 / (self.density ** (1/3))
 
-    def make_positions(self, rng=None) -> np.ndarray:
-        log.info("Constructing atom positions...") 
-        return make_positions(self, rng=rng)
+    def generate_cloud(self, rng=None) -> np.ndarray:
+        log.info("Constructing atom positions...  rng = %s", rng) 
+        self.r_xyz =  make_positions(self, rng=rng)
+        return self.r_xyz
+
+    def update_position(self, dt ): 
+        self.r_xyz = self.r_xyz + self.v_xyz * dt 
+
+        # now check whether an atom is outside box to make reflection. 
+#        if self.geometry == "cylinder":
+#            self.reflect_cylinder_boundaries()
+#        else:  
+#            raise NotImplementedError(f"Reflection not implemented for {self.geometry}")
+
+    def update_position_diffusive(self, dt_code, D_code, rng=None):
+        if rng is None:
+            rng = np.random.default_rng()
+
+        step_std = np.sqrt(2.0 * D_code * dt_code)
+
+        dr = rng.normal(
+            loc=0.0,
+            scale=step_std,
+            size=self.r_xyz.shape,
+        )
+
+        self.r_xyz = self.r_xyz + dr
+
+    def cylinder_mask(self): 
+        rho2 = self.r_xyz[:, 0]**2 + self.r_xyz[:, 1]**2
+        return (rho2 <= 1.3* self.R**2) & (np.abs(self.r_xyz[:, 2]) <=1.5* 0.5*self.Lz)
+
+    def update_motion_phase(self):
+        k_sw = self.atoms.k_sw * np.array([0,0,1])
+        return  np.exp(-1j * ((self.r_xyz - self.r0_xyz) @ k_sw))
+
+    def generate_velocity_distribution(self ):
+        """ generates Velocity distibution according to Boltzman law, normalize to ref velocity == most prob speed"""
+        self.v_xyz = np.random.normal(loc = 0.0, scale = 1 / np.sqrt(2), size = (self.n_atoms, 3)) 
+        return self.v_xyz
+
+
+    def generate_S_profile(self, w0_signal): 
+        """ Generates Spin_wave profile from paper. asymetric distribution skweed to the end of the cloud"""
+
+        z = self.r_xyz[:, 2]
+
+        if self.Lz <= 0:
+            raise ValueError("cloud.Lz must be > 0")
+
+        z = self.r_xyz[:, 2]
+        z_norm = z / (self.Lz/2)          # now in [-1, 1]
+        z_norm = np.clip(z_norm, -1, 1)
+
+        amp = np.sqrt(1 - z_norm**2)
+        amp /= np.linalg.norm(amp)
+
+        k_sw = self.atoms.k_sw * np.array([0,0,1])
+        phase = np.exp(-1j * (self.r_xyz @ k_sw))
+
+        x = self.r_xyz[:, 0]
+        y = self.r_xyz[:, 1]
+        r2_perp = x*x + y*y
+        
+        signal_mode = np.exp(-r2_perp / (w0_signal**2))
+
+        self.S = amp.astype(np.complex128) * signal_mode * phase
+
+        return self.S 
 
 
     ## For later. 
-    # def make_velocity_distribution
+    #def make_velocity_distribution
         # return velocty array 
     
     # def update_position( time): 
-        # Ballistic motion update
+# Ballistic motion update
 
+    def reflect_cylinder_boundaries(self):
+        r = self.r_xyz
+        v = self.v_xyz
+
+        zmin = -0.5 * self.Lz
+        zmax = +0.5 * self.Lz
+
+        # --- z end caps ---
+        mask_hi = r[:, 2] > zmax
+        r[mask_hi, 2] = 2*zmax - r[mask_hi, 2]
+        v[mask_hi, 2] *= -1
+
+        mask_lo = r[:, 2] < zmin
+        r[mask_lo, 2] = 2*zmin - r[mask_lo, 2]
+        v[mask_lo, 2] *= -1
+
+        # --- radial cylinder wall ---
+        x = r[:, 0]
+        y = r[:, 1]
+        rho = np.sqrt(x*x + y*y)
+
+        mask_r = rho > self.R
+
+        if np.any(mask_r):
+            # outward normal at wall
+            nx = x[mask_r] / rho[mask_r]
+            ny = y[mask_r] / rho[mask_r]
+
+            # reflect position back inside
+            rho_ref = 2*self.R - rho[mask_r]
+            r[mask_r, 0] = rho_ref * nx
+            r[mask_r, 1] = rho_ref * ny
+
+            # reflect velocity: v' = v - 2(v·n)n
+            vx = v[mask_r, 0]
+            vy = v[mask_r, 1]
+            v_dot_n = vx*nx + vy*ny
+
+            v[mask_r, 0] = vx - 2*v_dot_n*nx
+            v[mask_r, 1] = vy - 2*v_dot_n*ny
+
+        self.r_xyz = r
+        self.v_xyz = v
 
     def log_info(self):
         """ summary of the cloud being simulated. All lengths in units of wavelength."""
@@ -119,7 +294,7 @@ class CloudModel:
         log.info("volume           = %.6g lambda^3", self.volumen)
         log.info("density          = %.6g lambda^-3", self.density)
         log.info("mean spacing      = %.6g lambda", self.spacing)
-        log.info("n_atoms          = %d", self.n_atoms)
+        log.info("n_atoms          = %.3e", self.n_atoms)
 
         if self.distribution == "gaussian":
             log.info("sigma_x          = %s", f"{self.sigma_x:.6g} lambda" if self.sigma_x is not None else "None")
@@ -127,6 +302,7 @@ class CloudModel:
             log.info("sigma_z          = %s", f"{self.sigma_z:.6g} lambda" if self.sigma_z is not None else "None")
 
         log.info("====================================================")
+
 
 
     def report_density_profile(
