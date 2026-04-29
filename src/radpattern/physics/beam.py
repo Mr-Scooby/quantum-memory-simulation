@@ -106,36 +106,16 @@ class BeamModel:
             return np.zeros(3, dtype=float)
         return self.r_front0 + self.v_front * float(t) * self.k_in_hat
 
-    def generate_S_profile(self, r_xyz, cloud,  t:float = 0.0): 
-        """ Generates Spin_wave profile from paper. asymetric distribution skweed to the end of the cloud"""
 
-        r_xyz = np.asarray(r_xyz, dtype=float)
-        z = r_xyz[:, 2]
+    def beam_mask(self, r_xyz, radius_factor=2.0):
+        """ count how many atoms inside beam"""
+        dr = r_xyz - self.pulse_center(0)[None, :]
 
-        zmin = -cloud.Lz / 2.0
-        zmax = +cloud.Lz / 2.0
-        Lz = zmax - zmin
+        u_par = dr @ self.k_in_hat
+        dr2 = np.sum(dr * dr, axis=1)
+        u_perp2 = dr2 - u_par**2
 
-        if Lz <= 0:
-            raise ValueError("cloud.Lz must be > 0")
-
-        # Reduced coordinate in [0,1]
-        z_tilde = (z - zmin) / Lz
-        z_tilde = np.clip(z_tilde, 0.0, 1.0)
-
-        # |S|^2 = 2 z_tilde  ->  integral_0^1 |S|^2 dz = 1
-        eps = 1e-3
-        alpha = -2.4
-        b = -1.2
-        amp = 1.5 - ( b - alpha *  z_tilde + eps)**2
-
-        norm_factor = sum( np.abs(amp)**2) 
-        amp = amp / np.sqrt(norm_factor)
-        phase = np.exp(-1j * self.k_in * (r_xyz @ self.k_in_hat))
-
-        S = amp.astype(np.complex128) * phase
-
-        return S
+        return u_perp2 <= (radius_factor * self.w0)**2
 
 
 
@@ -163,8 +143,8 @@ class BeamModel:
         # -------- Plane wave --------
         if self.beam_type == "plane_wave":
             phase = np.exp(-1j * self.k_in * (r_xyz @ self.k_in_hat))
-            w = phase.astype(np.complex128)
-            return w
+            self.w = phase.astype(np.complex128)
+            return self.w
 
         # -------- Gaussian pulse --------
         r_front_t = self.pulse_center(t)
@@ -186,9 +166,9 @@ class BeamModel:
         # Optical phase
         phase = np.exp(-1j * self.k_in * (r_xyz @ self.k_in_hat))
 
-        w = (env_perp * env_long * phase).astype(np.complex128)
+        self.w = (env_perp * env_long * phase).astype(np.complex128)
 
-        return w
+        return self.w
     
     def log_info(self):
         log.info("====================================================")
