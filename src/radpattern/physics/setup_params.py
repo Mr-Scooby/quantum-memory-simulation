@@ -174,8 +174,9 @@ class SimParams:
     n_mc: int = 100
 
     # Time sampling
-    t_max_factor: float = 1.5
-    n_times: int = 100
+    sim_time_us: float = 50  # microseconds
+    time_divisions: int = 10
+    char_time: int = 38e-6   # Seconds.
 
     # Angular grid
     n_theta: int = 91
@@ -203,6 +204,23 @@ class SimParams:
 
     def sim_metadataSetUp(self, regime, beam): 
         return SetupParams(regime, self, beam)
+
+    @property 
+    def sim_time_s(self):
+        return self.sim_time_us * 1e-6
+    @property
+    def sim_time_code(self): 
+        return self.sim_time_s / self.char_time
+
+    def time_array(self): 
+        """ returns the time array in code times i.e. time_s / char_time. 
+        linspace array. 
+        params: char_time, time_divisions. 
+        """
+        log.info("Time array creation. Sim_time_window = %f [us], divisions = %i", self.sim_time_us, self.time_divisions )
+        return np.linspace(0, self.sim_time_code, self.time_divisions)
+
+
 
 
 def _k_tag(k_hat) -> str:
