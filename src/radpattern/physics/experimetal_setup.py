@@ -142,6 +142,11 @@ class ExperimentalParams:
     def w0_control(self):
         return self.w0_control_m / self.ref_length
     
+    @property
+    def forwardlobe_angular_width(self): 
+        # Forward emission angular width from diffraction (FT of transverse mode):
+        # tetha ~ 1 / (k_signal * w0_signal)
+        return 1 / (exp.atom.k_signal * exp.w0_signal)
 
     # useful ratios
     @property

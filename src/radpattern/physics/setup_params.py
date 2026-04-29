@@ -247,9 +247,8 @@ class SetupParams:
         ).hexdigest()[:8]
 
         return (
-            f"_mc{self.sim.n_mc}"
-            f"_nt{self.sim.n_times}"
-            f"_{_k_tag(self.beam.k_in_hat)}"
+            f"_simT{self.sim.sim_time_us}us"
+            f"_nt{self.sim.time_divisions}"
             f"_{h}"
         )
 
