@@ -10,14 +10,14 @@ import inspect
 log = logging.getLogger(__name__)
 
 # Angle grids / directions
-def make_angle_grid(n_theta=241, n_phi=481):
+def make_angle_grid(n_theta=241, n_phi=481, theta_max = np.pi):
     """
     Returns:
       theta (n_theta,1)
       phi   (n_phi,1)
       nx, ny, nz  (n_theta, n_phi) each
     """
-    theta = np.linspace(0, np.pi, n_theta)
+    theta = np.linspace(0, theta_max, n_theta)
     phi = np.linspace(0, 2 * np.pi, n_phi, endpoint=False)
     TH, PH = np.meshgrid(theta, phi, indexing="ij")
 
