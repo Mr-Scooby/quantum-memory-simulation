@@ -176,12 +176,15 @@ class SimParams:
     # Time sampling
     sim_time_us: float = 50  # microseconds
     time_divisions: int = 10
-    char_time: int = 38e-6   # Seconds.
+    char_time: float = 38e-6   # Seconds.
 
     # Angular grid
     n_theta: int = 91
     n_phi: int = 181
     theta_max : float = np.pi
+
+    # MC atoms sim.
+    sim_density :int = 1e11
 
     # Performance / implementation
     chunk_atoms: int = 2000
@@ -214,11 +217,14 @@ class SimParams:
 
     def time_array(self): 
         """ returns the time array in code times i.e. time_s / char_time. 
-        linspace array. 
+        geomspace array. 
         params: char_time, time_divisions. 
         """
         log.info("Time array creation. Sim_time_window = %f [us], divisions = %i", self.sim_time_us, self.time_divisions )
-        return np.linspace(0, self.sim_time_code, self.time_divisions)
+        times_us = np.r_[0.0, np.geomspace(0.05, self.sim_time_us, self.time_divisions)]
+        times_code = times_us * 1e-6 / self.char_time
+        self.time_divisions += 1
+        return times_code
 
 
 
