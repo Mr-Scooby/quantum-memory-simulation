@@ -29,6 +29,10 @@ class ExperimentalParams:
     -----
     - beam diameters are assumed to be FWHM diameters unless otherwise stated
     - lambda_control is the optical wavelength used as the default physical reference
+
+    Function:
+    --------
+    - Calculates physical parameters and variables of the experiment in SI units and translates it to sim_units. 
     """
     atoms : str 
     lambda_control_m: float          # control wavelength [m]
@@ -40,8 +44,14 @@ class ExperimentalParams:
     signal_fwhm_diameter_m: float    # signal beam FWHM diameter [m]
     control_fwhm_diameter_m: float   # control beam FWHM diameter [m]
 
-    density : float = 1e11
+    density_cm3 : float = 1e11           # atoms/ cm^3 
     temperature: float = 75+ 273.15          # Temperature in Kelvin 
+
+    buffer_gas : str = "N2"
+    buffer_pressure_Torr : float = 5.0          # Torr = 1/760 atm = 101325/760 Pa
+    diffusion_D0_cm2_s: float = 0.2
+    diffusion_T0_K: float = 300.0
+    diffusion_P0_Torr: float = 1.0
 
     scalling: int = 1
     label: str = "experiment"
@@ -52,6 +62,15 @@ class ExperimentalParams:
                                   self.delta_f_hz,
                                   self.ref_length, 
                                   ) 
+
+    @property
+    def density(self): 
+        """ convert density cm^-3 -> m^-3""" 
+        return self.density_cm3 * 1e6 # atoms/ m^3 
+    @property
+    def interparticle_distance(self): 
+        """ mean interparticle distance """
+        return self.density**(-1/3)
 
     @property
     def radius_m(self) -> float:
@@ -80,11 +99,7 @@ class ExperimentalParams:
     def ref_length(self) -> float:
         return self.scalling * self.lambda_control_m
 
-    @property
-    def interparticle_distance(self): 
-        return self.density**(-1/3)
-
-   # geometry in chosen units
+       # geometry in chosen units
     @property
     def Lz(self):
         return self.cell_length_m / self.ref_length
@@ -107,13 +122,19 @@ class ExperimentalParams:
     @property 
     def diffusion_coeff_SI(self): 
         """
-        Simple kinetic estimate:
-            D = (1/3) lambda_mfp * v_mean [m2/ s]
-        """
-        # self.density**(-1.0/3.0)
-        # temporarly set mean free path manually to check. 
-        return (1.0 / 3.0) *self.density**(-1.0/3.0)   * self.mean_speed
+        Buffer-gas diffusion estimate [m^2/s].
 
+        Uses empirical scaling:
+            D(T,P) = D0 * (P0/P) * sqrt(T/T0)
+
+        D0 sets the buffer-gas reference value at T0, P0.
+        """
+        # Avoids ZeroDivisionError. 
+        P = max(float(self.buffer_pressure_Torr), 1e-30)
+        D0 = self.diffusion_D0_cm2_s * 1e-4 # Converts cm^2/s -> m^2/s 
+        return D0 * (self.diffusion_P0_Torr / P) * math.sqrt(
+            self.temperature / self.diffusion_T0_K
+        )
 
     @property
     def diffusion_coeff_code(self):
@@ -122,31 +143,37 @@ class ExperimentalParams:
             D_code = D_si * time_unit / length_unit^2
         """
         return self.diffusion_coeff_SI * self.char_time / (self.ref_length ** 2)
+
     @property 
     def char_time (self):
-        return self.ref_length / self.mean_speed  # Char code time units. Taking as velocity reference the mean thermal velocity. 
+        # Char code time units. Taking as velocity reference the mean thermal velocity. 
+        return self.ref_length / self.mean_speed  
         
     @property
     def density_rescalled(self): 
+        """ density in code units"""
         return self.density * self.ref_length**3 
     
     @property
     def a_spacing_reescaled(self):
+        """ Mean interparticle distance in code units """ 
         return  self.density_rescalled**(-1/3)
 
     @property
     def w0_signal(self):
+        # Waist of signal in code units
         return  self.w0_signal_m  / self.ref_length
 
     @property
     def w0_control(self):
+        # Waist of control in code units
         return self.w0_control_m / self.ref_length
     
     @property
     def forwardlobe_angular_width(self): 
         # Forward emission angular width from diffraction (FT of transverse mode):
         # tetha ~ 1 / (k_signal * w0_signal)
-        return 1 / (exp.atom.k_signal * exp.w0_signal)
+        return 1 / (self.atom.k_signal * self.w0_signal)
 
     # useful ratios
     @property
@@ -185,15 +212,20 @@ class ExperimentalParams:
         lines.append("==============================")
         lines.append("")
         lines.append(f"atoms type {self.atoms}")
-        lines.append(f"density {self.density:.3E}")
+        lines.append(f"density {self.density:.3E} [atoms/ m^3]")
         lines.append(f"geometry: cylinder")
         lines.append(f"dimensions: Lz {self.cell_length_m}[m], Diameter: {self.cell_diameter_m} [m]") 
         lines.append(f"Signal diameter_FWHM at center: {self.signal_fwhm_diameter_m:.3e} [m]")
         lines.append(f"control diameter_FWHM at center: {self.control_fwhm_diameter_m:.3e} [m]")
         lines.append(f" Temperature : {self.temperature} K. Most probable velocity: {self.probable_speed:.4f} m/s, mean speed: {self.mean_speed:.3f} m/s")
         lines.append(f"char time {self.char_time:.4e} [s]")
-        lines.append(f"Diffusive Coeff {self.diffusion_coeff_SI:.4e} [m^2/s]")
-        lines.append(f"lobe angular size 1/ ( k_s w_s0)  : {1 / (self.atom.k_signal_SI * self.signal_fwhm_diameter_m) :.4e} [rad]")
+        lines.append(f"lobe angular size 1/ ( k_s w_s0)  : {self.forwardlobe_angular_width:.4e} [rad]")
+        lines.append("")
+        lines.append("--- buffer gas / diffusion ---")
+        lines.append(f"buffer gas                  : {self.buffer_gas}")
+        lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")
+        lines.append(f"cell temperature [C]        : {self.temperature - 273.15:.6g}")
+        lines.append(f"diffusion D [m^2/s]         : {self.diffusion_coeff_SI:.6e}")
         lines.append("")
         lines.append("==============================")
         lines.append("Experimental -> computational scaling")
@@ -249,6 +281,8 @@ class ExperimentalParams:
         lines.append(f"Lz/a                        : {self.Lz/ self.a_spacing_reescaled}") 
         lines.append(f"t_perp = w_control / v_mean : {self.w0_control_m/ self.mean_speed :.4e} [s]") 
         lines.append(f"t_z = Lz/ V_mean            : {self.cell_length_m/ self.mean_speed :.4e} [s]") 
+        lines.append(f"tau_beam = w_c0^2 / 4D       : {self.w0_control_m**2 / (4 * self.diffusion_coeff_SI ):.4e} [s]") 
+        lines.append(f"sw_dephasing tau_sw = 1 / (D* k_sw^2) : {1 / (self.diffusion_coeff_SI * self.atom.k_sw_SI**2) :.4e} [s]") 
 
         lines.append("")
         lines.append("--- spin-wave across sample ---")
