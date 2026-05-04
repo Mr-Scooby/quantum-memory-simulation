@@ -92,17 +92,12 @@ class CloudModel:
     R :float   = None
 
     # distribution parameters
-    density: float = 1
-    n_atoms: int  = None #field(init=False) 
+    sim_density: float = 1e11  #field(init=False) 
 
     # anisotropic Gaussian widths
     sigma_x:float  = None
     sigma_y:float  = None
     sigma_z:float  = None
-
-    def __post_init__(self):
-        #io.log_attrs(log, self, ["geometry", "distribution"], "Cloud Model: ")
-        self.n_atoms = round( self.volumen * self.density )
 
     @property
     def volumen(self): 
@@ -118,9 +113,10 @@ class CloudModel:
         else: 
             raise ValueError(f"No volumen formula define yet for geometry= {self.geometry}\n Valid current geometries: box, sphere, cylinder")
 
-    #@property 
-    #def spacing(self):
-    #    return self.density ** (-1/3) 
+    @property 
+    def n_atoms(self):
+        """ sim density. Only for diagnostic"""
+        return int(self.sim_density *  self.volumen )
 
     @property
     def has_any_sigma(self) -> bool:
@@ -142,8 +138,8 @@ class CloudModel:
             return np.asarray([2*self.R, 2*self.R, self.Lz])
 
     @property
-    def spacing(self): 
-        return 1 / (self.density ** (1/3))
+    def mean_spacing(self): 
+        return 1 / (self.sim_density ** (1/3))
 
     def generate_cloud(self, rng=None) -> np.ndarray:
         log.info("Constructing atom positions...  rng = %s", rng) 
@@ -292,8 +288,8 @@ class CloudModel:
             log.info("Lz               = %.6g lambda", self.Lz)
 
         log.info("volume           = %.6g lambda^3", self.volumen)
-        log.info("density          = %.6g lambda^-3", self.density)
-        log.info("mean spacing      = %.6g lambda", self.spacing)
+        log.info("density          = %.6g lambda^-3", self.sim_density)
+        log.info("mean spacing      = %.6g lambda", self.mean_spacing)
         log.info("n_atoms          = %.3e", self.n_atoms)
 
         if self.distribution == "gaussian":
@@ -332,7 +328,7 @@ class CloudModel:
             raise ValueError(f"r_xyz must have shape (N, 3), got {r_xyz.shape}")
     
         if probe_radius is None:
-            probe_radius = 0.5 * self.spacing
+            probe_radius = 0.5 * self.mean_spacing
     
         def local_density(point, radius):
             d2 = np.sum((r_xyz - point[None, :]) ** 2, axis=1)
@@ -352,7 +348,7 @@ class CloudModel:
         print("\n=== Cloud density profile report ===")
         print(f"geometry = {self.geometry}")
         print(f"n_atoms = {len(r_xyz)}")
-        print(f"target density = {self.density:.6g} atoms / lambda^3")
+        print(f"target density = {self.sim_density:.6g} atoms / lambda^3")
         print(f"probe_radius = {probe_radius:.6g} lambda")
     
         print("\nTransverse density profile (along +x, y=z=0):")
