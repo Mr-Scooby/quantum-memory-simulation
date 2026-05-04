@@ -56,6 +56,9 @@ class ExperimentalParams:
     scalling: int = 1
     label: str = "experiment"
 
+    spin_destruction_cross_section_CsN2_m2: float = 2.9e-26  # verify
+    spin_exchange_alpha_CsCs_m3_s: float = 6.5e-16
+
     def __post_init__(self): 
         self.atom = AtomSpeciment( self.atoms,
                                   self.lambda_control_m,
@@ -175,6 +178,73 @@ class ExperimentalParams:
         # tetha ~ 1 / (k_signal * w0_signal)
         return 1 / (self.atom.k_signal * self.w0_signal)
 
+    @property
+    def cs_vapor_pressure_Torr(self):
+        """Approx the  Cs atoms vapor pressure [Torr]. Check constants against Steck."""
+        return 10 ** (2.881 + 4.165 - 3830.0 / self.temperature)
+    
+    @property
+    def cs_density_m3(self):
+        P_pa = self.cs_vapor_pressure_Torr * 101325.0 / 760.0
+        return P_pa / (KB * self.temperature)
+    
+    @property
+    def buffer_density_m3(self):
+        P_pa = self.buffer_pressure_Torr * 101325.0 / 760.0
+        return P_pa / (KB * self.temperature)
+    
+    def mean_relative_speed(self, mass2_amu):
+        m1 = self.atom.mass * AMU
+        m2 = mass2_amu * AMU
+        mu = m1 * m2 / (m1 + m2)
+        return math.sqrt(8 * KB * self.temperature / (math.pi * mu))
+    
+    @property
+    def pressure_broadening_signal_Hz(self):
+        gamma_MHz_per_Torr = 19.18
+        return gamma_MHz_per_Torr * 1e6 * self.buffer_pressure_Torr
+    
+    @property
+    def spin_exchange_rate_CsCs_Hz(self):
+        alpha_cm3_s = 6.5e-10
+        return alpha_cm3_s * (self.cs_density_m3 / 1e6)
+    
+    @property
+    def spin_destruction_rate_CsN2_Hz(self):
+        sigma = 2.9e-26  # m^2
+        vrel = self.mean_relative_speed(mass2_amu=28.0)
+        return self.buffer_density_m3 * sigma * vrel@property
+  
+    @property
+    def spin_destruction_rate_CsN2_Hz(self):
+        sigma = self.spin_destruction_cross_section_CsN2_m2
+        return self.buffer_density_m3 * sigma * self.mean_relative_speed(28.0)
+
+    @property
+    def spin_exchange_rate_CsCs_Hz(self):
+        alpha_m3_s = 6.5e-16
+        return alpha_m3_s * self.cs_density_m3
+
+    @property
+    def ballistic_transit_rate_Hz(self):
+        """HWHM transit rate for ballistic Cs atoms through signal beam."""
+        return (self.mean_speed / self.w0_signal_m) * math.log(2.0)
+
+    @property
+    def diffusive_transit_rate_Hz(self):
+        """HWHM transit rate for diffusive motion through signal beam. Gamma"""
+        return self.diffusion_coeff_SI / (self.w0_signal_m / math.log(2.0))**2
+
+    @property
+    def transit_time_rate_Hz(self):
+        """Use slower escape mechanism as rough estimate."""
+        return min(self.ballistic_transit_rate_Hz, self.diffusive_transit_rate_Hz)
+
+    @property
+    def transit_time_s(self):
+        return 1.0 / self.transit_time_rate_Hz
+
+
     # useful ratios
     @property
     def aspect_ratio_full_cell(self):
@@ -223,9 +293,13 @@ class ExperimentalParams:
         lines.append("")
         lines.append("--- buffer gas / diffusion ---")
         lines.append(f"buffer gas                  : {self.buffer_gas}")
-        lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")
+        lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")º
         lines.append(f"cell temperature [C]        : {self.temperature - 273.15:.6g}")
         lines.append(f"diffusion D [m^2/s]         : {self.diffusion_coeff_SI:.6e}")
+        lines.append(f"diffusion D0 [cm^2/s]       : {self.diffusion_D0_cm2_s:.6g}")
+        lines.append(f"diffusion T0 [K]            : {self.diffusion_T0_K:.6g}")
+        lines.append(f"diffusion P0 [Torr]         : {self.diffusion_P0_Torr:.6g}")
+        lines.append(f"diffusion D code units      : {self.diffusion_coeff_code:.6e}")
         lines.append("")
         lines.append("==============================")
         lines.append("Experimental -> computational scaling")
@@ -269,7 +343,25 @@ class ExperimentalParams:
         lines.append(f"k_control                   : {self.atom.k_control:.12f}")
         lines.append(f"k_signal                    : {self.atom.k_signal:.12f}")
         lines.append(f"k_sw                        : {self.atom.k_sw:.12e}")
-    
+        lines.append("")
+        lines.append("--- vapor / buffer gas / intrinsic relaxation ---")
+        lines.append(f"Cs vapor pressure [Torr]    : {self.cs_vapor_pressure_Torr:.6e}")
+        lines.append(f"Cs density [m^-3]           : {self.cs_density_m3:.6e}")
+        lines.append(f"{self.buffer_gas} density [m^-3]        : {self.buffer_density_m3:.6e}")
+        lines.append(f"mean Cs speed [m/s]         : {self.mean_speed:.6f}")
+        lines.append(f"Cs-{self.buffer_gas} v_rel [m/s]        : {self.mean_relative_speed(28.0):.6f}")
+        lines.append(f"pressure broadening [Hz]    : {self.pressure_broadening_signal_Hz:.6e}")
+        lines.append(f"pressure broadening [MHz]   : {self.pressure_broadening_signal_Hz / 1e6:.6f}")
+        lines.append(f"Cs-Cs spin exchange [Hz]    : {self.spin_exchange_rate_CsCs_Hz:.6e}")
+        lines.append(f"Cs-{self.buffer_gas} spin destruction [Hz]: {self.spin_destruction_rate_CsN2_Hz:.6e}")
+        lines.append("")
+        lines.append("--- transit-time broadening ---")
+        lines.append(f"ballistic transit HWHM [Hz]  : {self.ballistic_transit_rate_Hz:.6e}")
+        lines.append(f"ballistic transit HWHM [kHz] : {self.ballistic_transit_rate_Hz / 1e3:.6f}")
+        lines.append(f"diffusive transit HWHM [Hz]  : {self.diffusive_transit_rate_Hz:.6e}")
+        lines.append(f"diffusive transit HWHM [kHz] : {self.diffusive_transit_rate_Hz / 1e3:.6f}")
+        lines.append(f"chosen transit HWHM [Hz]     : {self.transit_time_rate_Hz:.6e}")
+        lines.append(f"transit dephasing time [us]  : {self.transit_time_s * 1e6:.6f}")
         lines.append("")
         lines.append("--- ratios ---")
         lines.append(f"aspect ratio full cell      : {self.aspect_ratio_full_cell:.6f}")
