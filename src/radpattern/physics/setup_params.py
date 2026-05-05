@@ -215,15 +215,19 @@ class SimParams:
     def sim_time_code(self): 
         return self.sim_time_s / self.char_time
 
-    def time_array(self): 
+    def time_array(self, time_spacing: str = "geomspace"): 
         """ returns the time array in code times i.e. time_s / char_time. 
         geomspace array. 
         params: char_time, time_divisions. 
         """
         log.info("Time array creation. Sim_time_window = %f [us], divisions = %i", self.sim_time_us, self.time_divisions )
-        times_us = np.r_[0.0, np.geomspace(0.05, self.sim_time_us, self.time_divisions)]
+        if time_spacing == "linspace":
+            times_us = np.linspace(0.0, self.sim_time_us, self.time_divisions)
+        elif time_spacing == "geomspace":
+            times_us = np.r_[0.0, np.geomspace(0.05, self.sim_time_us, self.time_divisions - 1 )]
+        else:
+            raise ValueError("time_spacing must be 'linspace' or 'geomspace'")
         times_code = times_us * 1e-6 / self.char_time
-        self.time_divisions += 1
         return times_code
 
 

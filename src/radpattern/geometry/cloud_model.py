@@ -214,108 +214,108 @@ class CloudModel:
 #        return self.S 
 #
     def generate_S_profile(
-    self,
-    w0_signal,
-    z_span_mode="percentile",
-    z_percentiles=(0.5, 99.5),
-    profile="sqrt_1_minus_z2",
-    retrieval_direction="+z",
-):
-    """
-    Generate spin-wave profile using the actual atom cloud extent,
-    not the full cell length.
+        self,
+        w0_signal,
+        z_span_mode="percentile",
+        z_percentiles=(0.5, 99.5),
+        profile="sqrt_1_minus_z2",
+        retrieval_direction="+z",
+        ):
+        """
+        Generate spin-wave profile using the actual atom cloud extent,
+        not the full cell length.
 
-    Parameters
-    ----------
-    w0_signal : float
-        Signal beam waist in code units.
+        Parameters
+        ----------
+        w0_signal : float
+            Signal beam waist in code units.
 
-    z_span_mode : str
-        "minmax"      -> use z.min(), z.max()
-        "percentile"  -> use robust atom-position percentiles
+        z_span_mode : str
+            "minmax"      -> use z.min(), z.max()
+            "percentile"  -> use robust atom-position percentiles
 
-    z_percentiles : tuple
-        Percentiles used when z_span_mode="percentile".
-        Example: (0.5, 99.5) ignores extreme outlier atoms.
+        z_percentiles : tuple
+            Percentiles used when z_span_mode="percentile".
+            Example: (0.5, 99.5) ignores extreme outlier atoms.
 
-    profile : str
-        "sqrt_1_minus_z2"  -> symmetric old profile, but over atom cloud
-        "gaussian"         -> Gaussian along actual atom positions
-        "forward_sqrt"     -> approximate forward retrieval profile sqrt(z_tilde)
+        profile : str
+            "sqrt_1_minus_z2"  -> symmetric old profile, but over atom cloud
+            "gaussian"         -> Gaussian along actual atom positions
+            "forward_sqrt"     -> approximate forward retrieval profile sqrt(z_tilde)
 
-    retrieval_direction : str
-        "+z" or "-z" for the forward_sqrt profile.
-    """
+        retrieval_direction : str
+            "+z" or "-z" for the forward_sqrt profile.
+        """
 
-    if not hasattr(self, "r_xyz"):
-        raise ValueError("Call generate_cloud() before generate_S_profile().")
+        if not hasattr(self, "r_xyz"):
+            raise ValueError("Call generate_cloud() before generate_S_profile().")
 
-    z = self.r_xyz[:, 2]
-    x = self.r_xyz[:, 0]
-    y = self.r_xyz[:, 1]
+        z = self.r_xyz[:, 2]
+        x = self.r_xyz[:, 0]
+        y = self.r_xyz[:, 1]
 
-    if z_span_mode == "minmax":
-        z_min = float(np.min(z))
-        z_max = float(np.max(z))
-    elif z_span_mode == "percentile":
-        z_min, z_max = np.percentile(z, z_percentiles)
-        z_min = float(z_min)
-        z_max = float(z_max)
-    else:
-        raise ValueError("z_span_mode must be 'minmax' or 'percentile'")
-
-    z_center = 0.5 * (z_min + z_max)
-    z_half_span = 0.5 * (z_max - z_min)
-
-    if z_half_span <= 0:
-        raise ValueError("Atom z span is zero; cannot build longitudinal profile.")
-
-    # coordinate spanning only the atom cloud:
-    # z_norm = -1 at lower atom edge, +1 at upper atom edge
-    z_norm = (z - z_center) / z_half_span
-    z_norm = np.clip(z_norm, -1.0, 1.0)
-
-    if profile == "sqrt_1_minus_z2":
-        amp_z = np.sqrt(np.maximum(0.0, 1.0 - z_norm**2))
-
-    elif profile == "gaussian":
-        # Choose sigma so that +/- z_half_span corresponds roughly to +/-3 sigma.
-        sigma_eff = z_half_span / 3.0
-        amp_z = np.exp(-0.5 * ((z - z_center) / sigma_eff)**2)
-
-    elif profile == "forward_sqrt":
-        # z_tilde in [0,1] across the actual atom cloud
-        z_tilde = 0.5 * (z_norm + 1.0)
-
-        if retrieval_direction == "+z":
-            amp_z = np.sqrt(np.maximum(0.0, z_tilde))
-        elif retrieval_direction == "-z":
-            amp_z = np.sqrt(np.maximum(0.0, 1.0 - z_tilde))
+        if z_span_mode == "minmax":
+            z_min = float(np.min(z))
+            z_max = float(np.max(z))
+        elif z_span_mode == "percentile":
+            z_min, z_max = np.percentile(z, z_percentiles)
+            z_min = float(z_min)
+            z_max = float(z_max)
         else:
-            raise ValueError("retrieval_direction must be '+z' or '-z'")
+            raise ValueError("z_span_mode must be 'minmax' or 'percentile'")
 
-    else:
-        raise ValueError(
-            "profile must be 'sqrt_1_minus_z2', 'gaussian', or 'forward_sqrt'"
-        )
+        z_center = 0.5 * (z_min + z_max)
+        z_half_span = 0.5 * (z_max - z_min)
 
-    # Spin-wave optical phase
-    k_sw = self.atoms.k_sw * np.array([0.0, 0.0, 1.0])
-    phase = np.exp(-1j * (self.r_xyz @ k_sw))
+        if z_half_span <= 0:
+            raise ValueError("Atom z span is zero; cannot build longitudinal profile.")
 
-    # Transverse signal mode
-    r2_perp = x*x + y*y
-    signal_mode = np.exp(-r2_perp / (w0_signal**2))
+        # coordinate spanning only the atom cloud:
+        # z_norm = -1 at lower atom edge, +1 at upper atom edge
+        z_norm = (z - z_center) / z_half_span
+        z_norm = np.clip(z_norm, -1.0, 1.0)
 
-    self.S = amp_z.astype(np.complex128) * signal_mode * phase
+        if profile == "sqrt_1_minus_z2":
+            amp_z = np.sqrt(np.maximum(0.0, 1.0 - z_norm**2))
 
-    # Normalize after applying longitudinal profile, transverse mode, and phase
-    norm = np.linalg.norm(self.S)
-    if norm <= 0:
-        raise ValueError("Spin wave norm is zero.")
-    self.S /= norm
+        elif profile == "gaussian":
+            # Choose sigma so that +/- z_half_span corresponds roughly to +/-3 sigma.
+            sigma_eff = z_half_span / 3.0
+            amp_z = np.exp(-0.5 * ((z - z_center) / sigma_eff)**2)
 
-    return self.S
+        elif profile == "forward_sqrt":
+            # z_tilde in [0,1] across the actual atom cloud
+            z_tilde = 0.5 * (z_norm + 1.0)
+
+            if retrieval_direction == "+z":
+                amp_z = np.sqrt(np.maximum(0.0, z_tilde))
+            elif retrieval_direction == "-z":
+                amp_z = np.sqrt(np.maximum(0.0, 1.0 - z_tilde))
+            else:
+                raise ValueError("retrieval_direction must be '+z' or '-z'")
+
+        else:
+            raise ValueError(
+                "profile must be 'sqrt_1_minus_z2', 'gaussian', or 'forward_sqrt'"
+            )
+
+        # Spin-wave optical phase
+        k_sw = self.atoms.k_sw * np.array([0.0, 0.0, 1.0])
+        phase = np.exp(-1j * (self.r_xyz @ k_sw))
+
+        # Transverse signal mode
+        r2_perp = x*x + y*y
+        signal_mode = np.exp(-r2_perp / (w0_signal**2))
+
+        self.S = amp_z.astype(np.complex128) * signal_mode * phase
+
+        # Normalize after applying longitudinal profile, transverse mode, and phase
+        norm = np.linalg.norm(self.S)
+        if norm <= 0:
+            raise ValueError("Spin wave norm is zero.")
+        self.S /= norm
+
+        return self.S
 
 
     ## For later. 
