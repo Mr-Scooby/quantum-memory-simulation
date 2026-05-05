@@ -49,8 +49,8 @@ class ExperimentalParams:
 
     buffer_gas : str = "N2"
     buffer_pressure_Torr : float = 5.0          # Torr = 1/760 atm = 101325/760 Pa
-    diffusion_D0_cm2_s: float = 0.2
-    diffusion_T0_K: float = 300.0
+    diffusion_D0_cm2_s: float = 0.24
+    diffusion_T0_K: float = 273.15
     diffusion_P0_Torr: float = 1.0
 
     scalling: int = 1
@@ -293,7 +293,7 @@ class ExperimentalParams:
         lines.append("")
         lines.append("--- buffer gas / diffusion ---")
         lines.append(f"buffer gas                  : {self.buffer_gas}")
-        lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")º
+        lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")
         lines.append(f"cell temperature [C]        : {self.temperature - 273.15:.6g}")
         lines.append(f"diffusion D [m^2/s]         : {self.diffusion_coeff_SI:.6e}")
         lines.append(f"diffusion D0 [cm^2/s]       : {self.diffusion_D0_cm2_s:.6g}")
