@@ -207,7 +207,9 @@ class CloudModel:
         
         signal_mode = np.exp(-r2_perp / (w0_signal**2))
 
-        self.S = amp.astype(np.complex128) * signal_mode * phase
+        S = amp.astype(np.complex128) * signal_mode * phase
+        S /= np.sqrt( np.sum(np.abs(S)**2))
+        self.S = S
 
         return self.S 
 
