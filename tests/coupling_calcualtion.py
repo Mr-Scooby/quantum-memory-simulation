@@ -52,6 +52,39 @@ def overlap_on_sphere(grid, E_emit, E_mode, theta_max = 0.1):
     eta = np.abs(num)**2 / (den_emit * den_mode + 1e-30)
     return eta, num
 
+def intensity_overlap_on_sphere(grid, I_emit, I_mode, theta_max=0.1):
+    mask = grid.TH <= theta_max
+
+    theta = grid.TH[:, 0]
+    phi = grid.PH[0, :]
+    sin_th = np.sin(grid.TH)
+
+    I_emit = np.asarray(I_emit, float)
+    I_mode = np.asarray(I_mode, float)
+
+    I_emit = np.where(mask, I_emit, 0.0)
+    I_mode = np.where(mask, I_mode, 0.0)
+
+    num = np.trapz(
+        np.trapz(I_emit * I_mode * sin_th, phi, axis=1),
+        theta,
+        axis=0,
+    )
+
+    den_emit = np.trapz(
+        np.trapz(I_emit * sin_th, phi, axis=1),
+        theta,
+        axis=0,
+    )
+
+    den_mode = np.trapz(
+        np.trapz(I_mode * sin_th, phi, axis=1),
+        theta,
+        axis=0,
+    )
+
+    return num / (den_emit+ 1e-30)
+
 
 
 
