@@ -14,10 +14,6 @@ from radpattern.helpers.io import save_simulation_npz
 
 from radpattern.physics.mcpattern import mc_static, static_AF_calculation
 
-from radpattern.plotting.beam_test import check_beam_window, plot_atom_distribution,plot_weight_distribution
-from radpattern.plotting.rplotting import plot_atoms
-import matplotlib.pyplot as plt
-
 from coupling_calcualtion import intensity_overlap_on_sphere, gaussian_fiber_mode_on_sphere
 
 from dataclasses import asdict 
