@@ -8,7 +8,7 @@ from radpattern.geometry.cloud_model import CloudModel
 from radpattern.physics.beam import BeamModel
 from radpattern.geometry.grids import AngleGrid
 
-from radpattern.physics.rpattern_gpu import array_factor_general_gpu
+from radpattern.physics.rpattern_gpu import array_factor_general_gpu, prepare_gpu_grid
 from radpattern.helpers.helpers import single_dipole_E, intensity_from_field
 from radpattern.helpers.io import save_simulation_npz
 
@@ -115,6 +115,8 @@ Diff_coef = exp.diffusion_coeff_code
 # Coupling E field for calculating eta
 E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, exp.forwardlobe_angular_width))**2
 
+# Moves n_hat to gpu, to reduce timing
+In_hat_gpu = prepare_gpu_grid(grid.n_hat_flat)
 # MC runs. 
 def mc_single_run(mc): 
     print(f"Run {mc}/{ sim.n_mc}")
@@ -148,7 +150,7 @@ def mc_single_run(mc):
 
         # Compute far field emission. 
         AF = array_factor_general_gpu(
-            n_hat_flat=grid.n_hat_flat,
+            n_hat_flat=In_hat_gpu,
             grid_shape=grid.shape,
             k_out=exp.atom.k_signal,
             r_xyz=cloud.r_xyz,

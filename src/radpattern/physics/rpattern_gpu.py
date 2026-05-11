@@ -8,6 +8,13 @@ Should be susefull as we have large matrix
 import numpy as np
 import cupy as cp
 
+def prepare_gpu_grid(n_hat_flat):
+    """
+    Move fixed angular grid to GPU once.
+    Call this once before the time / MC loop.
+    """
+    return cp.asarray(n_hat_flat, dtype=cp.float32)
+
 
 def array_factor_general_gpu(
     n_hat_flat,
@@ -48,7 +55,6 @@ def array_factor_general_gpu(
     M = n_hat_flat.shape[0]
 
     # Move fixed arrays to GPU
-    n_hat_gpu = cp.asarray(n_hat_flat, dtype=cp.float64)
     r_gpu = cp.asarray(r_xyz, dtype=cp.float64)
 
     if w is None:
@@ -57,6 +63,7 @@ def array_factor_general_gpu(
         w_gpu = cp.asarray(w, dtype=cp.complex128)
 
     AF_gpu = cp.zeros(M, dtype=cp.complex128)
+    k_out_gpu = cp.float32(k_out)
 
     for a0 in range(0, N, chunk_atoms):
         a1 = min(a0 + chunk_atoms, N)
@@ -65,10 +72,10 @@ def array_factor_general_gpu(
         w_chunk = w_gpu[a0:a1]      # shape (chunk,)
 
         # shape: (M, chunk)
-        phase = k_out * (n_hat_gpu @ r_chunk.T)
+        phase = k_out_gpu * (n_hat_gpu @ r_chunk.T)
 
         # sum over atoms in this chunk
-        AF_gpu += cp.exp(1j * phase) @ w_chunk
+        AF_gpu += cp.exp(1j * phase).astype(cp.complex64) @ w_chunk
 
         # Optional: free temporary memory between chunks
         del phase
