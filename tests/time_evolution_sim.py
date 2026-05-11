@@ -18,6 +18,7 @@ from radpattern.plotting.beam_test import check_beam_window, plot_atom_distribut
 from radpattern.plotting.rplotting import plot_atoms
 import matplotlib.pyplot as plt
 
+from coupling_calcualtion import intensity_overlap_on_sphere, gaussian_fiber_mode_on_sphere
 
 from dataclasses import asdict 
 
@@ -34,20 +35,33 @@ exp = ExperimentalParams(
         delta_f_hz = 9.12e9, 
         cell_length_m = 75e-3, 
         cell_diameter_m = 4e-3, 
-        signal_fwhm_diameter_m = 120e-6, 
+        signal_fwhm_diameter_m = 2 * 120e-6, 
         control_fwhm_diameter_m = 300e-6, 
-        density = 1e13, 
+        density_cm3 = 1e13, 
         scalling = 10000,
-        temperature = 200 + 273.15 
+        temperature = 50 + 273.15, 
+        label = "2/1 ratios of signal/control beam. 5Torr bufferPresure. GeomTimeSpacing",
+        buffer_gas = "N2",
+        buffer_pressure_Torr = 10, 
+        diffusion_D0_cm2_s = 0.240 , # From liteture. Phd LuisaEsguerra 
+        diffusion_T0_K = 273.15, 
+        diffusion_P0_Torr = 760  # 1 atm. 1Torr = 1/760 atm 
         ) 
 print(exp)
+sim = SimParams(n_theta = 100, n_phi = 100,
+                theta_max = 10 * exp.forwardlobe_angular_width,
+                sim_time_us = 50, #microseconds
+                time_divisions = 10, 
+                char_time = exp.char_time, 
+                sim_density = 1e4,
+                n_mc =1 ) 
 
-cloud = CloudModel( "cylinder", 
-                   "random", 
-                   exp.atom, 
+cloud = CloudModel( geometry = "cylinder", 
+                   distribution = "random", 
+                   atoms = exp.atom, 
                    Lz = exp.Lz,
                    R = 3 * exp.w0_control, 
-                   density = exp.density_rescalled, 
+                   sim_density = sim.sim_density, 
                    )
 
 beam = BeamModel(
@@ -60,71 +74,72 @@ beam = BeamModel(
     pcenter_at_origin = True,
 )
 
-theta0 = 1 / (exp.atom.k_signal * exp.w0_signal)
-
-sim = SimParams(n_theta = 100, n_phi = 100, theta_max = 10 * theta0, n_mc = 1) 
-
 setp = sim.sim_metadataSetUp(exp, beam)
 
+
 grid = sim.create_grid()
-
 cloud.log_info()
-
-
-cloud.generate_cloud()
-cloud.generate_velocity_distribution()
-cloud.generate_S_profile(exp.w0_signal) 
 
 dipole = single_dipole_E(grid.nx, grid.ny, grid.nz, np.array([1,0,0]))
 
-times_si = np.linspace(0, 50e-6, 10)
-times_code = times_si / exp.char_time
-T = len(times_code)
+times_code = sim.time_array() 
+
+T = sim.time_divisions
 nt, np_ = grid.shape
 AF_t = np.zeros((T, nt, np_), dtype=np.complex128)
 I_t  = np.zeros((T, nt, np_), dtype=float)
 n_inside_t = np.zeros(T)
 n_beam_t = np.zeros(T)
 
-beam.generate_weights(cloud.r_xyz)
 
-cloud.r0_xyz = cloud.r_xyz.copy()
 Diff_coef = exp.diffusion_coeff_code
-for it, t in enumerate(times_code):
-    dt = 0.0 if it == 0 else times_code[it] - times_code[it-1]
 
-    cloud.update_position_diffusive(dt,Diff_coef )
-    #cloud.update_position(dt)
+eta_all = np.zeros((sim.n_mc, T))
+E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, exp.forwardlobe_angular_width))**2
 
-    beam.generate_weights(cloud.r_xyz)
-    motion_phase = cloud.update_motion_phase()
-    weights = cloud.S * beam.w * motion_phase
+for mc in range(sim.n_mc):
+    print(f"Run {mc}/{ sim.n_mc}")
+    rng = np.random.default_rng(1000 + mc)
 
-    print("it, dt =", it, dt)
-    print("mean displacement =", np.mean(np.linalg.norm(cloud.r_xyz - cloud.r0_xyz, axis=1)))
-    print("std phase motion =", np.std(np.angle(motion_phase)))
-    print("same r?", np.allclose(cloud.r_xyz, cloud.r0_xyz))
+    cloud.generate_cloud(rng=rng)
+    cloud.generate_velocity_distribution()
+    cloud.generate_S_profile(exp.w0_signal)
+    cloud.r0_xyz = cloud.r_xyz.copy()
 
-    inside = cloud.cylinder_mask()
-    mask_beam = beam.beam_mask(cloud.r_xyz, radius_factor=2.0)
-    n_beam_t[it] = np.count_nonzero(mask_beam)
-    
-    n_inside_t[it] = np.count_nonzero(inside)
+    eta_t = np.zeros(T)
 
-    AF = array_factor_general(
-        n_hat_flat=grid.n_hat_flat,
-        grid_shape=grid.shape,
-        k_out=exp.atom.k_signal,
-        r_xyz=cloud.r_xyz[inside],
-        w= weights[inside],
-    )
+    for it, t in enumerate(times_code):
+        dt = 0.0 if it == 0 else times_code[it] - times_code[it-1]
 
-    AF_t[it] = AF
-    I_t[it] = np.abs(AF)**2 * dipole
+        cloud.update_position_diffusive(dt, Diff_coef, rng=rng)
 
-path = "../data/results_sims/Diffusive_exp_data_s_wave_reduce_cone_50ustimeSim"
+        beam.generate_weights(cloud.r_xyz)
+        motion_phase = cloud.update_motion_phase()
+        weights = cloud.S * beam.w * motion_phase
+
+        inside = cloud.cylinder_mask()
+
+        AF = array_factor_general(
+            n_hat_flat=grid.n_hat_flat,
+            grid_shape=grid.shape,
+            k_out=exp.atom.k_signal,
+            r_xyz=cloud.r_xyz[inside],
+            w=weights[inside],
+        )
+
+        I = np.abs(AF)**2 * dipole
+
+        eta_t[it] = intensity_overlap_on_sphere(grid,I,E_fib, exp.forwardlobe_angular_width)  # replace with your coupling function
+
+    eta_all[mc] = eta_t
+
+eta_mean = eta_all.mean(axis=0)
+eta_std = eta_all.std(axis=0)
+eta_sem = eta_std / np.sqrt(sim.n_mc)
+
+path = "../data/results_sims/DiffusiveBufferN2_3Torr_simDens1e6_exp_data_s_wave_reduce_cone_50ustimeSim_GeomSpace"
 save_simulation_npz(path + setp.run_name,
-    metadata=asdict(setp),intensity = I_t,atom_pos = cloud.r_xyz,w = weights,AF = AF_t, times_code = times_code, speed_distribution = cloud.v_xyz, n_inside = n_inside_t, n_beam = n_beam_t
+    metadata=asdict(setp),intensity = I_t,atom_pos = cloud.r_xyz,w = weights,AF = AF, times_code = times_code, speed_distribution = cloud.v_xyz, eta = eta_all
                 )
-####
-#
+##
+
