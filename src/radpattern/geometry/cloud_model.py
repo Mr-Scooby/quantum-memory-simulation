@@ -14,6 +14,8 @@ import logging
 
 log = logging.getLogger(__name__) 
 C = 299_792_458.0  # m/s
+MU_B = 9.2740100783e-24
+HBAR = 1.054571817e-34
 
 @dataclass 
 class AtomSpeciment: 
@@ -21,6 +23,12 @@ class AtomSpeciment:
     lambda_control_m : float
     delta_f_hz : float
     ref_length: float 
+
+    g_g: float = 0.0
+    m_g: float = 0.0
+    g_s: float = 0.0
+    m_s: float = 0.0
+
 
     # basic optical quantities
     @property
@@ -78,6 +86,13 @@ class AtomSpeciment:
     def mass(self): 
         masses = {"Cs133":132.90, "Rb87":86.90 }
         return masses[self.name]
+    @property 
+    @property
+    def magnetic_sensitivity_rad_s_T(self):
+        try: 
+            return MU_B / HBAR * (self.g_s * self.m_s - self.g_g * self.m_g)
+        except ZeroDivisionError:
+            return 0
 
 @dataclass
 class CloudModel:
@@ -317,8 +332,37 @@ class CloudModel:
 
         return self.S
 
+    def update_magnetic_phase(self, dt_s, B_gradient_z_T_per_code):
+        """
+        Accumulate magnetic spin-wave phase for one time step.
 
-    ## For later. 
+        Linear gradient only:
+            B_j = Gz * z_j
+
+        phase_B_j <- phase_B_j * exp[-i chi_B B_j dt]
+
+        Parameters
+        ----------
+        dt_s : float
+            Time step in seconds.
+
+        B_gradient_z_T_per_code : float
+            Magnetic-field gradient in Tesla / code_length.
+        """
+
+        if not hasattr(self, "phase_B"):
+            self.phase_B = np.ones(self.n_atoms, dtype=np.complex128)
+
+        z_code = self.r_xyz[:, 2]
+
+        B_j = B_gradient_z_T_per_code * z_code
+
+        omega_B_j = self.atoms.magnetic_sensitivity_rad_s_T * B_j
+
+        self.phase_B *= np.exp(-1j * omega_B_j * dt_s)
+
+        return self.phase_B
+        ## For later. 
     #def make_velocity_distribution
         # return velocty array 
     

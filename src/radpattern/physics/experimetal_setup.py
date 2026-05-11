@@ -43,6 +43,16 @@ class ExperimentalParams:
 
     signal_fwhm_diameter_m: float    # signal beam FWHM diameter [m]
     control_fwhm_diameter_m: float   # control beam FWHM diameter [m]
+    
+    # |g> = |F=1, mF=+1>
+    g_g:float = -0.5018
+    m_g:float = +1
+
+    # |s> = |F=2, mF=+1>
+    g_s:float = +0.4998
+    m_s:float = +1
+
+
 
     density_cm3 : float = 1e11           # atoms/ cm^3 
     temperature: float = 75+ 273.15          # Temperature in Kelvin 
@@ -52,6 +62,9 @@ class ExperimentalParams:
     diffusion_D0_cm2_s: float = 0.24
     diffusion_T0_K: float = 273.15
     diffusion_P0_Torr: float = 1.0
+
+    B0_T: float = 0.0 # Magnetic field
+    B_gradient: float = 1 
 
     scalling: int = 1
     label: str = "experiment"
@@ -64,6 +77,11 @@ class ExperimentalParams:
                                   self.lambda_control_m,
                                   self.delta_f_hz,
                                   self.ref_length, 
+                                  g_g = self.g_g , 
+                                  m_g = self.m_g , 
+                                  g_s = self.g_s , 
+                                  m_s = self.m_s , 
+
                                   ) 
 
     @property
@@ -275,6 +293,12 @@ class ExperimentalParams:
     def sw_periods_across_cell(self) -> float:
         return self.kz_phase_accumulation / (2.0 * math.pi)
 
+    @property
+    def B_gradient_z_T_per_code(self):
+        """ retruns B gradient in code units"""
+        return self.B_gradient_z_T_per_m * self.ref_length
+
+
     def __str__(self) -> str:
         lines = []
         lines.append("==============================")
@@ -292,15 +316,24 @@ class ExperimentalParams:
         lines.append(f"lobe angular size 1/ ( k_s w_s0)  : {self.forwardlobe_angular_width:.4e} [rad]")
         lines.append("")
         lines.append("--- buffer gas / diffusion ---")
-        lines.append(f"buffer gas                  : {self.buffer_gas}")
-        lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")
-        lines.append(f"cell temperature [C]        : {self.temperature - 273.15:.6g}")
-        lines.append(f"diffusion D [m^2/s]         : {self.diffusion_coeff_SI:.6e}")
-        lines.append(f"diffusion D0 [cm^2/s]       : {self.diffusion_D0_cm2_s:.6g}")
-        lines.append(f"diffusion T0 [K]            : {self.diffusion_T0_K:.6g}")
-        lines.append(f"diffusion P0 [Torr]         : {self.diffusion_P0_Torr:.6g}")
-        lines.append(f"diffusion D code units      : {self.diffusion_coeff_code:.6e}")
+        try:
+            lines.append(f"buffer gas                  : {self.buffer_gas}")
+            lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")
+            lines.append(f"cell temperature [C]        : {self.temperature - 273.15:.6g}")
+            lines.append(f"diffusion D [m^2/s]         : {self.diffusion_coeff_SI:.6e}")
+            lines.append(f"diffusion D0 [cm^2/s]       : {self.diffusion_D0_cm2_s:.6g}")
+            lines.append(f"diffusion T0 [K]            : {self.diffusion_T0_K:.6g}")
+            lines.append(f"diffusion P0 [Torr]         : {self.diffusion_P0_Torr:.6g}")
+            lines.append(f"diffusion D code units      : {self.diffusion_coeff_code:.6e}")
+            lines.append("")
+        except TypeError: 
+            lines.append(" NONE Buffer Gas")
+
         lines.append("")
+        lines.append("--- B field ---------------")
+        lines.append(f"B0_T                       : {self.B0_T}")
+        lines.append(f"B gradient                       : {self.B_gradient}")
+
         lines.append("==============================")
         lines.append("Experimental -> computational scaling")
         lines.append("==============================")
