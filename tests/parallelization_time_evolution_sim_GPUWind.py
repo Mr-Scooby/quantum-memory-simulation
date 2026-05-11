@@ -63,7 +63,7 @@ sim = SimParams(n_theta = 100, n_phi = 100,
                 time_divisions = 10, 
                 char_time = exp.char_time, 
                 sim_density = 1e6,
-                chunk_atoms = 1000,
+                chunk_atoms = 3000,
                 n_mc =4 ) 
 
 cloud = CloudModel( geometry = "cylinder", 
@@ -166,7 +166,7 @@ def mc_single_run(mc):
 
 if __name__ == "__main__":
 
-    n_jobs = 4   # start with 4, then test 6, 8, etc.
+    n_jobs = 1   # start with 4, then test 6, 8, etc.
 
     results = Parallel(n_jobs=n_jobs, backend="loky")(
         delayed(mc_single_run)(mc)

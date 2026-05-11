@@ -31,20 +31,20 @@ def overlap_on_sphere(grid, E_emit, E_mode, theta_max = 0.1):
     phi   = grid.PH[0, :]   # 1D phi,   shape (n_phi,)
     sin_th = np.sin(grid.TH)   # 2D, same shape as E_emit
 
-    num = np.trapz(
-        np.trapz(E_emit * np.conj(E_mode) * sin_th, phi, axis=1),
+    num = np.trapezoid(
+        np.trapezoid(E_emit * np.conj(E_mode) * sin_th, phi, axis=1),
         theta,
         axis=0
     )
 
-    den_emit = np.trapz(
-        np.trapz(np.abs(E_emit)**2 * sin_th, phi, axis=1),
+    den_emit = np.trapezoid(
+        np.trapezoid(np.abs(E_emit)**2 * sin_th, phi, axis=1),
         theta,
         axis=0
     )
 
-    den_mode = np.trapz(
-        np.trapz(np.abs(E_mode)**2 * sin_th, phi, axis=1),
+    den_mode = np.trapezoid(
+        np.trapezoid(np.abs(E_mode)**2 * sin_th, phi, axis=1),
         theta,
         axis=0
     )
@@ -65,20 +65,20 @@ def intensity_overlap_on_sphere(grid, I_emit, I_mode, theta_max=0.1):
     I_emit = np.where(mask, I_emit, 0.0)
     I_mode = np.where(mask, I_mode, 0.0)
 
-    num = np.trapz(
-        np.trapz(I_emit * I_mode * sin_th, phi, axis=1),
+    num = np.trapezoid(
+        np.trapezoid(I_emit * I_mode * sin_th, phi, axis=1),
         theta,
         axis=0,
     )
 
-    den_emit = np.trapz(
-        np.trapz(I_emit * sin_th, phi, axis=1),
+    den_emit = np.trapezoid(
+        np.trapezoid(I_emit * sin_th, phi, axis=1),
         theta,
         axis=0,
     )
 
-    den_mode = np.trapz(
-        np.trapz(I_mode * sin_th, phi, axis=1),
+    den_mode = np.trapezoid(
+        np.trapezoid(I_mode * sin_th, phi, axis=1),
         theta,
         axis=0,
     )
