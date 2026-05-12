@@ -110,6 +110,11 @@ files = [
 "270Sdiam_Cs133_simT50us_nt30_50062153",
 "120Sdiam_Cs133_simT50us_nt30_668eec6f",
         ]
+
+files =[ 
+"120Sdiam_100McCs133_simT50us_nt30_0ca5af1d",
+"120Sdiam_10McCs133_simT50us_nt30_f5923077",
+]
 #
 # plot title and legend title
 title =  "Coupling decay. Rb87. T= 1mk.\n ControlBeam varying, signal 170um"

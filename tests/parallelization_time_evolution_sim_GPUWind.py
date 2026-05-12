@@ -66,7 +66,7 @@ sim = SimParams(n_theta = 100, n_phi = 100,
                 char_time = exp.char_time, 
                 sim_density = 1e5,
                 chunk_atoms = 3000,
-                n_mc =50 ) 
+                n_mc =70 ) 
 
 cloud = CloudModel( geometry = "cylinder", 
                    distribution = "random", 
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             "simulations",
             "data",
             "results_sims",
-            f"120Sdiam_100Mc" + setp.run_name,
+            f"120Sdiam_70Mc" + setp.run_name,
         )
 
 

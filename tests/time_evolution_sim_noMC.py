@@ -44,7 +44,7 @@ def main(Cdiameterfactor):
             cell_diameter_m = 4e-3, 
             signal_fwhm_diameter_m = 1.5 * 235.2* 1e-6, 
             control_fwhm_diameter_m = Cdiameterfactor * 588.7 * 1e-6, 
-            density_cm3 = 1e8, 
+            density_cm3 = 1e8,
             scalling = 10000,
             temperature =  10e-6, 
             label = "RB87. Varying Control. NO buffer gas. Ballistic motion. ",
@@ -60,7 +60,8 @@ def main(Cdiameterfactor):
                     sim_time_us = 200_000, #microseconds
                     time_divisions = 15, 
                     char_time = exp.char_time, 
-                    sim_density = 1e5,
+                    sim_density = 1e6,
+                    chunk_atoms = 3000,
                     n_mc =1 ) 
 
     cloud = CloudModel( geometry = "cylinder", 
@@ -212,6 +213,7 @@ def main(Cdiameterfactor):
             k_out=exp.atom.k_signal,
             r_xyz=cloud.r_xyz,
             w=weights, 
+            chunk_atoms = sim.chunk_atoms,
         )
        
         # Intensity. 
@@ -231,7 +233,7 @@ def main(Cdiameterfactor):
 
 if __name__ == "__main__":
 
-    for Cdiameterfactor in [0.7,0.9,1,1.2, 1.5, 1.7, 2, 2.2 ] : 
+    for Cdiameterfactor in [0.7] : 
         #print(Sdiamter)
         main(Cdiameterfactor)
 
