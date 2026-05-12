@@ -48,9 +48,9 @@ exp = ExperimentalParams(
         density_cm3 = 1e13, 
         scalling = 10000,
         temperature = 75 + 273.15, 
-        label = "Parallelization Testing, sim density low ",
+        label = "Cs133 Normal sim",
         buffer_gas = "N2",
-        buffer_pressure_Torr = 10, 
+        buffer_pressure_Torr = 2, 
         diffusion_D0_cm2_s = 0.240 , # From liteture. Phd LuisaEsguerra 
         diffusion_T0_K = 273.15, 
         diffusion_P0_Torr = 760  # 1 atm. 1Torr = 1/760 atm 
@@ -62,11 +62,11 @@ print(exp)
 sim = SimParams(n_theta = 100, n_phi = 100,
                 theta_max = 10 * exp.forwardlobe_angular_width,
                 sim_time_us = 50, #microseconds
-                time_divisions = 5, 
+                time_divisions = 30, 
                 char_time = exp.char_time, 
-                sim_density = 1e3,
+                sim_density = 1e5,
                 chunk_atoms = 3000,
-                n_mc =2 ) 
+                n_mc =50 ) 
 
 cloud = CloudModel( geometry = "cylinder", 
                    distribution = "random", 
@@ -95,7 +95,7 @@ cloud.log_info()
 dipole = single_dipole_E(grid.nx, grid.ny, grid.nz, np.array([1,0,0]))
 
 # Sim times array
-times_code = sim.time_array() 
+times_code = sim.time_array("linspace") 
 
 # Array dimensions
 T = sim.time_divisions
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             "simulations",
             "data",
             "results_sims",
-            setp.run_name,
+            f"120Sdiam_100Mc" + setp.run_name,
         )
 
 

@@ -17,7 +17,7 @@ import numpy as np
 
 PATH = "../data/results_sims/"
 #test2DslabN100000_mc1_nt20_k001_a2cc34fd
-FILE = "multirunN165816_mc1_nt1_k001_a5a3e979"
+FILE = "_simT50us_nt10_b9636ccc"
 print(f"showing file = {PATH+FILE}")
 
 npz = np.load(PATH+FILE+'.npz', allow_pickle=True)

@@ -14,9 +14,6 @@ from radpattern.helpers.io import save_simulation_npz
 
 from radpattern.physics.mcpattern import mc_static, static_AF_calculation
 
-from radpattern.plotting.rplotting import plot_atoms
-import matplotlib.pyplot as plt
-
 from coupling_calcualtion import intensity_overlap_on_sphere, gaussian_fiber_mode_on_sphere
 
 from dataclasses import asdict 
@@ -166,7 +163,7 @@ def mc_single_run(mc):
 
 if __name__ == "__main__":
 
-    n_jobs = 4   # start with 4, then test 6, 8, etc.
+    n_jobs = 1   # start with 4, then test 6, 8, etc.
 
     results = Parallel(n_jobs=n_jobs, backend="loky")(
         delayed(mc_single_run)(mc)

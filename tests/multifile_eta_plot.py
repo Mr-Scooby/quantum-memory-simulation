@@ -103,9 +103,13 @@ files = [
 #]
 
 
-#files = [
-#        "Cs133_simT50us_nt25_403a3338"
-#        ]
+files = [
+        "Cs133_simT50us_nt30_f5923077", 
+        "Cs133_simT50us_nt30_9ae4db70",
+        "270Sdiam_Cs133_simT50us_nt30_2f9f2cd4",
+"270Sdiam_Cs133_simT50us_nt30_50062153",
+"120Sdiam_Cs133_simT50us_nt30_668eec6f",
+        ]
 #
 # plot title and legend title
 title =  "Coupling decay. Rb87. T= 1mk.\n ControlBeam varying, signal 170um"
@@ -119,7 +123,7 @@ labels = np.zeros(len(files))
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
 
-Time_division = 16
+Time_division = 30
 
 etas = np.zeros((len(files), Time_division)) 
 
@@ -252,7 +256,7 @@ for file_idx, file in enumerate(files):
 
     ### Calculating Gaussian mode. 
     ### Coupling to gaussian mode calculation.
-    theta0 = 12 / ( exp.atom.k_signal * exp.w0_signal)
+    theta0 = 10 / ( exp.atom.k_signal * exp.w0_signal)
     print(f"theta0 = {theta0}, forwardLobe = {exp.forwardlobe_angular_width}, equal? {theta0 == exp.forwardlobe_angular_width}") 
 
     E_fib = cp.gaussian_fiber_mode_on_sphere(grid, theta0)#* np.exp(1j * np.angle(AF))
@@ -316,6 +320,8 @@ plt.rcParams.update({
 # Setting time sclae [us or ms]
 if timeScale.upper() == "MS": 
     times_us /= 1e3    # Convet us to ms
+
+labels = [120, 180, 270, 270_1, 120_1]
 
 ##### coupling / dephasing plot ---
 fig, ax = plt.subplots(figsize=(7, 4.8))
