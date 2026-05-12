@@ -57,7 +57,6 @@ exp = ExperimentalParams(
         ) 
 print(exp)
 
-
 # Sim params
 sim = SimParams(n_theta = 100, n_phi = 100,
                 theta_max = 10 * exp.forwardlobe_angular_width,
@@ -67,6 +66,9 @@ sim = SimParams(n_theta = 100, n_phi = 100,
                 sim_density = 1e3,
                 chunk_atoms = 3000,
                 n_mc =2 ) 
+
+
+
 
 cloud = CloudModel( geometry = "cylinder", 
                    distribution = "random", 
@@ -122,13 +124,23 @@ E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, theta0))**2
 
 # Moves n_hat to gpu, to reduce timing
 In_hat_gpu = prepare_gpu_grid(grid.n_hat_flat)
+
+
 # MC runs. 
 def mc_single_run(mc): 
+    """ Generates a single time evolution run, 
+    generates random object -> cloud and beam -> time evlution sim. 
+
+    returns: eta_t (T, ) , AF_t (T, nt, np_) , AF2_t (T, nt, np_) , I_t (T, nt, np_)  
+    """
+    # Counter
     print(f"Run {mc}/{ sim.n_mc}")
+    # Time counter. 
     t0_mc = time.perf_counter() 
 
     # Random generator for each mc instance. 
-    rng = np.random.default_rng(1000 + mc )
+    seed = sim.seed if sim.seed is not None else 0 
+    rng = np.random.default_rng(seed + mc )
 
     # Generate cloud
     cloud.generate_cloud(rng=rng)
@@ -139,6 +151,7 @@ def mc_single_run(mc):
     # Store original position for time advancement
     cloud.r0_xyz = cloud.r_xyz.copy()
 
+    # Geneeate storage arrays
     eta_t = np.zeros(T)
     AF_t = np.zeros((T, nt, np_), dtype=np.complex64)
     AF2_t = np.zeros((T, nt, np_), dtype=np.float32)
