@@ -257,6 +257,7 @@ class SetupParams:
         ).hexdigest()[:8]
 
         return (
+            f"{self.regime.atoms}"
             f"_simT{self.sim.sim_time_us}us"
             f"_nt{self.sim.time_divisions}"
             f"_{h}"

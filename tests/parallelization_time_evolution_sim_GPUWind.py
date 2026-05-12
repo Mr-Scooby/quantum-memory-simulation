@@ -1,4 +1,4 @@
-#!/usr/bin/env math
+#!/usr/bin/env mathD
 # -*- coding: utf-8 -*-
 
 import numpy as np
@@ -62,11 +62,11 @@ print(exp)
 sim = SimParams(n_theta = 100, n_phi = 100,
                 theta_max = 10 * exp.forwardlobe_angular_width,
                 sim_time_us = 50, #microseconds
-                time_divisions = 50, 
+                time_divisions = 5, 
                 char_time = exp.char_time, 
-                sim_density = 1e6,
+                sim_density = 1e3,
                 chunk_atoms = 3000,
-                n_mc =20 ) 
+                n_mc =2 ) 
 
 cloud = CloudModel( geometry = "cylinder", 
                    distribution = "random", 
@@ -103,7 +103,7 @@ nt, np_ = grid.shape
 
 # Prepare array storage
 AF_t = np.zeros((T, nt, np_), dtype=np.complex128)
-AF2_mean_t.shape  == (T, nt, np_)
+AF2_mean_t = np.zeros((T, nt, np_), dtype= np.complex128 )
 I_t  = np.zeros((T, nt, np_), dtype=float)
 n_inside_t = np.zeros(T)
 n_beam_t = np.zeros(T)
@@ -125,10 +125,10 @@ In_hat_gpu = prepare_gpu_grid(grid.n_hat_flat)
 # MC runs. 
 def mc_single_run(mc): 
     print(f"Run {mc}/{ sim.n_mc}")
-    t0_mc = time.perf_counter(1000 + mc) 
+    t0_mc = time.perf_counter() 
 
     # Random generator for each mc instance. 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(1000 + mc )
 
     # Generate cloud
     cloud.generate_cloud(rng=rng)
