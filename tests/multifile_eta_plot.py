@@ -77,39 +77,40 @@ files = [
 #]
 #
 # RB87 sim with changing control beam. The signal is 100 um
-files = [
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.7ControlBeamfactor_simT200000us_nt15_0bd1783f",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.9ControlBeamfactor_simT200000us_nt15_4596d951",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1ControlBeamfactor_simT200000us_nt15_05856623",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.2ControlBeamfactor_simT200000us_nt15_8fec7ff7",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ef27abec",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.7ControlBeamfactor_simT200000us_nt15_c51d58be",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2ControlBeamfactor_simT200000us_nt15_78ade96a",
-         ]
+#files = [
+##"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.7ControlBeamfactor_simT200000us_nt15_0bd1783f",
+##"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.9ControlBeamfactor_simT200000us_nt15_4596d951",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1ControlBeamfactor_simT200000us_nt15_05856623",
+##"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.2ControlBeamfactor_simT200000us_nt15_8fec7ff7",
+##"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ef27abec",
+##"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.7ControlBeamfactor_simT200000us_nt15_c51d58be",
+##"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2ControlBeamfactor_simT200000us_nt15_78ade96a",
+        # ]
 #
 #files = ["ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ef27abec"]
 
 
 # RB87 Sim with changing control beam.  A  signal beam of 17 um
-files = [
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.7ControlBeamfactor_simT200000us_nt15_5b43f4cc",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.9ControlBeamfactor_simT200000us_nt15_4240ffe8",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1ControlBeamfactor_simT200000us_nt15_74619d5f",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.2ControlBeamfactor_simT200000us_nt15_4adb2fd3",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ee05c512",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.7ControlBeamfactor_simT200000us_nt15_a971ba17",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2ControlBeamfactor_simT200000us_nt15_0b537299",
-"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2.2ControlBeamfactor_simT200000us_nt15_372b7454",
-]
+#files = [
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.7ControlBeamfactor_simT200000us_nt15_5b43f4cc",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.9ControlBeamfactor_simT200000us_nt15_4240ffe8",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1ControlBeamfactor_simT200000us_nt15_74619d5f",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.2ControlBeamfactor_simT200000us_nt15_4adb2fd3",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ee05c512",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.7ControlBeamfactor_simT200000us_nt15_a971ba17",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2ControlBeamfactor_simT200000us_nt15_0b537299",
+#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2.2ControlBeamfactor_simT200000us_nt15_372b7454",
+#]
 
 
-files = [
-        "parallel_testCS133_simT50us_nt10_67050d8d"
-        ]
-
+#files = [
+#        "Cs133_simT50us_nt25_403a3338"
+#        ]
+#
 # plot title and legend title
 title =  "Coupling decay. Rb87. T= 1mk.\n ControlBeam varying, signal 170um"
 legend_title = "Control Diam" 
+timeScale = "ms" 
 # To match from file name for labels 
 regex_pattern =r'(\d+)Sdiamter'
 
@@ -118,12 +119,14 @@ labels = np.zeros(len(files))
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
 
-etas = np.zeros((len(files), 15)) 
+Time_division = 16
 
-P_fiber = np.zeros((len(files), 15)) 
-P_total = np.zeros((len(files), 15)) 
-eta_i = np.zeros((len(files), 15)) 
-I = np.zeros((len(files), 15))
+etas = np.zeros((len(files), Time_division)) 
+
+P_fiber = np.zeros((len(files), Time_division)) 
+P_total = np.zeros((len(files), Time_division)) 
+eta_i = np.zeros((len(files), Time_division)) 
+I = np.zeros((len(files), Time_division))
 
 Diffusion_cte = np.zeros(len(files))
 
@@ -132,6 +135,18 @@ def fiber_coupling_vs_time(I_t, grid, theta_f):
     """
     I_t: shape (T, ntheta, nphi), already |AF|^2 * dipole
     theta_f: Gaussian fiber intensity radius in radians
+
+    Returns
+    -------
+    eta : np.ndarray
+        Fiber coupling efficiency versus time, with shape (T,). Defined as
+        P_fiber / P_total.
+
+    P_fiber : np.ndarray
+        Fiber-mode-weighted angular power versus time, with shape (T,).
+
+    P_total : np.ndarray
+        Total angularly integrated power versus time, with shape (T,).
     """
     theta = grid.TH
 
@@ -149,6 +164,10 @@ def fiber_coupling_vs_time(I_t, grid, theta_f):
     return eta, P_fiber, P_total
 
 
+
+
+
+### Data extraction and formation of new objects to get the properties values. 
 for file_idx, file in enumerate(files): 
     print(f"showing file = {PATH+file}")
     npz = np.load(PATH+file+'.npz', allow_pickle=True)
@@ -231,6 +250,7 @@ for file_idx, file in enumerate(files):
 
 
 
+    ### Calculating Gaussian mode. 
     ### Coupling to gaussian mode calculation.
     theta0 = 12 / ( exp.atom.k_signal * exp.w0_signal)
     print(f"theta0 = {theta0}, forwardLobe = {exp.forwardlobe_angular_width}, equal? {theta0 == exp.forwardlobe_angular_width}") 
@@ -256,7 +276,7 @@ for file_idx, file in enumerate(files):
 
             #eta_abs, _ = cp.overlap_on_sphere(grid, np.abs(AF[it]),np.abs( E_fib))
             eta_abs = cp.intensity_overlap_on_sphere(grid,np.abs(E_field)**2 , I_fib, theta_max = theta0)
-            eta_i_[it], P_fiber_[it], P_total_[it] = fiber_coupling_vs_time(np.abs(E_field)**2, grid, theta0)
+#            eta_i_[it], P_fiber_[it], P_total_[it] = fiber_coupling_vs_time(np.abs(E_field)**2, grid, theta0)
 
             I_t[it] = np.mean(np.abs(E_field[0,:])**2)
 
@@ -281,7 +301,6 @@ print(etas)
 
 
 ########################################
-##### coupling / dephasing plot ---
 
 plt.rcParams.update({
     'font.size': 12,          # Default text size
@@ -293,22 +312,20 @@ plt.rcParams.update({
     'legend.title_fontsize': 19 
 })
 
+
+# Setting time sclae [us or ms]
+if timeScale.upper() == "MS": 
+    times_us /= 1e3    # Convet us to ms
+
+##### coupling / dephasing plot ---
 fig, ax = plt.subplots(figsize=(7, 4.8))
 
-
-times_us /= 1e3 # [ms] 
-labels = [0.7,0.9,1, 1.2, 1.5,1.7,2, 2.2]
-
-#ax.plot(times_us, eta_t, "o-", label="coherent")
 for idx, file in enumerate(files[:7]): 
     ax.plot(times_us, etas[idx, : ], "o-", label=labels[idx])
-#ax.plot(t_fit, exp_decay(t_fit, *popt_erased), ":",color="k", label="phase-erased fit")
 for idx, file in enumerate(files[7:],7): 
     ax.plot(times_us, etas[idx, : ], "*--", label=labels[idx])
-#ax.plot(t_fit, exp_decay(t_fit, *popt_erased), ":",color="k", label="phase-erased fit")
 
-
-ax.set_xlabel("time [ms]")
+ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"coupling $\eta$")
 ax.set_title(title)
 
@@ -319,58 +336,58 @@ plt.show()
 print(beamRatios)
 
 
+# Plots forwards intensity vs Time.
 fig, ax = plt.subplots(figsize = (7, 4.8) )
 for idx, file in enumerate(files[:7]): 
     ax.plot(times_us, I[idx,:], "o-", label=labels[idx])
 
-ax.set_xlabel("time [ms]")
+ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Intensity [AF^2] $")
 ax.set_title(title)
 
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
-
 plt.show()
 
-fig, ax = plt.subplots(figsize=(7, 4.8))
 
+# Plots fiber-Coupled power vs Time 
+fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(files[:7]): 
     ax.plot(times_us, P_fiber[idx, : ], "o-", label=labels[idx])
 
-ax.set_xlabel("time [ms]")
+ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"P_fiber $")
 ax.set_title(title)
-
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
-
 plt.show()
 
+
+# Plots total emitted power vs time
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(files[:7]): 
     ax.plot(times_us, P_total[idx, : ], "o-", label=labels[idx])
 
-ax.set_xlabel("time [ms]")
+ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"P_total  $")
 ax.set_title(title)
-
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
-
 plt.show()
 
+
+# Plot fiber couploing efficiency vs Time eta= P_in / P_t 
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(files[:7]): 
     ax.plot(times_us, eta_i[idx, : ], "o-", label=labels[idx])
 
-ax.set_xlabel("time [ms]")
+ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"P_fiber/P_total $")
 ax.set_title(title)
-
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
 
-
+# Compare normalize P_fiber and P_total for the first data set 
 fig = plt.figure()
 plt.plot(times_us, P_fiber[0,:] / P_fiber[0,0], label="P_fiber norm")
 plt.plot(times_us, P_total[0,:] / P_total[0,0], label="P_total norm")
@@ -378,6 +395,5 @@ plt.plot(times_us, P_total[0,:] / P_total[0,0], label="P_total norm")
 plt.legend()
 plt.grid(True)
 plt.show()
-
 plt.show()
 
