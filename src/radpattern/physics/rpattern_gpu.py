@@ -72,7 +72,7 @@ def array_factor_general_gpu(
         w_chunk = w_gpu[a0:a1]      # shape (chunk,)
 
         # shape: (M, chunk)
-        phase = k_out_gpu * (n_hat_gpu @ r_chunk.T)
+        phase = k_out_gpu * (n_hat_flat @ r_chunk.T)
 
         # sum over atoms in this chunk
         AF_gpu += cp.exp(1j * phase).astype(cp.complex64) @ w_chunk
