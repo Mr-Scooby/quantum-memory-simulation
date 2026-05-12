@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import os
 
 from radpattern.physics.setup_params import PhysicalRegime, SimParams, SetupParams
 from radpattern.geometry.cloud_model import CloudModel
@@ -24,6 +25,7 @@ from dataclasses import asdict
 from joblib import Parallel, delayed
 from threadpoolctl import threadpool_limits
 import copy
+import time 
 
 import logging
 logging.basicConfig(level = logging.INFO) 
@@ -60,11 +62,11 @@ print(exp)
 sim = SimParams(n_theta = 100, n_phi = 100,
                 theta_max = 10 * exp.forwardlobe_angular_width,
                 sim_time_us = 50, #microseconds
-                time_divisions = 10, 
+                time_divisions = 50, 
                 char_time = exp.char_time, 
                 sim_density = 1e6,
                 chunk_atoms = 3000,
-                n_mc =4 ) 
+                n_mc =20 ) 
 
 cloud = CloudModel( geometry = "cylinder", 
                    distribution = "random", 
@@ -120,7 +122,8 @@ In_hat_gpu = prepare_gpu_grid(grid.n_hat_flat)
 # MC runs. 
 def mc_single_run(mc): 
     print(f"Run {mc}/{ sim.n_mc}")
-    
+    t0_mc = time.perf_counter() 
+
     # Random generator for each mc instance. 
     rng = np.random.default_rng()
 
@@ -164,11 +167,14 @@ def mc_single_run(mc):
         # Coupling for time t
         eta_t[it] = intensity_overlap_on_sphere(grid,I,E_fib, exp.forwardlobe_angular_width)  
 
+    dt_mc = time.perf_counter() - t0_mc
+    print(f"MC {mc+1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
     return eta_t
 
 if __name__ == "__main__":
 
     n_jobs = 1   # start with 4, then test 6, 8, etc.
+    t0_total = time.perf_counter()
 
     results = Parallel(n_jobs=n_jobs, backend="loky")(
         delayed(mc_single_run)(mc)
@@ -177,10 +183,22 @@ if __name__ == "__main__":
 
     eta_all = np.array(results)
 
-    path = "../data/results_sims/parallel_testCS133"
+    total_seconds = time.perf_counter() - t0_total
+    print(f"Total runtime: {total_seconds:.2f} s")
+    print(f"Total runtime: {total_seconds/60:.2f} min")
+
+    path = os.path.join(
+            os.path.expanduser("~"),
+            "radek",
+            "simulations",
+            "data",
+            "results_sims",
+            setp.run_name,
+        )
+
 
     save_simulation_npz(
-        path + setp.run_name,
+        path,
         metadata=asdict(setp),
         times_code=times_code,
         eta_all=eta_all,
