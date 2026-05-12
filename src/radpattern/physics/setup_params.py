@@ -257,9 +257,11 @@ class SetupParams:
         ).hexdigest()[:8]
 
         return (
-            f"{self.regime.atoms}"
+            f"{self.regime.atoms}_{self.regime.buffer_pressure_Torr}Torr"
+            f"{self.regime.signal_fwhm_diamter_m}SDia_{self.regime.control_fwhm_diameter_m}Cdia_"
             f"_simT{self.sim.sim_time_us}us"
             f"_nt{self.sim.time_divisions}"
+            f"{self.sim.n_mc}runs"
             f"_{h}"
         )
 
