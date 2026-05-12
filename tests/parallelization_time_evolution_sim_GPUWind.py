@@ -102,6 +102,7 @@ nt, np_ = grid.shape
 
 # Prepare array storage
 AF_t = np.zeros((T, nt, np_), dtype=np.complex128)
+AF2_mean_t.shape  == (T, nt, np_)
 I_t  = np.zeros((T, nt, np_), dtype=float)
 n_inside_t = np.zeros(T)
 n_beam_t = np.zeros(T)
@@ -114,14 +115,16 @@ eta_t = np.zeros(sim.time_divisions)
 Diff_coef = exp.diffusion_coeff_code
 
 # Coupling E field for calculating eta
-E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, exp.forwardlobe_angular_width))**2
+
+theta0 = 12 / ( exp.atom.k_signal * exp.w0_signal)
+E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, theta0))**2
 
 # Moves n_hat to gpu, to reduce timing
 In_hat_gpu = prepare_gpu_grid(grid.n_hat_flat)
 # MC runs. 
 def mc_single_run(mc): 
     print(f"Run {mc}/{ sim.n_mc}")
-    t0_mc = time.perf_counter() 
+    t0_mc = time.perf_counter(1000 + mc) 
 
     # Random generator for each mc instance. 
     rng = np.random.default_rng()
@@ -136,6 +139,9 @@ def mc_single_run(mc):
     cloud.r0_xyz = cloud.r_xyz.copy()
 
     eta_t = np.zeros(T)
+    AF_t = np.zeros((T, nt, np_), dtype=np.complex64)
+    AF2_t = np.zeros((T, nt, np_), dtype=np.float32)
+    I_t = np.zeros((T, nt, np_), dtype=np.float32)
 
     # Time evolution runs
     for it, t in enumerate(times_code):
@@ -161,14 +167,18 @@ def mc_single_run(mc):
         )
 
         # Intensity
-        I = np.abs(AF)**2 * dipole
+        AF2 = np.abs(AF)**2
+        I = AF2 * dipole
 
         # Coupling for time t
-        eta_t[it] = intensity_overlap_on_sphere(grid,I,E_fib, exp.forwardlobe_angular_width)  
+        eta_t[it] = intensity_overlap_on_sphere(grid,I,E_fib, theta0 )  
+        AF_t[it] = AF.astype(np.complex64)
+        AF2_t[it] = AF2.astype(np.float32)
+        I_t[it] = I.astype(np.float32)
 
     dt_mc = time.perf_counter() - t0_mc
     print(f"MC {mc+1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
-    return eta_t
+    return eta_t,AF_t, AF2_t, I_t
 
 if __name__ == "__main__":
 
@@ -180,7 +190,18 @@ if __name__ == "__main__":
         for mc in range(sim.n_mc)
     )
 
-    eta_all = np.array(results)
+
+    eta_all = np.array([r[0] for r in results])
+    AF_all  = np.array([r[1] for r in results])
+    AF2_all = np.array([r[2] for r in results])
+    I_all   = np.array([r[3] for r in results])
+
+    eta_mean = eta_all.mean(axis=0)
+    AF_mean_t = AF_all.mean(axis=0)
+    AF2_mean_t = AF2_all.mean(axis=0)
+    I_mean_t = I_all.mean(axis=0)
+
+
 
     total_seconds = time.perf_counter() - t0_total
     print(f"Total runtime: {total_seconds:.2f} s")
@@ -192,6 +213,9 @@ if __name__ == "__main__":
         path + setp.run_name,
         metadata=asdict(setp),
         times_code=times_code,
+        AF = AF_mean_t,
+        AF2 = AF2_mean_t,
+        intensity = I_mean_t, 
         eta_all=eta_all,
         )
 ##
