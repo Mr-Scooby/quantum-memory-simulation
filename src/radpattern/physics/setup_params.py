@@ -197,7 +197,7 @@ class SimParams:
 
     # File naming 
     # Computed run name: human-readable + hash from all params
-    def __post_init__: 
+    def __post_init__(self): 
         if self.seed is None:
             self.seed = int(np.random.default_rng().integers(0, 2**32))
     @property 
