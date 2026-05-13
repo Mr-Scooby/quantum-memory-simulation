@@ -100,14 +100,15 @@ class CloudModel:
     distribution: str              # "lattice", "random", "gaussian"
     atoms : AtomSpeciment          # Type of atoms and its wavelength, frequencies and such. 
 
+    # distribution parameters
+    # Sim density.
+    sim_density: float   #field(init=False) 
+
     # geometry parameters
     Lx:float   = None
     Ly:float   = None
     Lz:float   = None
     R :float   = None
-
-    # distribution parameters
-    sim_density: float = 1e11  #field(init=False) 
 
     # anisotropic Gaussian widths
     sigma_x:float  = None
@@ -162,15 +163,11 @@ class CloudModel:
         return self.r_xyz
 
     def update_position(self, dt ): 
+        """ Balistic motion position update, Updates r(t0 + dt) = r(t0) + vdt""" 
         self.r_xyz = self.r_xyz + self.v_xyz * dt 
 
-        # now check whether an atom is outside box to make reflection. 
-#        if self.geometry == "cylinder":
-#            self.reflect_cylinder_boundaries()
-#        else:  
-#            raise NotImplementedError(f"Reflection not implemented for {self.geometry}")
-
     def update_position_diffusive(self, dt_code, D_code, rng=None):
+        """ Difussive update position. Updates r(t0 + dt) = r(t0) + sqrt(2 D dt)* randVector """
         if rng is None:
             rng = np.random.default_rng()
 
@@ -362,12 +359,6 @@ class CloudModel:
         self.phase_B *= np.exp(-1j * omega_B_j * dt_s)
 
         return self.phase_B
-        ## For later. 
-    #def make_velocity_distribution
-        # return velocty array 
-    
-    # def update_position( time): 
-# Ballistic motion update
 
     def reflect_cylinder_boundaries(self):
         r = self.r_xyz
