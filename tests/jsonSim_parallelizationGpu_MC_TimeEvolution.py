@@ -9,7 +9,6 @@ from radpattern.geometry.cloud_model import CloudModel
 from radpattern.physics.beam import BeamModel
 from radpattern.geometry.grids import AngleGrid
 
-from radpattern.physics.rpattern_gpu import array_factor_general_gpu, prepare_gpu_grid
 from radpattern.helpers.helpers import single_dipole_E, intensity_from_field
 from radpattern.helpers.io import save_simulation_npz
 
@@ -40,7 +39,9 @@ from radpattern.physics.experimetal_setup import ExperimentalParams
 
 def run_one_config(config_path, output_dir):
     ### Experimenatal parameters.
-    objs = build_run_objects("config_path")
+    from radpattern.physics.rpattern_gpu import array_factor_general_gpu, prepare_gpu_grid
+
+    objs = build_run_objects(str(config_path))
 
     exp = objs.exp
     sim = objs.sim
@@ -50,6 +51,7 @@ def run_one_config(config_path, output_dir):
     setp = sim.sim_metadataSetUp(exp, beam)
     # Grid formation
     grid = sim.create_grid()
+    print(exp)
     cloud.log_info()
 
     # Dipole generation for intensity
