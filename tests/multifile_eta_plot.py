@@ -112,8 +112,8 @@ files = [
         ]
 
 files =[ 
-"120Sdiam_100McCs133_simT50us_nt30_0ca5af1d",
-"120Sdiam_10McCs133_simT50us_nt30_f5923077",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_ad9b5931",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
 ]
 #
 # plot title and legend title
@@ -121,14 +121,14 @@ title =  "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeS
 legend_title = "Buffer gas" 
 timeScale = "us" 
 # To match from file name for labels 
-regex_pattern =r'(\d+)Sdiamter'
+regex_pattern =r'_(\d+)runs'
 
 #Plot labels 
 labels = np.zeros(len(files))
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
 
-Time_division = 30
+Time_division = 16
 
 etas = np.zeros((len(files), Time_division)) 
 
@@ -138,6 +138,7 @@ eta_i = np.zeros((len(files), Time_division))
 I = np.zeros((len(files), Time_division))
 
 Diffusion_cte = np.zeros(len(files))
+seed = np.zeros(len(files))
 
 
 def fiber_coupling_vs_time(I_t, grid, theta_f):
@@ -184,22 +185,22 @@ for file_idx, file in enumerate(files):
         meta = npz["metadata"].item()
 
         exp = ExperimentalParams(
-                atoms = meta['regime']['atoms'], 
-                lambda_control_m = meta['regime']['lambda_control_m'],
-                delta_f_hz = meta['regime']['delta_f_hz'], 
-                cell_length_m = meta['regime']['cell_length_m'], 
-                cell_diameter_m = meta['regime']['cell_diameter_m'], 
-                signal_fwhm_diameter_m = meta['regime']['signal_fwhm_diameter_m'], 
-                control_fwhm_diameter_m = meta['regime']['control_fwhm_diameter_m'], 
-                density_cm3 = meta['regime']['density_cm3'], 
-                scalling = meta['regime']['scalling'],
-                temperature = meta['regime']['temperature'],
-                label = meta['regime']['label'],
-                buffer_pressure_Torr = meta['regime']['buffer_pressure_Torr'],
-                buffer_gas = meta['regime']['buffer_gas'],
-                diffusion_D0_cm2_s =meta['regime']['diffusion_D0_cm2_s'], #0.240 , # From liteture. Phd LuisaEsguerra 
-                diffusion_T0_K = meta['regime']['diffusion_T0_K'], #273.15, 
-                diffusion_P0_Torr =meta['regime']['diffusion_P0_Torr'], # 760  # 1 atm. 1Torr = 1/760 atm 
+                atoms = meta['experiment']['atoms'], 
+                lambda_control_m = meta['experiment']['lambda_control_m'],
+                delta_f_hz = meta['experiment']['delta_f_hz'], 
+                cell_length_m = meta['experiment']['cell_length_m'], 
+                cell_diameter_m = meta['experiment']['cell_diameter_m'], 
+                signal_fwhm_diameter_m = meta['experiment']['signal_fwhm_diameter_m'], 
+                control_fwhm_diameter_m = meta['experiment']['control_fwhm_diameter_m'], 
+                density_cm3 = meta['experiment']['density_cm3'], 
+                scalling = meta['experiment']['scalling'],
+                temperature = meta['experiment']['temperature'],
+                label = meta['experiment']['label'],
+                buffer_pressure_Torr = meta['experiment']['buffer_pressure_Torr'],
+                buffer_gas = meta['experiment']['buffer_gas'],
+                diffusion_D0_cm2_s =meta['experiment']['diffusion_D0_cm2_s'], #0.240 , # From liteture. Phd LuisaEsguerra 
+                diffusion_T0_K = meta['experiment']['diffusion_T0_K'], #273.15, 
+                diffusion_P0_Torr =meta['experiment']['diffusion_P0_Torr'], # 760  # 1 atm. 1Torr = 1/760 atm 
 ) 
         print(f"label: {exp.label.upper()}")
         print(exp)
@@ -228,11 +229,12 @@ for file_idx, file in enumerate(files):
                     time_divisions = meta["sim"]["time_divisions"],
                     char_time =meta["sim"]["char_time"],
                     sim_density =meta["sim"]["sim_density"],
-                    n_mc =meta["sim"]["n_mc"]
+                    n_mc =meta["sim"]["n_mc"],
+                    seed = meta["sim"]["seed"],
                         ) 
 
         cloud.log_info()
-
+        seed[file_idx]= meta["sim"]["seed"]
         # convert code time -> SI -> microseconds
         times_code = npz["times_code"]
         char_time = exp.char_time          # [s] = ref_length / ref_velocity
@@ -326,7 +328,6 @@ plt.rcParams.update({
 if timeScale.upper() == "MS": 
     times_us /= 1e3    # Convet us to ms
 
-labels = [120, 180, 270, 270_1, 120_1]
 
 ##### coupling / dephasing plot ---
 fig, ax = plt.subplots(figsize=(7, 4.8))
@@ -494,3 +495,6 @@ npz_metadata_to_json(
     PATH + files[0] + ".npz",
     "old_metadata.json",
 )
+
+
+print(f"seeds ={seed}")
