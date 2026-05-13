@@ -197,7 +197,9 @@ class SimParams:
 
     # File naming 
     # Computed run name: human-readable + hash from all params
-
+    def __post_init__: 
+        if self.seed is None:
+            self.seed = int(np.random.default_rng().integers(0, 2**32))
     @property 
     def grid_shape(self): 
         return (self.n_theta, self.n_phi)
