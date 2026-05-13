@@ -176,25 +176,11 @@ def build_cloud(sim: SimParams, exp: ExperimentalParams) -> CloudModel:
     The simulated atom number comes from sim.sim_density.
     """
 
-    geometry = "cylinder"
+    geometry = exp.cell_geometry
     distribution = "random"
-    r_factor = 3.0
 
-    R = r_factor * exp.w0_control
+    R = sim.simulation_window_radius_w0_cutoff * exp.w0_control
     Lz = exp.Lz
-
-    if geometry == "cylinder":
-        volume = np.pi * R**2 * Lz
-    else:
-        raise ValueError(f"Unsupported default cloud geometry: {geometry!r}")
-
-    n_atoms = int(round(sim.sim_density * volume))
-
-    if n_atoms <= 0:
-        raise ValueError(
-            f"Computed n_atoms={n_atoms}. Check sim.sim_density={sim.sim_density}, "
-            f"R={R}, Lz={Lz}."
-        )
 
     defaults = {
         "geometry": geometry,
@@ -202,7 +188,7 @@ def build_cloud(sim: SimParams, exp: ExperimentalParams) -> CloudModel:
         "atoms": exp.atom,
         "Lz": Lz,
         "R": R,
-        "n_atoms": n_atoms,
+        "sim_density": sim.sim_density,
     }
 
     cloud_kwargs = dataclass_kwargs(CloudModel, defaults)
