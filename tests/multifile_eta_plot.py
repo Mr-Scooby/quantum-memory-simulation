@@ -11,8 +11,8 @@ import re
 
 
 PATH = "../data/results_sims/"
-#files = [
-#         "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_c2e6fcd3",
+files = [
+         "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_c2e6fcd3",
 #         "DiffusiveBufferN2_3Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_260f4b5d",
 #         "DiffusiveBufferN2_4Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_88032039",
 #         "DiffusiveBufferN2_5Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_1a93c62c",
@@ -23,7 +23,7 @@ PATH = "../data/results_sims/"
 #         "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_582bdb8b",
 #         "DiffusiveBufferN2_11Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_6e487271",
 #         "DiffusiveBufferN2_12Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_286e4962",
-#         ]
+         ]
 #
 #files = [
 #        "DiffusiveBufferN2_1Torr_simDens1e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_b943d55c",
@@ -44,14 +44,14 @@ PATH = "../data/results_sims/"
 #]
 
 # CS. Changing signal 
-files = [
-"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_120Sdiamter_simT50us_nt16_f1118cef",
-"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_150Sdiamter_simT50us_nt16_72859d29",
-"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_180Sdiamter_simT50us_nt16_deede175",
-"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_210Sdiamter_simT50us_nt16_db316c0c",
-"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_240Sdiamter_simT50us_nt16_30183bee",
-"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_270Sdiamter_simT50us_nt16_6c0a1957",
-]
+#files = [
+#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_120Sdiamter_simT50us_nt16_f1118cef",
+#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_150Sdiamter_simT50us_nt16_72859d29",
+#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_180Sdiamter_simT50us_nt16_deede175",
+#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_210Sdiamter_simT50us_nt16_db316c0c",
+#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_240Sdiamter_simT50us_nt16_30183bee",
+#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_270Sdiamter_simT50us_nt16_6c0a1957",
+#]
 
 ## Beam Ratios change 
 #files =[
@@ -117,9 +117,9 @@ files =[
 ]
 #
 # plot title and legend title
-title =  "Coupling decay. Rb87. T= 1mk.\n ControlBeam varying, signal 170um"
-legend_title = "Control Diam" 
-timeScale = "ms" 
+title =  "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us"
+legend_title = "Buffer gas" 
+timeScale = "us" 
 # To match from file name for labels 
 regex_pattern =r'(\d+)Sdiamter'
 
@@ -408,3 +408,89 @@ plt.grid(True)
 plt.show()
 plt.show()
 
+
+
+
+"""
+Extract metadata from an old npz result and save it as JSON.
+"""
+
+import json
+from pathlib import Path
+
+import numpy as np
+
+
+def json_value(x):
+    """
+    Convert numpy values into JSON-safe values.
+    """
+
+    if isinstance(x, np.ndarray):
+        return x.tolist()
+
+    if isinstance(x, np.integer):
+        return int(x)
+
+    if isinstance(x, np.floating):
+        return float(x)
+
+    if isinstance(x, np.bool_):
+        return bool(x)
+
+    return x
+
+
+def load_npz_metadata(npz_path):
+    """
+    Load metadata from an npz result.
+
+    Input
+    -----
+    npz_path : str
+        Path to saved result.
+
+    Output
+    ------
+    dict
+        Metadata dictionary.
+    """
+
+    data = np.load(npz_path, allow_pickle=True)
+
+    if "metadata" not in data:
+        raise KeyError("npz file has no 'metadata' key")
+
+    metadata = data["metadata"]
+
+    if metadata.shape == ():
+        metadata = metadata.item()
+
+    return metadata
+
+
+def write_json(path, data):
+    """
+    Save dictionary as formatted JSON.
+    """
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, default=json_value)
+
+
+def npz_metadata_to_json(npz_path, json_path):
+    """
+    Convert old npz metadata to JSON.
+    """
+
+    metadata = load_npz_metadata(npz_path)
+    write_json(json_path, metadata)
+
+
+npz_metadata_to_json(
+    PATH + files[0] + ".npz",
+    "old_metadata.json",
+)

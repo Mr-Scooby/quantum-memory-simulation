@@ -60,8 +60,8 @@ def main(Cdiameterfactor):
                     sim_time_us = 200_000, #microseconds
                     time_divisions = 15, 
                     char_time = exp.char_time, 
-                    sim_density = 1e6,
-                    chunk_atoms = 3000,
+                    sim_density = 1e5,
+                    chunk_atoms = 2000,
                     n_mc =1 ) 
 
     cloud = CloudModel( geometry = "cylinder", 
