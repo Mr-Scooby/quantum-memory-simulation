@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 from dataclasses import dataclass, asdict
 import math
 from typing import Dict, Any, Optional
@@ -43,6 +40,9 @@ class ExperimentalParams:
 
     signal_fwhm_diameter_m: float    # signal beam FWHM diameter [m]
     control_fwhm_diameter_m: float   # control beam FWHM diameter [m]
+
+    cell_geometry: str = "cylinder" 
+    Control_beam_AxisOffset_nm : tuple = (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
     
     # |g> = |F=1, mF=+1>
     g_g:float = -0.5018
@@ -81,8 +81,16 @@ class ExperimentalParams:
                                   m_g = self.m_g , 
                                   g_s = self.g_s , 
                                   m_s = self.m_s , 
-
                                   ) 
+
+        if self.buffer_gas is None: 
+            self.buffer_pressure_Torr : float = 0.0         # Torr = 1/760 atm = 101325/760 Pa
+            self.diffusion_D0_cm2_s: float    = 0.0
+            self.diffusion_T0_K: float        = 0.0
+            self.diffusion_P0_Torr: float     = 0.0
+
+
+
 
     @property
     def density(self): 
@@ -149,13 +157,21 @@ class ExperimentalParams:
             D(T,P) = D0 * (P0/P) * sqrt(T/T0)
 
         D0 sets the buffer-gas reference value at T0, P0.
+        
+        Note. if buffer_gas == None => D = mfp * v_average / 3
         """
-        # Avoids ZeroDivisionError. 
-        P = max(float(self.buffer_pressure_Torr), 1e-30)
-        D0 = self.diffusion_D0_cm2_s * 1e-4 # Converts cm^2/s -> m^2/s 
-        return D0 * (self.diffusion_P0_Torr / P) * math.sqrt(
-            self.temperature / self.diffusion_T0_K
-        )
+        if self.buffer_gas is None: 
+            log.info("No buffer gas. Diffusion coeff = 1/3 * mfp * v_average""") 
+            return self.interparticle_distance * self.mean_speed /3 
+
+        else: 
+            # Computes Diffusion constante empirical. 
+            # Avoids ZeroDivisionError. 
+            P = max(float(self.buffer_pressure_Torr), 1e-30)
+            D0 = self.diffusion_D0_cm2_s * 1e-4 # Converts cm^2/s -> m^2/s 
+            return D0 * (self.diffusion_P0_Torr / P) * math.sqrt(
+                self.temperature / self.diffusion_T0_K
+            )
 
     @property
     def diffusion_coeff_code(self):

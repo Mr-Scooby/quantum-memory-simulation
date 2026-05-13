@@ -5,7 +5,9 @@ from pathlib import Path
 import shutil
 import traceback
 
-from jsonSim_parallelizationGpu_MC_TimeEvolution import run_one_config
+from config_object import RunObjects
+
+#from jsonSim_parallelizationGpu_MC_TimeEvolution import run_one_config
 def move_file(src, dst_dir):
     """
     Move one file into a folder.
@@ -41,7 +43,10 @@ def main():
         print("running:", config_path)
 
         try:
-            run_one_config(config_path, output_dir)
+
+            objs = build_run_objects(str(config_path))
+            print(objs)
+            #run_one_config(config_path, output_dir)
 
         except Exception:
             print("failed:", config_path)

@@ -176,11 +176,10 @@ def build_cloud(sim: SimParams, exp: ExperimentalParams) -> CloudModel:
     The simulated atom number comes from sim.sim_density.
     """
 
-    geometry = "cylinder"
+    geometry = exp.cell_geometry
     distribution = "random"
-    r_factor = 3.0
 
-    R = r_factor * exp.w0_control
+    R = sim.simulation_window_radius_w0_cutoff * exp.w0_control
     Lz = exp.Lz
 
     defaults = {
