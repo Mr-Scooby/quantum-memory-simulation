@@ -183,26 +183,13 @@ def build_cloud(sim: SimParams, exp: ExperimentalParams) -> CloudModel:
     R = r_factor * exp.w0_control
     Lz = exp.Lz
 
-    if geometry == "cylinder":
-        volume = np.pi * R**2 * Lz
-    else:
-        raise ValueError(f"Unsupported default cloud geometry: {geometry!r}")
-
-    n_atoms = int(round(sim.sim_density * volume))
-
-    if n_atoms <= 0:
-        raise ValueError(
-            f"Computed n_atoms={n_atoms}. Check sim.sim_density={sim.sim_density}, "
-            f"R={R}, Lz={Lz}."
-        )
-
     defaults = {
         "geometry": geometry,
         "distribution": distribution,
         "atoms": exp.atom,
         "Lz": Lz,
         "R": R,
-        "n_atoms": n_atoms,
+        "sim_density": sim.sim_density,
     }
 
     cloud_kwargs = dataclass_kwargs(CloudModel, defaults)
@@ -243,6 +230,7 @@ def build_run_objects(config_path: str) -> RunObjects:
     """
 
     cfg = load_json(config_path)
+    print(cfg)
 
     exp = build_exp(cfg)
     sim = build_sim(cfg, exp)

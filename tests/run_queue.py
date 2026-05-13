@@ -31,11 +31,12 @@ def move_file(src, dst_dir):
 
 
 def main():
-    queue_dir = Path("local_runs/queue")
-    done_dir = Path("local_runs/done")
-    failed_dir = Path("local_runs/failed")
-    output_dir = Path("results")
+    queue_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue")
+    done_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\done")
+    failed_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\failed")
+    output_dir = Path(r"C:\Users\local_admin\radek\simulations\data\results_sims")
 
+    print(queue_dir.glob)
     for config_path in sorted(queue_dir.glob("*.json")):
         print("running:", config_path)
 
