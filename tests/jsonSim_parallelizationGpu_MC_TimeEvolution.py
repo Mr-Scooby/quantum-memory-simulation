@@ -89,9 +89,9 @@ def run_one_config(config_path, output_dir):
     def mc_single_run(mc): 
         print(f"Run {mc}/{ sim.n_mc}")
         t0_mc = time.perf_counter() 
-
+        seed = 1000 if sim.seed is None else int(sim.seed)
         # Random generator for each mc instance. 
-        rng = np.random.default_rng(1000 + mc )
+        rng = np.random.default_rng(seed + mc )
 
         # Generate cloud
         cloud.generate_cloud(rng=rng)
