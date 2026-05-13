@@ -61,13 +61,8 @@ def load_json(path: str) -> Dict[str, Any]:
     """
     Load a JSON file.
 
-    Input
-    -----
-    path : str JSON file path.
-
-    Output
-    ------
-    dict Parsed config.
+    Input: path : str JSON file path.
+    Output: dict Parsed config.
     """
 
     with open(path, "r", encoding="utf-8") as f:
@@ -85,10 +80,7 @@ def dataclass_kwargs(cls: Any, data: Dict[str, Any]) -> Dict[str, Any]:
     data : dict
         Candidate keyword values.
 
-    Output
-    ------
-    dict
-        Constructor-safe keyword values.
+    Output: dict  Constructor-safe keyword values.
     """
 
     valid = set(f.name for f in fields(cls) if f.init)
@@ -170,108 +162,92 @@ def build_sim(cfg: Dict[str, Any], exp: ExperimentalParams) -> SimParams:
     return SimParams(**sim_cfg)
 
 
-def build_cloud(cfg: Dict[str, Any], exp: ExperimentalParams) -> CloudModel:
+def build_cloud(sim: SimParams, exp: ExperimentalParams) -> CloudModel:
     """
     Build CloudModel from cfg['cloud'].
 
     Input
     -----
-    cfg : dict
-        Full config with section cloud.
-    exp : ExperimentalParams
-        Experiment object used for default length scales.
+    sim : simParams: Sim parameters
+    exp : ExperimentalParams:Experiment object used for default length scales.
 
-    Output
-    ------
-    CloudModel
-        Cloud object; generated positions later have shape (n_atoms, 3).
+    Output: CloudModel
+    The physical dimensions come from exp.
+    The simulated atom number comes from sim.sim_density.
     """
 
-    cloud_cfg = dict(cfg.get("cloud", {}))
+    geometry = "cylinder"
+    distribution = "random"
+    r_factor = 3.0
 
-    geometry = cloud_cfg.pop("geometry", "cylinder")
-    distribution = cloud_cfg.pop("distribution", "random")
+    R = r_factor * exp.w0_control
+    Lz = exp.Lz
 
-    r_factor = cloud_cfg.pop("R_factor_control_w0", 3.0)
+    if geometry == "cylinder":
+        volume = np.pi * R**2 * Lz
+    else:
+        raise ValueError(f"Unsupported default cloud geometry: {geometry!r}")
+
+    n_atoms = int(round(sim.sim_density * volume))
+
+    if n_atoms <= 0:
+        raise ValueError(
+            f"Computed n_atoms={n_atoms}. Check sim.sim_density={sim.sim_density}, "
+            f"R={R}, Lz={Lz}."
+        )
 
     defaults = {
         "geometry": geometry,
         "distribution": distribution,
         "atoms": exp.atom,
-        "Lz": exp.Lz,
-        "R": r_factor * exp.w0_control,
+        "Lz": Lz,
+        "R": R,
+        "n_atoms": n_atoms,
     }
-
-    defaults.update(cloud_cfg)
 
     cloud_kwargs = dataclass_kwargs(CloudModel, defaults)
     return CloudModel(**cloud_kwargs)
-
+    
 
 def build_beam(
-    cfg: Dict[str, Any],
     exp: ExperimentalParams,
     cloud: CloudModel,
 ) -> BeamModel:
     """
-    Build BeamModel from cfg['beam'].
+    Build BeamModel from ExperimentalParams and CloudModel.
 
-    Input
-    -----
-    cfg : dict
-        Full config with section beam.
-    exp : ExperimentalParams
-        Experiment object used for beam waist and k values.
-    cloud : CloudModel
-        Cloud object used for box_size.
-
-    Output
-    ------
-    BeamModel
-        Beam object; generated weights later have shape (n_atoms,).
+    The beam is derived from the experimental setup.
     """
-
-    beam_cfg = dict(cfg.get("beam", {}))
-
-    k_in_hat = beam_cfg.pop("k_in_hat", [0.0, 0.0, 1.0])
 
     defaults = {
         "beam_type": "gaussian_pulse",
         "w0": exp.w0_control,
         "sigma_long": 3.0,
-        "k_in_hat": vector3(k_in_hat, "beam.k_in_hat"),
+        "k_in_hat": np.array([0.0, 0.0, 1.0], dtype=float),
         "k_in": exp.atom.k_control,
         "box_size": cloud.box_size,
         "pcenter_at_origin": True,
     }
 
-    defaults.update(beam_cfg)
-
     beam_kwargs = dataclass_kwargs(BeamModel, defaults)
     return BeamModel(**beam_kwargs)
+
 
 
 def build_run_objects(config_path: str) -> RunObjects:
     """
     Build all run objects from one JSON file.
 
-    Input
-    -----
-    config_path : str
-        Path to the run config.
-
-    Output
-    ------
-    RunObjects
-        Ready-to-use objects for the runner.
+    Input: config_path : str Path to the run config.
+    Output : RunObjects: Ready-to-use objects for the runner.
     """
 
     cfg = load_json(config_path)
 
     exp = build_exp(cfg)
     sim = build_sim(cfg, exp)
-    cloud = build_cloud(cfg, exp)
-    beam = build_beam(cfg, exp, cloud)
+    cloud = build_cloud(sim, exp)
+    beam = build_beam(exp, cloud)
 
     return RunObjects(
         cfg=cfg,
