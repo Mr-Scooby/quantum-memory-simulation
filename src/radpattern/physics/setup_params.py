@@ -171,20 +171,23 @@ class PhysicalRegime:
 @dataclass
 class SimParams:
     """Numerical controls for the Monte Carlo simulation."""
-    n_mc: int = 100
+    n_mc: int 
 
     # Time sampling
-    sim_time_us: float = 50  # microseconds
+    sim_time_us: float  # microseconds
+    char_time: float # Seconds.
     time_divisions: int = 10
-    char_time: float = 38e-6   # Seconds.
+    time_spacing: str = "linspace"
+
 
     # Angular grid
     n_theta: int = 91
     n_phi: int = 181
     theta_max : float = np.pi
+    simulation_window_radius_w0_cutoff: float = 3 #Only simulate atoms within radius = simulation_window_radius_w0_cutoff * w0_control
 
     # MC atoms sim.
-    sim_density :int = 1e11
+    sim_density :int = 1
 
     # Performance / implementation
     chunk_atoms: int = 2000
@@ -215,15 +218,15 @@ class SimParams:
     def sim_time_code(self): 
         return self.sim_time_s / self.char_time
 
-    def time_array(self, time_spacing: str = "geomspace"): 
+    def time_array(self): 
         """ returns the time array in code times i.e. time_s / char_time. 
         geomspace array. 
         params: char_time, time_divisions. 
         """
         log.info("Time array creation. Sim_time_window = %f [us], divisions = %i", self.sim_time_us, self.time_divisions )
-        if time_spacing == "linspace":
+        if self.time_spacing.upper() == "LINSPACE":
             times_us = np.linspace(0.0, self.sim_time_us, self.time_divisions)
-        elif time_spacing == "geomspace":
+        elif time_spacing.upper() == "GEOMSPACE":
             times_us = np.r_[0.0, np.geomspace(0.05, self.sim_time_us, self.time_divisions - 1 )]
         else:
             raise ValueError("time_spacing must be 'linspace' or 'geomspace'")
@@ -239,7 +242,7 @@ def _k_tag(k_hat) -> str:
 @dataclass
 class SetupParams:
     """ Stores metadata and creates run naming """
-    regime: ExperimentalParams
+    experiment: ExperimentalParams
     sim: SimParams
     beam: BeamModel
 
@@ -248,7 +251,7 @@ class SetupParams:
     def run_name(self) -> str:
         # hash full setup
         d = {
-            "regime": asdict(self.regime),
+            "experiment": asdict(self.experiment),
             "sim": asdict(self.sim),
             "cloud": asdict(self.sim),
         }
@@ -257,7 +260,7 @@ class SetupParams:
         ).hexdigest()[:8]
 
         return (
-            f"{self.regime.atoms}"
+            f"{self.experiment.atoms}"
             f"_simT{self.sim.sim_time_us}us"
             f"_nt{self.sim.time_divisions}"
             f"_{h}"
