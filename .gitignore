@@ -1,0 +1,47 @@
+# Python cache/build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+
+# Project files
+__init__.py
+tasks.txt
+
+# Data / run outputs
+data/
+scripts/run.npz
+
+# Package metadata
+src/radpattern.egg-info/
+
+# Generated caches
+scripts/__pycache__/
+src/radpattern/geometry/__pycache__/
+src/radpattern/helpers/__pycache__/
+src/radpattern/physics/__pycache__/
+src/radpattern/plotting/__pycache__/
+
+# Specific ignored file
+src/radpattern/plotting/beam_test.py
+tests/coup_calc.py
+tests/coup_calc_test.py
+tests/coupling_test.py
+tests/cyl_coordinates.py
+tests/diag_summary.png
+tests/diagnostic.py
+tests/locals_run/
+tests/mc_Eta_plots.py
+tests/motion_debuging.py
+tests/plot_eta_time.py
+tests/run.npz
+tests/run_001.json
+tests/run_multiple_test.py
+tests/sim_coupling_test.npz
+tests/sv_figures.py
+tests/temp_test.py
+tests/test_jsonConfig.py
+tests/try_fit.py
+
