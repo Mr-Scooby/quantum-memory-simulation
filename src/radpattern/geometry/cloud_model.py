@@ -186,8 +186,8 @@ class CloudModel:
         return (rho2 <= 1.3* self.R**2) & (np.abs(self.r_xyz[:, 2]) <=1.5* 0.5*self.Lz)
 
     def update_motion_phase(self):
-        k_sw = self.atoms.k_sw * np.array([0,0,1])
-        return  np.exp(-1j * ((self.r_xyz - self.r0_xyz) @ k_sw))
+#        k_sw = self.atoms.k_sw * np.array([0,0,1])
+        return  np.ones(self.n_atoms, dtype = np.comples128)
 
     def generate_velocity_distribution(self ):
         """ generates Velocity distibution according to Boltzman law, normalize to ref velocity == most prob speed"""
