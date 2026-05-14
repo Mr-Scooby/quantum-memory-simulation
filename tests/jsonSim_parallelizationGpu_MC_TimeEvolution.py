@@ -116,9 +116,16 @@ def run_one_config(config_path, output_dir):
             # Evolve and compute new weights
             cloud.update_position_diffusive(dt, Diff_coef, rng=rng)
             beam.generate_weights(cloud.r_xyz)
-            motion_phase = cloud.update_motion_phase()
+            dt_s = dt * sim.char_time
+
+            motion_phase = cloud.update_motion_phase(
+                dt_s=dt_s,
+                B0_T=exp.B0_T,
+                B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
+            )
 
             weights = cloud.S * beam.w * motion_phase
+
 
             # Compute far field emission. 
             AF = array_factor_general_gpu(

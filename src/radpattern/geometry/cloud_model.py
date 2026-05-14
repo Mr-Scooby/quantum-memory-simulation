@@ -185,9 +185,46 @@ class CloudModel:
         rho2 = self.r_xyz[:, 0]**2 + self.r_xyz[:, 1]**2
         return (rho2 <= 1.3* self.R**2) & (np.abs(self.r_xyz[:, 2]) <=1.5* 0.5*self.Lz)
 
-    def update_motion_phase(self):
-#        k_sw = self.atoms.k_sw * np.array([0,0,1])
-        return  np.ones(self.n_atoms, dtype = np.complex128)
+    def update_motion_phase(
+        self,
+        dt_s: float,
+        B0_T: float = 0.0,
+        B_gradient_z_T_per_code: float = 0.0,
+        ):
+        """
+        Update accumulated spin-wave phase from magnetic field.
+
+        Magnetic field model:
+
+            B_j = B0 + Gz * z_j
+
+        where z_j is in code units.
+
+        Phase update:
+
+            phase_j <- phase_j * exp[-i omega_j dt]
+
+        with
+
+            omega_j = (mu_B / hbar) (g_s m_s - g_g m_g) B_j
+        """
+
+        if not hasattr(self, "r_xyz"):
+            raise ValueError("Call generate_cloud() before update_motion_phase().")
+
+        if not hasattr(self, "motion_phase"):
+            self.motion_phase = np.ones(self.r_xyz.shape[0], dtype=np.complex128)
+
+        z_code = self.r_xyz[:, 2]
+
+        B_j = B0_T + B_gradient_z_T_per_code * z_code
+
+        omega_j = self.atoms.magnetic_sensitivity_rad_s_T * B_j
+
+        self.motion_phase *= np.exp(-1j * omega_j * dt_s)
+
+        return self.motion_phase
+
 
     def generate_velocity_distribution(self ):
         """ generates Velocity distibution according to Boltzman law, normalize to ref velocity == most prob speed"""
