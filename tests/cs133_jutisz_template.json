@@ -1,0 +1,49 @@
+{
+  "notes": {
+    "template_name": "cs133_jutisz_2024_standalone_mobile_qm",
+    "production_path": "tests/run_queue.py -> tests/config_object.py -> tests/jsonSim_parallelizationGpu_MC_TimeEvolution.py",
+    "source_values": {
+      "cell": "75 mm long cylindrical 133Cs cell, 4 mm inner diameter, 5 Torr N2 buffer gas",
+      "beams": "signal/control FWHM diameters 120 um / 210 um",
+      "operation": "signal pulse 10 ns, control pulse 25 ns, control peak power 5 mW, red detuning 1.5 GHz, cell temp 75 C",
+      "note": "Pulse durations and one-photon detuning are not currently consumed by ExperimentalParams/SimParams, so they are kept here as notes."
+    },
+    "important": "Current config_object.build_cloud() ignores any top-level cloud section. It builds a random cylinder with R = simulation_window_radius_w0_cutoff * exp.w0_control and Lz = exp.Lz.",
+    "sim_density_note": "The sim.sim_density below is the physical Cs vapor density converted to code units for scalling=1. This is faithful as a template but will generate billions of atoms in the 3*w0 interaction window. Downsample sim_density before running if needed."
+  },
+  "exp": {
+    "atoms": "Cs133",
+    "lambda_control_m": 8.95e-07,
+    "delta_f_hz": 9192631770.0,
+    "cell_length_m": 0.075,
+    "cell_diameter_m": 0.004,
+    "signal_fwhm_diameter_m": 0.00012,
+    "control_fwhm_diameter_m": 0.00021,
+    "cell_geometry": "cylinder",
+    "density_cm3": 100000000000.0,
+    "temperature": 348.15,
+    "buffer_gas": "N2",
+    "buffer_pressure_Torr": 5.0,
+    "diffusion_D0_cm2_s": 0.24,
+    "diffusion_T0_K": 273.15,
+    "diffusion_P0_Torr": 1.0,
+    "B0_T": 0.0,
+    "B_gradient": 0.0,
+    "scalling": 1,
+    "label": "cs133_jutisz_75mm_4mm_120um_210um_75C_5TorrN2"
+  },
+  "sim": {
+    "n_mc": 1,
+    "sim_time_us": 5.0,
+    "time_divisions": 20,
+    "time_spacing": "linspace",
+    "n_theta": 91,
+    "n_phi": 181,
+    "simulation_window_radius_w0_cutoff": 3.0,
+    "sim_density": 0.0716917375,
+    "chunk_atoms": 2000,
+    "normalize_each_time": false,
+    "plane_restricted": false,
+    "seed": 12345
+  }
+}
