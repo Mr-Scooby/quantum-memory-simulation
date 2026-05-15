@@ -86,8 +86,8 @@ class AtomSpeciment:
     def mass(self): 
         masses = {"Cs133":132.90, "Rb87":86.90 }
         return masses[self.name]
+
     @property 
-    @property
     def magnetic_sensitivity_rad_s_T(self):
         try: 
             return MU_B / HBAR * (self.g_s * self.m_s - self.g_g * self.m_g)
