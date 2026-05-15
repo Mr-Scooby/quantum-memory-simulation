@@ -32,7 +32,8 @@ tests/coupling_test.py
 tests/cyl_coordinates.py
 tests/diag_summary.png
 tests/diagnostic.py
-tests/locals_run/
+tests/locals_run/failed
+tests/locals_run/done
 tests/mc_Eta_plots.py
 tests/motion_debuging.py
 tests/plot_eta_time.py
