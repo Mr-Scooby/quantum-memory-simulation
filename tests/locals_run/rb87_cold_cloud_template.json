@@ -1,0 +1,37 @@
+{
+  "exp": {
+    "atoms": "Rb87",
+    "lambda_control_m": 7.94979e-07,
+    "delta_f_hz": 6834682610.904,
+    "cell_length_m": 0.006,
+    "cell_diameter_m": 0.006,
+    "signal_fwhm_diameter_m": 2.352e-04,
+    "control_fwhm_diameter_m": 5.887e-04,
+    "cell_geometry": "cylinder",
+    "density_cm3": 1e8,
+    "temperature": 1e-05,
+    "buffer_gas": null,
+    "buffer_pressure_Torr": 0.0,
+    "diffusion_D0_cm2_s": 0.0,
+    "diffusion_T0_K": 273.15,
+    "diffusion_P0_Torr": 1.0,
+    "B0_T": 0.0,
+    "B_gradient": 1e-5,
+    "scalling": 1e5,
+    "label": "rb87_1e8_10uK_sigma1mm_control2sigma500um_fullwindow"
+  },
+  "sim": {
+    "n_mc": 100,
+    "sim_time_us": 400.0,
+    "time_divisions": 50,
+    "time_spacing": "linspace",
+    "n_theta": 91,
+    "n_phi": 181,
+    "simulation_window_radius_w0_cutoff": 6.0,
+    "sim_density": 1e5,
+    "chunk_atoms": 2000,
+    "normalize_each_time": false,
+    "plane_restricted": false,
+    "seed": null
+  }
+}
