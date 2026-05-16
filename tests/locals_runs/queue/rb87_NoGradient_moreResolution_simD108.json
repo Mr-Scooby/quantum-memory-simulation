@@ -16,7 +16,7 @@
     "diffusion_T0_K": 273.15,
     "diffusion_P0_Torr": 1.0,
     "B0_T": 0.0,
-    "B_gradient": 1.0,
+    "B_gradient": 0.0,
     "scalling": 1e5,
     "label": "rb87_1e8_10uK_sigma1mm_control2sigma500um_fullwindow"
   },
@@ -28,7 +28,7 @@
     "n_theta": 273,
     "n_phi": 534,
     "simulation_window_radius_w0_cutoff": 6.0,
-    "sim_density": 1e5,
+    "sim_density": 100000000,
     "chunk_atoms": 2000,
     "normalize_each_time": false,
     "plane_restricted": false,

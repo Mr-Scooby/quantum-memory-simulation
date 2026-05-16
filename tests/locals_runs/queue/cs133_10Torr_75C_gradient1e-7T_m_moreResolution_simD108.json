@@ -28,7 +28,7 @@
     "n_theta": 273,
     "n_phi": 534,
     "simulation_window_radius_w0_cutoff": 3.0,
-    "sim_density": 10000,
+    "sim_density": 100000000,
     "chunk_atoms": 2000,
     "normalize_each_time": false,
     "plane_restricted": false,
