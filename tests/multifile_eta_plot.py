@@ -112,91 +112,83 @@ files = [
         ]
 
 files =[ 
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_150runs_dbb01d7c",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_200runs_c55da4d4",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_19ec493f",
+"Cs133_10.0Torr120SDia_300Cdia_simT75.0us_nt100_100runs_3cf2dbc1"
+"Cs133_10.0Torr240SDia_300Cdia_simT75.0us_nt100_100runs_123f0e66",
+"Cs133_10.0Torr240SDia_300Cdia_simT75.0us_nt100_100runs_b22d6ff4",
+"Cs133_10.0Torr240SDia_300Cdia_simT75.0us_nt100_100runs_e294a36e",
+"Cs133_10.0Torr240SDia_300Cdia_simT75.0us_nt100_100runs_e974d310",
         ]
-
-files =[
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16150runs_25ec013c",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16100runs_2dfa4ea8",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt11runs_a579414d",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c37c4d86",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16200runs_98e3a6f4",
-]
 
 #
 # plot title and legend title
-title =  "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us"
-legend_title = "Buffer gas" 
-timeScale = "us" 
-# To match from file name for labels 
+title =  "diffusivebuffern2_2torr_simdens0e6_expdata_swave_reduce_cone_50ustimesim_geomspace_normalizeweights_simt50us"
+legend_title = "buffer gas" 
+timescale = "us" 
+# to match from file name for labels 
 regex_pattern =r'_(\d+)runs'
 
-#Plot labels 
+#plot labels 
 labels = np.zeros(len(files))
-beamRatios = np.zeros(len(files)) # Control/signal ratio 
+beamratios = np.zeros(len(files)) # control/signal ratio 
 
 
-Time_division = 16
+time_division = 100
 
-etas = np.zeros((len(files), Time_division)) 
+etas = np.zeros((len(files), time_division)) 
 
-P_fiber = np.zeros((len(files), Time_division)) 
-P_total = np.zeros((len(files), Time_division)) 
-eta_i = np.zeros((len(files), Time_division)) 
-I = np.zeros((len(files), Time_division))
+p_fiber = np.zeros((len(files), time_division)) 
+p_total = np.zeros((len(files), time_division)) 
+eta_i = np.zeros((len(files), time_division)) 
+i = np.zeros((len(files), time_division))
 
-Diffusion_cte = np.zeros(len(files))
+diffusion_cte = np.zeros(len(files))
 seed = np.zeros(len(files))
 
 
-def fiber_coupling_vs_time(I_t, grid, theta_f):
+def fiber_coupling_vs_time(i_t, grid, theta_f):
     """
-    I_t: shape (T, ntheta, nphi), already |AF|^2 * dipole
-    theta_f: Gaussian fiber intensity radius in radians
+    i_t: shape (t, ntheta, nphi), already |af|^2 * dipole
+    theta_f: gaussian fiber intensity radius in radians
 
-    Returns
+    returns
     -------
     eta : np.ndarray
-        Fiber coupling efficiency versus time, with shape (T,). Defined as
-        P_fiber / P_total.
+        fiber coupling efficiency versus time, with shape (t,). defined as
+        p_fiber / p_total.
 
-    P_fiber : np.ndarray
-        Fiber-mode-weighted angular power versus time, with shape (T,).
+    p_fiber : np.ndarray
+        fiber-mode-weighted angular power versus time, with shape (t,).
 
-    P_total : np.ndarray
-        Total angularly integrated power versus time, with shape (T,).
+    p_total : np.ndarray
+        total angularly integrated power versus time, with shape (t,).
     """
-    theta = grid.TH
+    theta = grid.th
 
-    Gfiber = np.exp(-(grid.TH / theta_f)**2)
+    gfiber = np.exp(-(grid.th / theta_f)**2)
 
     dtheta = grid.theta[1] - grid.theta[0]
     dphi = grid.phi[1] - grid.phi[0]
-    dOmega = np.sin(theta) * dtheta * dphi
+    domega = np.sin(theta) * dtheta * dphi
 
-    P_fiber = np.sum(I_t * Gfiber[None, :, :] * dOmega[None, :, :], axis=(1, 2))
-    P_total = np.sum(I_t * dOmega[None, :, :], axis=(1, 2))
+    p_fiber = np.sum(i_t * gfiber[none, :, :] * domega[none, :, :], axis=(1, 2))
+    p_total = np.sum(i_t * domega[none, :, :], axis=(1, 2))
 
-    eta = P_fiber / P_total
+    eta = p_fiber / p_total
 
-    return eta, P_fiber, P_total
-
-
+    return eta, p_fiber, p_total
 
 
 
-### Data extraction and formation of new objects to get the properties values. 
+
+
+### data extraction and formation of new objects to get the properties values. 
 for file_idx, file in enumerate(files): 
-    print(f"showing file = {PATH+file}")
-    npz = np.load(PATH+file+'.npz', allow_pickle=True)
+    print(f"showing file = {path+file}")
+    npz = np.load(path+file+'.npz', allow_pickle=true)
     try: 
         meta = npz["metadata"].item()
 
-        exp = ExperimentalParams(
+        exp = experimentalparams(
                 atoms = meta['experiment']['atoms'], 
                 lambda_control_m = meta['experiment']['lambda_control_m'],
                 delta_f_hz = meta['experiment']['delta_f_hz'], 
@@ -208,33 +200,33 @@ for file_idx, file in enumerate(files):
                 scalling = meta['experiment']['scalling'],
                 temperature = meta['experiment']['temperature'],
                 label = meta['experiment']['label'],
-                buffer_pressure_Torr = meta['experiment']['buffer_pressure_Torr'],
+                buffer_pressure_torr = meta['experiment']['buffer_pressure_torr'],
                 buffer_gas = meta['experiment']['buffer_gas'],
-                diffusion_D0_cm2_s =meta['experiment']['diffusion_D0_cm2_s'], #0.240 , # From liteture. Phd LuisaEsguerra 
-                diffusion_T0_K = meta['experiment']['diffusion_T0_K'], #273.15, 
-                diffusion_P0_Torr =meta['experiment']['diffusion_P0_Torr'], # 760  # 1 atm. 1Torr = 1/760 atm 
+                diffusion_d0_cm2_s =meta['experiment']['diffusion_d0_cm2_s'], #0.240 , # from liteture. phd luisaesguerra 
+                diffusion_t0_k = meta['experiment']['diffusion_t0_k'], #273.15, 
+                diffusion_p0_torr =meta['experiment']['diffusion_p0_torr'], # 760  # 1 atm. 1torr = 1/760 atm 
 ) 
         print(f"label: {exp.label.upper()}")
         print(exp)
-        cloud = CloudModel( "cylinder", 
+        cloud = cloudmodel( "cylinder", 
                            "random", 
                            exp.atom, 
-                           Lz = exp.Lz,
-                           R = 3 * exp.w0_control, 
+                           lz = exp.lz,
+                           r = 3 * exp.w0_control, 
                            sim_density = 1e6, 
                            )
 
-        beam = BeamModel(
+        beam = beammodel(
             beam_type="gaussian_pulse",
             w0=exp.w0_control,
             sigma_long = 2,
             k_in_hat=np.array([0, 0, 1]),
             k_in=exp.atom.k_control,
             box_size=cloud.box_size,
-            pcenter_at_origin = True,
+            pcenter_at_origin = true,
             )
 
-        sim = SimParams(n_theta = meta["sim"]["n_theta"],
+        sim = simparams(n_theta = meta["sim"]["n_theta"],
                     n_phi = meta["sim"]["n_phi"],
                     theta_max = meta["sim"]["theta_max"],
                     sim_time_us = meta["sim"]["sim_time_us"], #microseconds
@@ -244,10 +236,11 @@ for file_idx, file in enumerate(files):
                     n_mc =meta["sim"]["n_mc"],
                     seed = meta["sim"]["seed"],
                         ) 
+        print(sim)
 
         cloud.log_info()
         seed[file_idx]= meta["sim"]["seed"]
-        # convert code time -> SI -> microseconds
+        # convert code time -> si -> microseconds
         times_code = npz["times_code"]
         char_time = exp.char_time          # [s] = ref_length / ref_velocity
         times_si = times_code * char_time  # [s]
@@ -259,87 +252,90 @@ for file_idx, file in enumerate(files):
         grid = sim.create_grid()
 
 
-        AF = npz["AF2"]
-        Intensity  = npz["intensity"]
+        af = npz["af2"]
+        intensity  = npz["intensity"]
         
         # stripping labels: 
         match = re.search(regex_pattern, file)
-        value = int(match.group(1)) if match else None
+        value = int(match.group(1)) if match else none
         labels[file_idx] = value
+#
+        beamratios[file_idx] = exp.control_to_signal_waist_ratio 
 
-        beamRatios[file_idx] = exp.control_to_signal_waist_ratio 
-    except KeyError as e: 
+
+    except keyerror as e: 
+
         print(" unable to generate objet from metadata... keyerror") 
         print(f"error {e}")
 
 
 
-    ### Calculating Gaussian mode. 
-    ### Coupling to gaussian mode calculation.
+    ### calculating gaussian mode. 
+    ### coupling to gaussian mode calculation.
     theta0 = 10 / ( exp.atom.k_signal * exp.w0_signal)
-    print(f"theta0 = {theta0}, forwardLobe = {exp.forwardlobe_angular_width}, equal? {theta0 == exp.forwardlobe_angular_width}") 
+    print(f"theta0 = {theta0}, forwardlobe = {exp.forwardlobe_angular_width}, equal? {theta0 == exp.forwardlobe_angular_width}") 
 
-    E_fib = cp.gaussian_fiber_mode_on_sphere(grid, theta0)#* np.exp(1j * np.angle(AF))
-    I_fib = np.abs(E_fib)**2
+    e_fib = cp.gaussian_fiber_mode_on_sphere(grid, theta0)#* np.exp(1j * np.angle(af))
+    i_fib = np.abs(e_fib)**2
 
-    eta_t = np.zeros(AF.shape[0])
-    eta_abs_t =np.zeros(AF.shape[0])
+    eta_t = np.zeros(af.shape[0])
+    eta_abs_t =np.zeros(af.shape[0])
 
-    print(f"Shape Inetensity {Intensity.shape}")
-    I_t = np.zeros(AF.shape[0])
-    eta_i_   =np.zeros(AF.shape[0]) 
-    P_fiber_ =np.zeros(AF.shape[0]) 
-    P_total_ =np.zeros(AF.shape[0]) 
-    for it in range(AF.shape[0]):
+    print(f"shape inetensity {intensity.shape}")
+    i_t = np.zeros(af.shape[0])
+    eta_i_   =np.zeros(af.shape[0]) 
+    p_fiber_ =np.zeros(af.shape[0]) 
+    p_total_ =np.zeros(af.shape[0]) 
+    for it in range(af.shape[0]):
         try: 
-            E_field = AF[it]
-            eta, amp = cp.overlap_on_sphere(grid, E_field, E_fib)
+            e_field = af[it]
+            eta, amp = cp.overlap_on_sphere(grid, e_field, e_fib)
             print(f"eta = {eta}, amp ={amp}")
 
-            eta_test = np.sum(np.abs(AF[it])**2 * np.abs(E_fib)**2) / np.sum(np.abs(AF[it])**2)
+            eta_test = np.sum(np.abs(af[it])**2 * np.abs(e_fib)**2) / np.sum(np.abs(af[it])**2)
 
-            #eta_abs, _ = cp.overlap_on_sphere(grid, np.abs(AF[it]),np.abs( E_fib))
-            eta_abs = cp.intensity_overlap_on_sphere(grid,np.abs(E_field)**2 , I_fib, theta_max = theta0)
-#            eta_i_[it], P_fiber_[it], P_total_[it] = fiber_coupling_vs_time(np.abs(E_field)**2, grid, theta0)
+            #eta_abs, _ = cp.overlap_on_sphere(grid, np.abs(af[it]),np.abs( e_fib))
+            eta_abs = cp.intensity_overlap_on_sphere(grid,np.abs(e_field)**2 , i_fib, theta_max = theta0)
+#            eta_i_[it], p_fiber_[it], p_total_[it] = fiber_coupling_vs_time(np.abs(e_field)**2, grid, theta0)
 
-            I_t[it] = np.mean(np.abs(E_field[0,:])**2)
+            i_t[it] = np.mean(np.abs(e_field[0,:])**2)
 
             eta_t[it] = eta
             eta_abs_t[it] = eta_abs
             
 
-        except KeyError: 
+        except keyerror: 
             eta = np.nan
             amp = np.nan
 
    # eta_abs_t
     etas[file_idx, : ] = eta_abs_t
-    I[file_idx,:] = I_t 
+    i[file_idx,:] = i_t 
     eta_i[file_idx,:] = eta_i_
-    P_fiber[file_idx,:] = P_fiber_
-    P_total[file_idx,:] = P_total_
+    p_fiber[file_idx,:] = p_fiber_
+    p_total[file_idx,:] = p_total_
 
-print(f"Intensity +z {I}")
-print(f"Pfiber +z {P_fiber}")
+print(f"intensity +z {i}")
+print(f"pfiber +z {p_fiber}")
 print(etas)
 
 
 ########################################
 
-plt.rcParams.update({
-    'font.size': 12,          # Default text size
-    'axes.titlesize': 30,     # Plot title size
-    'axes.labelsize': 27,     # X/Y axis label size
-    'xtick.labelsize': 18,    # X-axis tick label size
-    'ytick.labelsize': 18,    # Y-axis tick label size
-    'legend.fontsize': 19,     # Legend text size
+plt.rcparams.update({
+    'font.size': 12,          # default text size
+    'axes.titlesize': 30,     # plot title size
+    'axes.labelsize': 27,     # x/y axis label size
+    'xtick.labelsize': 18,    # x-axis tick label size
+    'ytick.labelsize': 18,    # y-axis tick label size
+    'legend.fontsize': 19,     # legend text size
     'legend.title_fontsize': 19 
 })
 
 
-# Setting time sclae [us or ms]
-if timeScale.upper() == "MS": 
-    times_us /= 1e3    # Convet us to ms
+# setting time sclae [us or ms]
+if timescale.upper() == "ms": 
+    times_us /= 1e3    # convet us to ms
 
 
 ##### coupling / dephasing plot ---
@@ -350,75 +346,75 @@ for idx, file in enumerate(files[:7]):
 for idx, file in enumerate(files[7:],7): 
     ax.plot(times_us, etas[idx, : ], "*--", label=labels[idx])
 
-ax.set_xlabel(f"time [{timeScale}]")
+ax.set_xlabel(f"time [{timescale}]")
 ax.set_ylabel(r"coupling $\eta$")
 ax.set_title(title)
 
 ax.legend(title = legend_title)
-ax.grid(True, alpha=0.25)
+ax.grid(true, alpha=0.25)
 
 plt.show()
-print(beamRatios)
+print(beamratios)
 
 
-# Plots forwards intensity vs Time.
+# plots forwards intensity vs time.
 fig, ax = plt.subplots(figsize = (7, 4.8) )
 for idx, file in enumerate(files[:7]): 
-    ax.plot(times_us, I[idx,:], "o-", label=labels[idx])
+    ax.plot(times_us, i[idx,:], "o-", label=labels[idx])
 
-ax.set_xlabel(f"time [{timeScale}]")
-ax.set_ylabel(r"Intensity [AF^2] $")
+ax.set_xlabel(f"time [{timescale}]")
+ax.set_ylabel(r"intensity [af^2] $")
 ax.set_title(title)
 
 ax.legend(title = legend_title)
-ax.grid(True, alpha=0.25)
+ax.grid(true, alpha=0.25)
 plt.show()
 
 
-# Plots fiber-Coupled power vs Time 
+# plots fiber-coupled power vs time 
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(files[:7]): 
-    ax.plot(times_us, P_fiber[idx, : ], "o-", label=labels[idx])
+    ax.plot(times_us, p_fiber[idx, : ], "o-", label=labels[idx])
 
-ax.set_xlabel(f"time [{timeScale}]")
-ax.set_ylabel(r"P_fiber $")
+ax.set_xlabel(f"time [{timescale}]")
+ax.set_ylabel(r"p_fiber $")
 ax.set_title(title)
 ax.legend(title = legend_title)
-ax.grid(True, alpha=0.25)
+ax.grid(true, alpha=0.25)
 plt.show()
 
 
-# Plots total emitted power vs time
+# plots total emitted power vs time
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(files[:7]): 
-    ax.plot(times_us, P_total[idx, : ], "o-", label=labels[idx])
+    ax.plot(times_us, p_total[idx, : ], "o-", label=labels[idx])
 
-ax.set_xlabel(f"time [{timeScale}]")
-ax.set_ylabel(r"P_total  $")
+ax.set_xlabel(f"time [{timescale}]")
+ax.set_ylabel(r"p_total  $")
 ax.set_title(title)
 ax.legend(title = legend_title)
-ax.grid(True, alpha=0.25)
+ax.grid(true, alpha=0.25)
 plt.show()
 
 
-# Plot fiber couploing efficiency vs Time eta= P_in / P_t 
+# plot fiber couploing efficiency vs time eta= p_in / p_t 
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(files[:7]): 
     ax.plot(times_us, eta_i[idx, : ], "o-", label=labels[idx])
 
-ax.set_xlabel(f"time [{timeScale}]")
-ax.set_ylabel(r"P_fiber/P_total $")
+ax.set_xlabel(f"time [{timescale}]")
+ax.set_ylabel(r"p_fiber/p_total $")
 ax.set_title(title)
 ax.legend(title = legend_title)
-ax.grid(True, alpha=0.25)
+ax.grid(true, alpha=0.25)
 
-# Compare normalize P_fiber and P_total for the first data set 
+# compare normalize p_fiber and p_total for the first data set 
 fig = plt.figure()
-plt.plot(times_us, P_fiber[0,:] / P_fiber[0,0], label="P_fiber norm")
-plt.plot(times_us, P_total[0,:] / P_total[0,0], label="P_total norm")
-#plt.plot(times_us, I[0,:] / I[0,0], label="I(+z) norm")
+plt.plot(times_us, p_fiber[0,:] / p_fiber[0,0], label="p_fiber norm")
+plt.plot(times_us, p_total[0,:] / p_total[0,0], label="p_total norm")
+#plt.plot(times_us, i[0,:] / i[0,0], label="i(+z) norm")
 plt.legend()
-plt.grid(True)
+plt.grid(true)
 plt.show()
 plt.show()
 
@@ -426,18 +422,18 @@ plt.show()
 
 
 """
-Extract metadata from an old npz result and save it as JSON.
+extract metadata from an old npz result and save it as json.
 """
 
 import json
-from pathlib import Path
+from pathlib import path
 
 import numpy as np
 
 
 def json_value(x):
     """
-    Convert numpy values into JSON-safe values.
+    convert numpy values into json-safe values.
     """
 
     if isinstance(x, np.ndarray):
@@ -457,23 +453,23 @@ def json_value(x):
 
 def load_npz_metadata(npz_path):
     """
-    Load metadata from an npz result.
+    load metadata from an npz result.
 
-    Input
+    input
     -----
     npz_path : str
-        Path to saved result.
+        path to saved result.
 
-    Output
+    output
     ------
     dict
-        Metadata dictionary.
+        metadata dictionary.
     """
 
-    data = np.load(npz_path, allow_pickle=True)
+    data = np.load(npz_path, allow_pickle=true)
 
     if "metadata" not in data:
-        raise KeyError("npz file has no 'metadata' key")
+        raise keyerror("npz file has no 'metadata' key")
 
     metadata = data["metadata"]
 
@@ -485,11 +481,11 @@ def load_npz_metadata(npz_path):
 
 def write_json(path, data):
     """
-    Save dictionary as formatted JSON.
+    save dictionary as formatted json.
     """
 
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = path(path)
+    path.parent.mkdir(parents=true, exist_ok=true)
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, default=json_value)
@@ -497,7 +493,7 @@ def write_json(path, data):
 
 def npz_metadata_to_json(npz_path, json_path):
     """
-    Convert old npz metadata to JSON.
+    convert old npz metadata to json.
     """
 
     metadata = load_npz_metadata(npz_path)
@@ -505,7 +501,7 @@ def npz_metadata_to_json(npz_path, json_path):
 
 
 npz_metadata_to_json(
-    PATH + files[0] + ".npz",
+    path + files[0] + ".npz",
     "old_metadata.json",
 )
 
