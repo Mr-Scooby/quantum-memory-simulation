@@ -103,18 +103,18 @@ files = [
 #]
 
 
-files = [
-        "Cs133_simT50us_nt30_f5923077", 
-        "Cs133_simT50us_nt30_9ae4db70",
-        "270Sdiam_Cs133_simT50us_nt30_2f9f2cd4",
-"270Sdiam_Cs133_simT50us_nt30_50062153",
-"120Sdiam_Cs133_simT50us_nt30_668eec6f",
-        ]
-
-files =[ 
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_ad9b5931",
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
-]
+#files = [
+#        "Cs133_simT50us_nt30_f5923077", 
+#        "Cs133_simT50us_nt30_9ae4db70",
+#        "270Sdiam_Cs133_simT50us_nt30_2f9f2cd4",
+#"270Sdiam_Cs133_simT50us_nt30_50062153",
+#"120Sdiam_Cs133_simT50us_nt30_668eec6f",
+#        ]
+#
+#files =[ 
+#"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_ad9b5931",
+#"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
+#]
 #
 # plot title and legend title
 title =  "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us"
@@ -184,70 +184,116 @@ for file_idx, file in enumerate(files):
     try: 
         meta = npz["metadata"].item()
 
+        exp_meta = meta["experiment"]
+        sim_meta = meta["sim"]
+        beam_meta = meta["beam"]
+
+        # -------------------------
+        # Experimental parameters
         exp = ExperimentalParams(
-                atoms = meta['experiment']['atoms'], 
-                lambda_control_m = meta['experiment']['lambda_control_m'],
-                delta_f_hz = meta['experiment']['delta_f_hz'], 
-                cell_length_m = meta['experiment']['cell_length_m'], 
-                cell_diameter_m = meta['experiment']['cell_diameter_m'], 
-                signal_fwhm_diameter_m = meta['experiment']['signal_fwhm_diameter_m'], 
-                control_fwhm_diameter_m = meta['experiment']['control_fwhm_diameter_m'], 
-                density_cm3 = meta['experiment']['density_cm3'], 
-                scalling = meta['experiment']['scalling'],
-                temperature = meta['experiment']['temperature'],
-                label = meta['experiment']['label'],
-                buffer_pressure_Torr = meta['experiment']['buffer_pressure_Torr'],
-                buffer_gas = meta['experiment']['buffer_gas'],
-                diffusion_D0_cm2_s =meta['experiment']['diffusion_D0_cm2_s'], #0.240 , # From liteture. Phd LuisaEsguerra 
-                diffusion_T0_K = meta['experiment']['diffusion_T0_K'], #273.15, 
-                diffusion_P0_Torr =meta['experiment']['diffusion_P0_Torr'], # 760  # 1 atm. 1Torr = 1/760 atm 
-) 
-        print(f"label: {exp.label.upper()}")
-        print(exp)
-        cloud = CloudModel( "cylinder", 
-                           "random", 
-                           exp.atom, 
-                           Lz = exp.Lz,
-                           R = 3 * exp.w0_control, 
-                           sim_density = 1e6, 
-                           )
+            atoms=exp_meta["atoms"],
+            lambda_control_m=exp_meta["lambda_control_m"],
+            delta_f_hz=exp_meta["delta_f_hz"],
+            cell_length_m=exp_meta["cell_length_m"],
+            cell_diameter_m=exp_meta["cell_diameter_m"],
+            signal_fwhm_diameter_m=exp_meta["signal_fwhm_diameter_m"],
+            control_fwhm_diameter_m=exp_meta["control_fwhm_diameter_m"],
+            cell_geometry=exp_meta["cell_geometry"],
+            Control_beam_AxisOffset_nm=exp_meta["Control_beam_AxisOffset_nm"],
+            g_g=exp_meta["g_g"],
+            m_g=exp_meta["m_g"],
+            g_s=exp_meta["g_s"],
+            m_s=exp_meta["m_s"],
+            density_cm3=exp_meta["density_cm3"],
+            temperature=exp_meta["temperature"],
+            buffer_gas=exp_meta["buffer_gas"],
+            buffer_pressure_Torr=exp_meta["buffer_pressure_Torr"],
+            diffusion_D0_cm2_s=exp_meta["diffusion_D0_cm2_s"],
+            diffusion_T0_K=exp_meta["diffusion_T0_K"],
+            diffusion_P0_Torr=exp_meta["diffusion_P0_Torr"],
+            B0_T=exp_meta["B0_T"],
+            B_gradient=exp_meta["B_gradient"],
+            scalling=exp_meta["scalling"],
+            label=exp_meta["label"],
+            spin_destruction_cross_section_CsN2_m2=
+                exp_meta["spin_destruction_cross_section_CsN2_m2"],
+            spin_exchange_alpha_CsCs_m3_s=
+                exp_meta["spin_exchange_alpha_CsCs_m3_s"],
+        )
 
+        # Simulation parameters
+        # -------------------------
+        sim = SimParams(
+            n_mc=sim_meta["n_mc"],
+            sim_time_us=sim_meta["sim_time_us"],
+            char_time=sim_meta["char_time"],
+            time_divisions=sim_meta["time_divisions"],
+            time_spacing=sim_meta["time_spacing"],
+            n_theta=sim_meta["n_theta"],
+            n_phi=sim_meta["n_phi"],
+            theta_max=sim_meta["theta_max"],
+            simulation_window_radius_w0_cutoff=
+                sim_meta["simulation_window_radius_w0_cutoff"],
+            sim_density=sim_meta["sim_density"],
+            chunk_atoms=sim_meta["chunk_atoms"],
+            normalize_each_time=sim_meta["normalize_each_time"],
+            plane_restricted=sim_meta["plane_restricted"],
+            seed=sim_meta["seed"],
+        )
+
+        # Cloud reconstruction
+        # -------------------------
+        # No explicit cloud metadata was saved.
+        # But beam.box_size was saved, so reconstruct the same cloud window.
+        box_size = np.asarray(beam_meta["box_size"], dtype=float)
+
+        cloud_R = box_size[0] / 2
+        cloud_Lz = box_size[2]
+
+        cloud = CloudModel(
+            exp_meta["cell_geometry"],
+            "random",
+            exp.atom,
+            Lz=cloud_Lz,
+            R=cloud_R,
+            sim_density=sim_meta["sim_density"],
+        )
+
+        # Beam reconstruction
+        # -------------------------
         beam = BeamModel(
-            beam_type="gaussian_pulse",
-            w0=exp.w0_control,
-            sigma_long = 2,
-            k_in_hat=np.array([0, 0, 1]),
-            k_in=exp.atom.k_control,
-            box_size=cloud.box_size,
-            pcenter_at_origin = True,
-            )
+            beam_type=beam_meta["beam_type"],
+            k_in_hat=np.asarray(beam_meta["k_in_hat"], dtype=float),
+            k_in=beam_meta["k_in"],
+            w0=beam_meta["w0"],
+            sigma_long=beam_meta["sigma_long"],
+            v_front=beam_meta["v_front"],
+            box_size=np.asarray(beam_meta["box_size"], dtype=float),
+            center=np.asarray(beam_meta["center"], dtype=float),
+            margin=beam_meta["margin"],
+            pulse_center_t0=beam_meta["pulse_center_t0"],
+            pcenter_at_origin=beam_meta["pcenter_at_origin"],
+            r_front0=np.asarray(beam_meta["r_front0"], dtype=float),
+        )
 
-        sim = SimParams(n_theta = meta["sim"]["n_theta"],
-                    n_phi = meta["sim"]["n_phi"],
-                    theta_max = meta["sim"]["theta_max"],
-                    sim_time_us = meta["sim"]["sim_time_us"], #microseconds
-                    time_divisions = meta["sim"]["time_divisions"],
-                    char_time =meta["sim"]["char_time"],
-                    sim_density =meta["sim"]["sim_density"],
-                    n_mc =meta["sim"]["n_mc"],
-                    seed = meta["sim"]["seed"],
-                        ) 
+        # Grid and arrays
+        # -------------------------
+        grid = sim.create_grid()
 
-        cloud.log_info()
-        seed[file_idx]= meta["sim"]["seed"]
         # convert code time -> SI -> microseconds
         times_code = npz["times_code"]
         char_time = exp.char_time          # [s] = ref_length / ref_velocity
-        times_si = times_code * char_time  # [s]
-        times_us = times_si * 1e6          # [µs]
+        times_si = times_code * exp.char_time
+        times_us = times_si * 1e6
+
+        print(f"label: {exp.label.upper()}")
+        print(exp)
+        cloud.log_info()
 
         print(f"char_rime {char_time}")
         print(times_us)
 
-        grid = sim.create_grid()
-
-
-        AF = npz["AF"]
+        AF = npz["AF2"]
         Intensity  = npz["intensity"]
         
         # stripping labels: 
