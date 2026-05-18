@@ -47,7 +47,6 @@ def main():
         try:
 
             objs = build_run_objects(str(config_path))
-            print(objs)
             run_one_config(config_path, output_dir)
 
         except Exception:

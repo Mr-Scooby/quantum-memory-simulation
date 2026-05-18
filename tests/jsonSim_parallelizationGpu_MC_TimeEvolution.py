@@ -7,25 +7,22 @@ from radpattern.helpers.io import save_simulation_npz
 from monte_carlo_gpu import run_monte_carlo_gpu
 
 
-def run_one_config(objs, output_dir):
+def run_one_config(objs, output_dir, **kargs):
     exp = objs.exp
     sim = objs.sim
     beam = objs.beam
 
     setp = sim.sim_metadataSetUp(exp, beam)
 
-    result = run_monte_carlo_gpu(objs)
+    output_dir = Path(output_dir)
+    path = output_dir/ setp.run_name
+    mc_dir = output_dir / f"{setp.run_name}_mc_runs"
 
-    #path = Path(output_dir) / setp.run_name
-    path = os.path.join(
-                os.path.expanduser("~"),
-                "radek",
-                "simulations",
-                "data",
-                "results_sims",
-                setp.run_name,
-            )
-
+    result = run_monte_carlo_gpu(
+        objs=objs,
+        save_full_mc=save_full_mc,
+        mc_dir=mc_dir,
+    )
 
     save_simulation_npz(
         path,
