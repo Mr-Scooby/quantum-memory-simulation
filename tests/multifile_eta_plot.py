@@ -112,9 +112,21 @@ files = [
         ]
 
 files =[ 
-"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_ad9b5931",
 "Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_150runs_dbb01d7c",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_200runs_c55da4d4",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_19ec493f",
+        ]
+
+files =[
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16150runs_25ec013c",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16100runs_2dfa4ea8",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt11runs_a579414d",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c9a31d38",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_c37c4d86",
+"Cs133_2Torr120SDia_300Cdia_simT50us_nt16200runs_98e3a6f4",
 ]
+
 #
 # plot title and legend title
 title =  "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us"
@@ -247,7 +259,7 @@ for file_idx, file in enumerate(files):
         grid = sim.create_grid()
 
 
-        AF = npz["AF"]
+        AF = npz["AF2"]
         Intensity  = npz["intensity"]
         
         # stripping labels: 
@@ -256,8 +268,9 @@ for file_idx, file in enumerate(files):
         labels[file_idx] = value
 
         beamRatios[file_idx] = exp.control_to_signal_waist_ratio 
-    except KeyError: 
+    except KeyError as e: 
         print(" unable to generate objet from metadata... keyerror") 
+        print(f"error {e}")
 
 
 
