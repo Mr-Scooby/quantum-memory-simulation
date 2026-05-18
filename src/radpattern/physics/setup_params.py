@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field, fields, asdict
 from radpattern.helpers import io
 from radpattern.geometry.cloud_model import CloudModel, AtomSpeciment
 from radpattern.geometry.grids import AngleGrid
@@ -235,8 +235,22 @@ class SimParams:
         times_code = times_us * 1e-6 / self.char_time
         return times_code
 
+    def __str__(self):
+        skip_types = (np.ndarray, list, tuple, dict, set)
 
+        lines = [f"{self.__class__.__name__}("]
 
+        for f in fields(self):
+            name = f.name
+            value = getattr(self, name)
+
+            if isinstance(value, skip_types):
+                continue
+
+            lines.append(f"  {name} = {value}")
+
+        lines.append(")")
+        return "\n".join(lines)
 
 def _k_tag(k_hat) -> str:
     return "k" + "".join(str(round(x)) for x in k_hat)
