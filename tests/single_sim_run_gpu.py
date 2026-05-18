@@ -5,6 +5,7 @@
 
 import time
 import numpy as np
+from copy import deepcopy
 
 from radpattern.physics.rpattern_gpu import array_factor_general_gpu
 from coupling_calcualtion import intensity_overlap_on_sphere
@@ -31,8 +32,8 @@ def run_single_mc_gpu(
 
     exp = objs.exp
     sim = objs.sim
-    cloud = objs.cloud
-    beam = objs.beam
+    cloud = deepcopy(objs.cloud) 
+    beam = deepcopy(objs.beam)
 
     T = sim.time_divisions
     nt, nphi = grid.shape
@@ -91,7 +92,7 @@ def run_single_mc_gpu(
             w=weights,
             chunk_atoms=sim.chunk_atoms,
         )
-
+        AF = cp.asnumpy(AF)
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole
 
@@ -108,5 +109,6 @@ def run_single_mc_gpu(
 
     dt_mc = time.perf_counter() - t0_mc
     print(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
+    del cloud, beam, rng 
 
     return eta_t, AF_t, AF2_t, I_t
