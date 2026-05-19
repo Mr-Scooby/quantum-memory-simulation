@@ -46,3 +46,10 @@ tests/temp_test.py
 tests/test_jsonConfig.py
 tests/try_fit.py
 
+tests/locals_runs/cs133_jutisz_template.json
+tests/locals_runs/done/
+tests/locals_runs/failed/
+tests/locals_runs/rb87_cold_cloud_template.json
+tests/locals_runs/template.json
+tests/log.txt
+tests/old_metadata.json
