@@ -58,13 +58,13 @@ class ExperimentalParams:
     temperature: float = 75+ 273.15          # Temperature in Kelvin 
 
     buffer_gas : str = "N2"
-    buffer_pressure_Torr : float = 5.0          # Torr = 1/760 atm = 101325/760 Pa
+    buffer_pressure_Torr : float = 0.0          # Torr = 1/760 atm = 101325/760 Pa
     diffusion_D0_cm2_s: float = 0.24
     diffusion_T0_K: float = 273.15
     diffusion_P0_Torr: float = 1.0
 
     B0_T: float = 0.0 # Magnetic field
-    B_gradient: float = 1 
+    B_gradient: float = 0
 
     scalling: int = 1
     label: str = "experiment"
