@@ -22,12 +22,13 @@ class AtomSpeciment:
     name : str
     lambda_control_m : float
     delta_f_hz : float
+    k_sw_SI: tuple
     ref_length: float 
 
-    g_g: float = 0.0
-    m_g: float = 0.0
-    g_s: float = 0.0
-    m_s: float = 0.0
+    g_g: float 
+    m_g: float 
+    g_s: float 
+    m_s: float 
 
 
     # basic optical quantities
@@ -53,13 +54,13 @@ class AtomSpeciment:
     def k_signal_SI(self):
         return 2.0 * math.pi / self.lambda_signal_m
 
-    @property
-    def k_sw_SI(self):
-        return self.k_signal_SI - self.k_control_SI
+#    @property
+#    def k_sw_SI(self):
+#        return self.k_signal_SI - self.k_control_SI
 
     @property
     def lambda_sw_SI(self) -> float:
-        return 2.0 * math.pi / abs(self.k_sw_SI)
+        return 2.0 * math.pi / np.linalg.norm(self.k_sw_SI)
 
     # wavevectors in chosen units
     @property
@@ -72,6 +73,10 @@ class AtomSpeciment:
 
     @property
     def k_sw(self) -> float:
+        return np.linalg.norm(self.k_sw_SI) * self.ref_length
+    
+    @property 
+    def k_sw_vector(self) -> np.array: 
         return self.k_sw_SI * self.ref_length
 
     @property
@@ -367,8 +372,7 @@ class CloudModel:
             )
 
         # Spin-wave optical phase
-        k_sw = self.atoms.k_sw * np.array([0.0, 0.0, 1.0])
-        phase = np.exp(-1j * (self.r_xyz @ k_sw))
+        phase = np.exp(-1j * (self.r_xyz @ self.atoms.k_sw_vector))
 
         # Transverse signal mode
         r2_perp = x*x + y*y

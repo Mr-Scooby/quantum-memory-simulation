@@ -75,16 +75,6 @@ class ExperimentalParams:
     spin_exchange_alpha_CsCs_m3_s: float 
 
     def __post_init__(self): 
-        self.atom = AtomSpeciment( self.atoms,
-                                  self.lambda_control_m,
-                                  self.delta_f_hz,
-                                  self.ref_length, 
-                                  g_g = self.g_g , 
-                                  m_g = self.m_g , 
-                                  g_s = self.g_s , 
-                                  m_s = self.m_s , 
-                                  ) 
-
         if self.buffer_gas is None: 
             self.buffer_pressure_Torr : float = 0.0         # Torr = 1/760 atm = 101325/760 Pa
             self.diffusion_D0_cm2_s: float    = 0.0
@@ -94,6 +84,20 @@ class ExperimentalParams:
 
         self.control_beam_direction  /= np.linalg.norm(self.control_beam_direction) 
         self.signal_beam_direction  /= np.linalg.norm(self.signal_beam_direction) 
+        
+        k_signal = 2.0 * np.pi /  (self.lambda_control_m + delta_f_hz / C ) * signal_beam_direction 
+        k_control = 2.0 * np.pi /  (self.lambda_control_m ) * control_beam_direction 
+
+        self.atom = AtomSpeciment(name= self.atoms,
+                                  lambda_control_m = self.lambda_control_m,
+                                  delta_f_hz = self.delta_f_hz,
+                                  k_sw_SI = ( k_signal - k_control)
+                                  ref_length = self.ref_length, 
+                                  g_g = self.g_g , 
+                                  m_g = self.m_g , 
+                                  g_s = self.g_s , 
+                                  m_s = self.m_s , 
+                                  ) 
 
 
     @property
