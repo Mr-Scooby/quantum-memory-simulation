@@ -22,24 +22,24 @@ class SimParams:
     # Time sampling
     sim_time_us: float  # microseconds
     char_time: float # Seconds.
-    time_divisions: int = 10
-    time_spacing: str = "linspace"
+    time_divisions: int 
+    time_spacing: str #= "linspace"
 
 
     # Angular grid
-    n_theta: int = 91
-    n_phi: int = 181
-    theta_max : float = np.pi
-    simulation_window_radius_w0_cutoff: float = 3 #Only simulate atoms within radius = simulation_window_radius_w0_cutoff * w0_control
+    n_theta: int #= 91
+    n_phi: int #= 181
+    theta_max : float 
+    simulation_window_radius_w0_cutoff: float #Only simulate atoms within radius #= simulation_window_radius_w0_cutoff * w0_control
 
     # MC atoms sim.
-    sim_density :int = 1 #Simulated atoms per code_volume 
+    sim_density :int  #Simulated atoms per code_volume 
 
     # Performance / implementation
-    chunk_atoms: int = 2000
-    normalize_each_time: bool = False
-    plane_restricted: bool = False
-    seed: int = None
+    chunk_atoms: int #= 2000
+    normalize_each_time: bool 
+    plane_restricted: bool 
+    seed: int 
 
     # File naming 
     # Computed run name: human-readable + hash from all params
@@ -74,7 +74,7 @@ class SimParams:
         log.info("Time array creation. Sim_time_window = %f [us], divisions = %i", self.sim_time_us, self.time_divisions )
         if self.time_spacing.upper() == "LINSPACE":
             times_us = np.linspace(0.0, self.sim_time_us, self.time_divisions)
-        elif time_spacing.upper() == "GEOMSPACE":
+        elif self.time_spacing.upper() == "GEOMSPACE":
             times_us = np.r_[0.0, np.geomspace(0.05, self.sim_time_us, self.time_divisions - 1 )]
         else:
             raise ValueError("time_spacing must be 'linspace' or 'geomspace'")

@@ -39,38 +39,40 @@ class ExperimentalParams:
     cell_diameter_m: float           # cylinder diameter [m]
 
     signal_fwhm_diameter_m: float    # signal beam FWHM diameter [m]
+    signal_beam_direction: tuple           # Signal beam direction. 
     control_fwhm_diameter_m: float   # control beam FWHM diameter [m]
+    control_pulse_fwhm_ns: float #= 25  # control intensity FWHM duration [ns] e-9
+    control_beam_direction: tuple          # Control beam direction.  
 
-    cell_geometry: str = "cylinder" 
-    Control_beam_AxisOffset_nm : tuple = (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
+
+    cell_geometry: str #= "cylinder" 
+    Control_beam_AxisOffset_nm : tuple #= (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
     
-    # |g> = |F=1, mF=+1>
-    g_g:float = -0.5018
-    m_g:float = +1
+    # |g> #= |F#=1, mF#=+1>
+    g_g:float
+    m_g:float 
 
-    # |s> = |F=2, mF=+1>
-    g_s:float = +0.4998
-    m_s:float = +1
+    # |s> #= |F#=2, mF#=+1>
+    g_s:float
+    m_s:float 
 
+    density_cm3 : float           # atoms/ cm^3 
+    temperature: float #= 75+ 273.15          # Temperature in Kelvin 
 
+    buffer_gas : str #= "N2"
+    buffer_pressure_Torr : float #= 0.0          # Torr #= 1/760 atm #= 101325/760 Pa
+    diffusion_D0_cm2_s: float #= 0.24
+    diffusion_T0_K: float #= 273.15
+    diffusion_P0_Torr: float #= 1.0
 
-    density_cm3 : float = 1e11           # atoms/ cm^3 
-    temperature: float = 75+ 273.15          # Temperature in Kelvin 
+    B0_T: float 
+    B_gradient: float 
 
-    buffer_gas : str = "N2"
-    buffer_pressure_Torr : float = 0.0          # Torr = 1/760 atm = 101325/760 Pa
-    diffusion_D0_cm2_s: float = 0.24
-    diffusion_T0_K: float = 273.15
-    diffusion_P0_Torr: float = 1.0
+    scalling: int 
+    label: str 
 
-    B0_T: float = 0.0 # Magnetic field
-    B_gradient: float = 0
-
-    scalling: int = 1
-    label: str = "experiment"
-
-    spin_destruction_cross_section_CsN2_m2: float = 2.9e-26  # verify
-    spin_exchange_alpha_CsCs_m3_s: float = 6.5e-16
+    spin_destruction_cross_section_CsN2_m2: float
+    spin_exchange_alpha_CsCs_m3_s: float 
 
     def __post_init__(self): 
         self.atom = AtomSpeciment( self.atoms,
@@ -90,6 +92,8 @@ class ExperimentalParams:
             self.diffusion_P0_Torr: float     = 0.0
 
 
+        self.control_beam_direction  /= np.linalg.norm(self.control_beam_direction) 
+        self.signal_beam_direction  /= np.linalg.norm(self.signal_beam_direction) 
 
 
     @property
@@ -121,6 +125,30 @@ class ExperimentalParams:
     @property
     def w0_control_m(self):
         return self.fwhm_diameter_to_w0(self.control_fwhm_diameter_m)
+
+    @property
+    def control_pulse_fwhm_s(self):
+        """ convert ns to s """ 
+        return self.control_pulse_fwhm_ns * 1e-9
+
+    @property
+    def control_sigma_long_m(self) -> float:
+        """
+        Longitudinal Gaussian amplitude width used by BeamModel.
+
+        BeamModel uses:
+            env_long = exp(-(u_par**2) / sigma_long**2)
+
+        If control_pulse_fwhm_s is the INTENSITY FWHM duration:
+            sigma_long_m = c * tau_fwhm / sqrt(2 ln 2)
+        """
+        return C * self.control_pulse_fwhm_s / math.sqrt(2.0 * math.log(2.0))
+
+
+    @property
+    def control_sigma_long(self) -> float:
+        """Longitudinal pulse width in code length units."""
+        return self.control_sigma_long_m / self.ref_length
 
     # chosen simulation reference unit
     # 1 code unit = unit_scale_lambda * lambda_control

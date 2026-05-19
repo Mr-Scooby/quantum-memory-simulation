@@ -7,7 +7,7 @@ import time
 import numpy as np
 from copy import deepcopy
 
-from radpattern.physics.rpattern_gpu import array_factor_general_gpu, cp 
+from radpattern.physics.rpattern_gpu import array_factor_general_gpu
 from coupling_calcualtion import intensity_overlap_on_sphere
 
 
@@ -95,7 +95,6 @@ def run_single_mc_gpu(
             w=weights,
             chunk_atoms=sim.chunk_atoms,
         )
-        AF = cp.asnumpy(AF)
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole
 

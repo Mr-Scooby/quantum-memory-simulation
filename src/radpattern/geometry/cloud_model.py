@@ -242,9 +242,11 @@ class CloudModel:
         return self.motion_phase
 
 
-    def generate_velocity_distribution(self ):
+    def generate_velocity_distribution(self, rng= None ):
         """ generates Velocity distibution according to Boltzman law, normalize to ref velocity == most prob speed"""
-        self.v_xyz = np.random.normal(loc = 0.0, scale = 1 / np.sqrt(2), size = (self.n_atoms, 3)) 
+        if rng is None:
+            rng = np.random.default_rng()
+        self.v_xyz = rng.normal(loc = 0.0, scale = 1 / np.sqrt(2), size = (self.n_atoms, 3)) 
         return self.v_xyz
 
 
@@ -566,3 +568,58 @@ class CloudModel:
                 f" z={z:>8.4f}, n_local={n_local:>4d},"
                 f" rho_local={rho_local:.6g}"
             )
+
+    def __str__(self):
+        lines = [f"{self.__class__.__name__}("]
+
+        # basic config
+        lines.append(f"  geometry      = {self.geometry}")
+        lines.append(f"  distribution  = {self.distribution}")
+
+        # atom info
+        if self.atoms is not None:
+            lines.append(f"  atoms         = {self.atoms.name}")
+            lines.append(f"  lambda_ctrl   = {self.atoms.lambda_control_m:.6e} m")
+            lines.append(f"  k_signal      = {self.atoms.k_signal:.6g} code units")
+            lines.append(f"  k_control     = {self.atoms.k_control:.6g} code units")
+            lines.append(f"  k_sw          = {self.atoms.k_sw:.6g} code units")
+
+        # geometry
+        lines.append(f"  Lx            = {self.Lx}")
+        lines.append(f"  Ly            = {self.Ly}")
+        lines.append(f"  Lz            = {self.Lz}")
+        lines.append(f"  R             = {self.R}")
+
+        # gaussian widths
+        lines.append(f"  sigma_x       = {self.sigma_x}")
+        lines.append(f"  sigma_y       = {self.sigma_y}")
+        lines.append(f"  sigma_z       = {self.sigma_z}")
+
+        # simulation density
+        lines.append(f"  sim_density   = {self.sim_density}")
+
+        try:
+            lines.append(f"  volume        = {self.volumen:.6g}")
+            lines.append(f"  n_atoms       = {self.n_atoms}")
+            lines.append(f"  mean_spacing  = {self.mean_spacing:.6g}")
+        except Exception:
+            lines.append("  volume        = unavailable")
+            lines.append("  n_atoms       = unavailable")
+
+        try:
+            lines.append(f"  box_size      = {self.box_size}")
+        except Exception:
+            lines.append("  box_size      = unavailable")
+
+        # generated arrays, only if they exist
+        if hasattr(self, "r_xyz"):
+            lines.append(f"  r_xyz.shape   = {self.r_xyz.shape}")
+
+        if hasattr(self, "v_xyz"):
+            lines.append(f"  v_xyz.shape   = {self.v_xyz.shape}")
+
+        if hasattr(self, "S"):
+            lines.append(f"  S.shape       = {self.S.shape}")
+
+        lines.append(")")
+        return "\n".join(lines)
