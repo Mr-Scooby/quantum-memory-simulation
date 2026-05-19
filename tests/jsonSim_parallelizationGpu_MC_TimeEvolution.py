@@ -24,6 +24,7 @@ def run_one_config(objs, output_dir, **kwargs):
         mc_dir=mc_dir,
     )
 
+    print(f"File save in {path}")
     save_simulation_npz(
         path,
         metadata=asdict(setp),

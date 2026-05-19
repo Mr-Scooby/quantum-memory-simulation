@@ -33,7 +33,7 @@ class SimParams:
     simulation_window_radius_w0_cutoff: float = 3 #Only simulate atoms within radius = simulation_window_radius_w0_cutoff * w0_control
 
     # MC atoms sim.
-    sim_density :int = 1
+    sim_density :int = 1 #Simulated atoms per code_volume 
 
     # Performance / implementation
     chunk_atoms: int = 2000

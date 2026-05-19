@@ -157,6 +157,22 @@ class CloudModel:
     def mean_spacing(self): 
         return 1 / (self.sim_density ** (1/3))
 
+    def mc_density_weight(self, physical_density_code: float) -> float:
+        """
+        How many real atoms are represented by one simulated atom.
+        physical_density_code: atoms / code_length^3
+        sim_density: simulated atoms / code_length^3
+        """
+        if self.sim_density <= 0:
+            raise ValueError("sim_density must be > 0")
+        return physical_density_code / self.sim_density
+
+    def mc_amplitude_weight(self, physical_density_code: float) -> float:
+        """
+        Amplitude correction for normalized single-excitation spin waves.
+        """
+        return np.sqrt(self.mc_density_weight(physical_density_code))
+
     def generate_cloud(self, rng=None) -> np.ndarray:
         log.info("Constructing atom positions...  rng = %s", rng) 
         self.r_xyz =  make_positions(self, rng=rng)
