@@ -7,7 +7,7 @@ from radpattern.helpers.io import save_simulation_npz
 from monte_carlo_gpu import run_monte_carlo_gpu
 
 
-def run_one_config(objs, output_dir, **kargs):
+def run_one_config(objs, output_dir, **kwargs):
     exp = objs.exp
     sim = objs.sim
     beam = objs.beam
@@ -20,7 +20,7 @@ def run_one_config(objs, output_dir, **kargs):
 
     result = run_monte_carlo_gpu(
         objs=objs,
-        save_full_mc=save_full_mc,
+        save_full_mc=kwargs.get("save_full_mc", False),
         mc_dir=mc_dir,
     )
 

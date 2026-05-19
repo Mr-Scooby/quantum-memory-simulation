@@ -223,7 +223,7 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
 
 if __name__ == "__main__":
     RESULT_FILE = Path(
-        r"C:\Users\local_admin\radek\simulations\data\results_sims\cs133_ABC.npz"
+        r"C:\Users\local_admin\radek\simulations\data\test\Cs133_10Torr120SDia_300Cdia_simT100us_nt30_100runs_e418e57e.npz"
     )
 
     times_code, eta_runs = plot_mc_couplings(

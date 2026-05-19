@@ -7,7 +7,7 @@ import time
 import numpy as np
 from copy import deepcopy
 
-from radpattern.physics.rpattern_gpu import array_factor_general_gpu
+from radpattern.physics.rpattern_gpu import array_factor_general_gpu, cp 
 from coupling_calcualtion import intensity_overlap_on_sphere
 
 

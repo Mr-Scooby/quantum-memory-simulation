@@ -9,6 +9,7 @@ from radpattern.helpers.helpers import single_dipole_E
 from radpattern.physics.rpattern_gpu import prepare_gpu_grid
 from coupling_calcualtion import gaussian_fiber_mode_on_sphere
 
+from pathlib import Path
 from single_sim_run_gpu import run_single_mc_gpu
 
 def run_monte_carlo_gpu(
@@ -18,6 +19,7 @@ def run_monte_carlo_gpu(
     mc_dir=None,
     ):
 
+    print(f"SAVE_FULL_MC = {save_full_mc}")
     exp = objs.exp
     sim = objs.sim
 

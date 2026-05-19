@@ -38,7 +38,7 @@ def main():
     queue_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue")
     done_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\done")
     failed_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\failed")
-    output_dir = Path(r"C:\Users\local_admin\radek\simulations\data\results_sims")
+    output_dir = Path(r"C:\Users\local_admin\radek\simulations\data\test")
 
     print(queue_dir.glob)
     for config_path in sorted(queue_dir.glob("*.json")):
@@ -47,7 +47,7 @@ def main():
         try:
 
             objs = build_run_objects(str(config_path))
-            run_one_config(objs, output_dir)
+            run_one_config(objs, output_dir, save_full_mc = True)
 
         except Exception:
             print("failed:", config_path)
