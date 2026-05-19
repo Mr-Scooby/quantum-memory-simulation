@@ -8,9 +8,12 @@ from radpattern.geometry.cloud_model import CloudModel
 import matplotlib.pyplot as plt 
 import numpy as np
 import re 
+from pathlib import Path
 
+here = Path.cwd()
+#PATH = (Path.cwd() / ".." / "data" / "results_sims").resolve()
+PATH = (Path.cwd() / ".." / "data" / "test").tesolve()
 
-PATH = "../data/results_sims/"
 files = [
          "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_c2e6fcd3",
 #         "DiffusiveBufferN2_3Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_260f4b5d",
@@ -119,7 +122,7 @@ files =[
 "Cs133_10.0Torr240SDia_300Cdia_simT75.0us_nt100_100runs_e974d310",
         ]
 
-#
+
 # plot title and legend title
 title =  "diffusivebuffern2_2torr_simdens0e6_expdata_swave_reduce_cone_50ustimesim_geomspace_normalizeweights_simt50us"
 legend_title = "buffer gas" 
@@ -462,91 +465,3 @@ plt.show()
 plt.show()
 
 
-
-
-"""
-extract metadata from an old npz result and save it as json.
-"""
-
-import json
-from pathlib import path
-
-import numpy as np
-
-
-def json_value(x):
-    """
-    convert numpy values into json-safe values.
-    """
-
-    if isinstance(x, np.ndarray):
-        return x.tolist()
-
-    if isinstance(x, np.integer):
-        return int(x)
-
-    if isinstance(x, np.floating):
-        return float(x)
-
-    if isinstance(x, np.bool_):
-        return bool(x)
-
-    return x
-
-
-def load_npz_metadata(npz_path):
-    """
-    load metadata from an npz result.
-
-    input
-    -----
-    npz_path : str
-        path to saved result.
-
-    output
-    ------
-    dict
-        metadata dictionary.
-    """
-
-    data = np.load(npz_path, allow_pickle=true)
-
-    if "metadata" not in data:
-        raise keyerror("npz file has no 'metadata' key")
-
-    metadata = data["metadata"]
-
-    if metadata.shape == ():
-        metadata = metadata.item()
-
-    return metadata
-
-
-def write_json(path, data):
-    """
-    save dictionary as formatted json.
-    """
-
-    path = path(path)
-    path.parent.mkdir(parents=true, exist_ok=true)
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, default=json_value)
-
-
-def npz_metadata_to_json(npz_path, json_path):
-    """
-    convert old npz metadata to json.
-    """
-
-    metadata = load_npz_metadata(npz_path)
-    write_json(json_path, metadata)
-
-
-npz_metadata_to_json(
-    path + files[0] + ".npz",
-    "old_metadata.json",
-)
-
-
-print(f"seeds ={seed}")
