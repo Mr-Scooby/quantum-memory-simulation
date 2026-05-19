@@ -47,7 +47,7 @@ def run_single_mc_gpu(
 
     # Generate one cloud realization
     cloud.generate_cloud(rng=rng)
-    cloud.generate_velocity_distribution()
+    cloud.generate_velocity_distribution(rng = rng)
     cloud.generate_S_profile(exp.w0_signal)
     cloud.r0_xyz = cloud.r_xyz.copy()
 

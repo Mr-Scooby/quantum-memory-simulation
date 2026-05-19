@@ -15,7 +15,11 @@ base_config = {
         "cell_length_m": 0.075,
         "cell_diameter_m": 0.004,
         "signal_fwhm_diameter_m": 0.00012,
+        "signal_beam_direction": ( 0,0,1), 
         "control_fwhm_diameter_m": 0.00030,
+        "control_pulse_fwhm_ns": 25 , 
+        "control_beam_direction": (0,0,1),
+        'Control_beam_AxisOffset_nm':0, 
         "cell_geometry": "cylinder",
         "density_cm3": 1000000000000.0,
         "temperature": 348.15,
@@ -28,6 +32,12 @@ base_config = {
         "B_gradient": 0,
         "scalling": 10000,
         "label": "cs133_jutisz_75mm_4mm_120um_300um_75C_10TorrN2_0TpMGradient",
+        'g_g':  -0.5018, 
+        'm_g': +1 ,
+        'g_s':+0.4998,
+        'm_s':+1 ,
+        'spin_destruction_cross_section_CsN2_m2': 2.9e-26,
+        'spin_exchange_alpha_CsCs_m3_s':6.5e-16
     },
 
     "sim": {
@@ -47,7 +57,7 @@ base_config = {
 }
 
 
-def save_config(config, filename, folder="queue", preview=True):
+def save_config(config, filename, folder=".", preview=True):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -67,7 +77,7 @@ def save_config(config, filename, folder="queue", preview=True):
 
 def make_single_file():
     config = deepcopy(base_config)
-    filename = "cs133_jutisz_base.json"
+    filename = "config_file_template.json"
     save_config(config, filename)
 
 
