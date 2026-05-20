@@ -25,9 +25,9 @@ class BeamModel:
     k_in_hat: np.ndarray #= field(default_factory#=lambda: np.array([0.0, 0.0, 1.0]))
     v_front: float #= 1.0
     box_size: tuple #= (1.0, 1.0, 1.0)
-    center: tuple #= (0.0, 0.0, 0.0)
     margin: float #= 0.0
     pulse_center_t0: float #= 0.0
+    center: tuple #= (0.0, 0.0, 0.0)
     pcenter_at_origin: bool #= False
 
     def __post_init__(self):
@@ -43,8 +43,7 @@ class BeamModel:
                 raise ValueError("gaussian_pulse requires w0 and sigma_long")
 
             if self.pcenter_at_origin:
-                log.info("Building beam. Pcenter = True") 
-                self.r_front0 = np.array([0.0, 0.0, 0.0], dtype=float)
+                self.r_front0 = self.center.copy()
             else:
                 self.r_front0 = self.upstream_front_position(
                     center=self.center,

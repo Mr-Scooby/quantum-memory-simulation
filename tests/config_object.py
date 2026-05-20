@@ -204,6 +204,11 @@ def build_beam(
     The beam is derived from the experimental setup.
     """
 
+    control_offset_code = (
+        np.asarray(exp.control_beam_AxisOffset_nm, dtype=float)
+        * 1e-9 # To m
+        / exp.ref_length # to code length 
+    )
     defaults = {
         "beam_type": "gaussian_pulse",
         "w0": exp.w0_control,
@@ -212,10 +217,10 @@ def build_beam(
         "k_in": exp.atom.k_control,
         "box_size": cloud.box_size,
         "pcenter_at_origin": True,
-        "margin": [0,0,0],
-        "pulse_center_t0": True,
+        "margin": 0,
+        "pulse_center_t0":0.0 ,
         "v_front": 0, 
-        "center": (0,0,0) 
+        "center": control_offset_code, 
     }
 
 

@@ -4,6 +4,9 @@
 import numpy as np
 import inspect
 import logging
+from dataclasses import fields
+#from radpattern.geometry.grids import AngleGrid
+#from radpattern.physics.experimetal_setup import ExperimentalParams
 log = logging.getLogger(__name__)
 
 

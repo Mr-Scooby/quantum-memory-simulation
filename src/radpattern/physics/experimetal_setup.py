@@ -47,7 +47,7 @@ class ExperimentalParams:
 
 
     cell_geometry: str #= "cylinder" 
-    Control_beam_AxisOffset_nm : tuple #= (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
+    control_beam_AxisOffset_nm : tuple #= (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
     
     # |g> #= |F#=1, mF#=+1>
     g_g:float
@@ -427,7 +427,7 @@ class ExperimentalParams:
         lines.append(f"control             : {self.control_beam_direction}")
         lines.append(f"signal              : {self.signal_beam_direction}")
         lines.append(f"sw                  : {self.atom.k_sw_SI_vector/ np.linalg.norm(self.atom.k_sw_SI_vector)}")
-        lines.append(f"control beam off axis offset [nm]: {self.Control_beam_AxisOffset_nm}")
+        lines.append(f"control beam off axis offset [nm]: {self.control_beam_AxisOffset_nm}")
     
         lines.append("")
         lines.append("--- geometry in code units ---")
