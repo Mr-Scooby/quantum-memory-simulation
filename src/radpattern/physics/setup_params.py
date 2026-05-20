@@ -115,7 +115,7 @@ class SetupParams:
         d = {
             "experiment": asdict(self.experiment),
             "sim": asdict(self.sim),
-            "cloud": asdict(self.sim),
+            "cloud": asdict(self.cloud),
         }
         h = hashlib.sha1(
             json.dumps(d, sort_keys=True, default=str).encode()

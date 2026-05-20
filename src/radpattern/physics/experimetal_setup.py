@@ -291,12 +291,13 @@ class ExperimentalParams:
     def spin_destruction_rate_CsN2_Hz(self):
         sigma = 2.9e-26  # m^2
         vrel = self.mean_relative_speed(mass2_amu=28.0)
-        return self.buffer_density_m3 * sigma * vrel@property
+        return self.buffer_density_m3 * sigma * vrel
+
   
-    @property
-    def spin_destruction_rate_CsN2_Hz(self):
-        sigma = self.spin_destruction_cross_section_CsN2_m2
-        return self.buffer_density_m3 * sigma * self.mean_relative_speed(28.0)
+ #   @property
+ #   def spin_destruction_rate_CsN2_Hz(self):
+ #       sigma = self.spin_destruction_cross_section_CsN2_m2
+ #       return self.buffer_density_m3 * sigma * self.mean_relative_speed(28.0)
 
     @property
     def spin_exchange_rate_CsCs_Hz(self):
@@ -356,7 +357,7 @@ class ExperimentalParams:
     @property
     def B_gradient_z_T_per_code(self):
         """ retruns B gradient in code units"""
-        return self.B_gradient_z_T_per_m * self.ref_length
+        return self.B_gradiendt * self.ref_length
 
 
     def __str__(self) -> str:

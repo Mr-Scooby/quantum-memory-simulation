@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 class BeamModel: 
     """ Beam model Info""" 
     # Gaussian-pulse parameters
-    w0: float 
-    sigma_long: float
+    w0: float  # gaussian with ( transverse direction ) 
+    sigma_long: float # Gaussina width ( longitudinal direction) 
     k_in: float 
 
     beam_type: str  # "gaussian_pulse" or "plane_wave"

@@ -56,11 +56,12 @@ class AtomSpeciment:
 
     @property
     def k_sw_SI(self):
+        "Get the k value of sw "
         return np.linalg.norm(self.k_sw_SI_vector)
 
     @property
     def lambda_sw_SI(self) -> float:
-        return 2.0 * math.pi / np.linalg.norm(self.k_sw_SI)
+        return 2.0 * math.pi / self.k_sw_SI
 
     @property 
     def f_sw (self): 
@@ -77,10 +78,12 @@ class AtomSpeciment:
 
     @property
     def k_sw(self) -> float:
+        "Convert |k| of sw to code units"  
         return np.linalg.norm(self.k_sw_SI) * self.ref_length
     
     @property 
     def k_sw_vector(self) -> np.array: 
+        "Convert vect k_sw to code units" 
         return self.k_sw_SI_vector * self.ref_length
 
     @property
@@ -289,6 +292,25 @@ class CloudModel:
 #
 #        return self.S 
 #
+    def gaussian_transverse_mode(self, w0_signal, center=(0, 0, 0)):
+        """
+        Generates the SW amplitude weight given by a gaussian beam. 
+        Generates the transverse amplitude weight. Accounts for Signal Beam direction
+        
+                        E(r) = exp ( - r_perp^2 / w_oSignal^2)
+        """
+
+        # Signal Beam direction 
+        k_hat = self.atoms.k_sw_vector / self.atoms.k_sw
+
+        center = np.asarray(center, dtype=float)
+        dr = self.r_xyz - center[None, :]
+
+        u_par = dr @ k_hat
+        u_perp2 = np.sum(dr * dr, axis=1) - u_par**2
+
+        return np.exp(-u_perp2 / w0**2)
+
     def generate_S_profile(
         self,
         w0_signal,
@@ -379,8 +401,7 @@ class CloudModel:
         phase = np.exp(-1j * (self.r_xyz @ self.atoms.k_sw_vector))
 
         # Transverse signal mode
-        r2_perp = x*x + y*y
-        signal_mode = np.exp(-r2_perp / (w0_signal**2))
+        signal_mode = gaussian_transverse_mode(w0_signal)
 
         self.S = amp_z.astype(np.complex128) * signal_mode * phase
 
