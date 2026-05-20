@@ -81,7 +81,7 @@ class AtomSpeciment:
     
     @property 
     def k_sw_vector(self) -> np.array: 
-        return self.k_sw_SI * self.ref_length
+        return self.k_sw_SI_vector * self.ref_length
 
     @property
     def lambda_signal(self) -> float:
