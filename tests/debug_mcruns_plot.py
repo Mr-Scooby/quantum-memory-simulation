@@ -44,16 +44,59 @@ from coupling_calcualtion import (
 
 import inspect
 
+def default_from_type(name, typ):
+    """
+    Choose a backward-compatible value from the dataclass type.
+    """
+    # Generic type-based defaults
+    if typ is float:
+        return 999.0
+
+    if typ is int:
+        return 999
+
+    if typ is str:
+        return "None"
+
+    if typ is bool:
+        return False
+
+    if typ is tuple:
+        return (9,9,9)
+
+    if typ is list:
+        return [9,9,9]
+
+    if typ is dict:
+        return {"None": "None" }
+
+    return None
+
+
+
 def dataclass_kwargs(cls, data):
     """Keep only keys accepted by a dataclass constructor.
     adds None if not found (backwards compatability
     """
-    valid = {f.name for f in fields(cls) if f.init}
-    return {
-        name: data[name] if name in data else None
-        for name in valid
-        }
+    kwargs = {}
 
+    for f in fields(cls):
+        if not f.init:
+            continue
+
+        if f.name in data:
+            kwargs[f.name] = data[f.name]
+
+        else:
+            kwargs[f.name] = default_from_type(f.name, f.type)
+
+#    valid = {f.name for f in fields(cls) if f.init}
+#    return {
+#        name: data[name] if name in data else default_from_type(f.name, f.type)
+#        for name in valid
+#        }
+
+    return kwargs
 
 
 
