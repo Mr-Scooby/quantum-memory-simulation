@@ -81,10 +81,7 @@ def run_single_mc_gpu(
             B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
         )
 
-        # Amplitud weight for how many sim atoms vs real atoms.  to reescale the system. 
-        amp_weight = cloud.mc_amplitude_weight(exp.density_rescalled)
-
-        weights = amp_weight * cloud.S * beam.w * motion_phase
+        weights =  cloud.S * beam.w * motion_phase
 
         # GPU array factor
         AF = array_factor_general_gpu(
