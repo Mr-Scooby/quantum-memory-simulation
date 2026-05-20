@@ -309,7 +309,7 @@ class CloudModel:
         u_par = dr @ k_hat
         u_perp2 = np.sum(dr * dr, axis=1) - u_par**2
 
-        return np.exp(-u_perp2 / w0**2)
+        return np.exp(-u_perp2 / w0_signal**2)
 
     def generate_S_profile(
         self,
@@ -401,7 +401,7 @@ class CloudModel:
         phase = np.exp(-1j * (self.r_xyz @ self.atoms.k_sw_vector))
 
         # Transverse signal mode
-        signal_mode = gaussian_transverse_mode(w0_signal)
+        signal_mode = self.gaussian_transverse_mode(w0_signal)
 
         self.S = amp_z.astype(np.complex128) * signal_mode * phase
 
