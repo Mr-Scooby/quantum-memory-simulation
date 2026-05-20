@@ -1,5 +1,9 @@
 #!/usr/bin/env python3 
 # -*- coding: utf-8 -*-
+"""
+Run one simulation configuration and save the Monte Carlo averaged results.
+"""
+
 from dataclasses import asdict
 from pathlib import Path
 
@@ -8,6 +12,10 @@ from monte_carlo_gpu import run_monte_carlo_gpu
 
 
 def run_one_config(objs, output_dir, **kwargs):
+    """
+    Run one config, save its mean MC results, and optionally save full MC runs.
+    """
+
     exp = objs.exp
     sim = objs.sim
     beam = objs.beam
@@ -34,3 +42,4 @@ def run_one_config(objs, output_dir, **kwargs):
         intensity=result["I_mean"],
         eta_mean=result["eta_mean"],
     )
+    return mc_dir
