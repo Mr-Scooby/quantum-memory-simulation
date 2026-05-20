@@ -22,12 +22,13 @@ class AtomSpeciment:
     name : str
     lambda_control_m : float
     delta_f_hz : float
+    k_sw_SI_vector: tuple
     ref_length: float 
 
-    g_g: float = 0.0
-    m_g: float = 0.0
-    g_s: float = 0.0
-    m_s: float = 0.0
+    g_g: float 
+    m_g: float 
+    g_s: float 
+    m_s: float 
 
 
     # basic optical quantities
@@ -55,11 +56,15 @@ class AtomSpeciment:
 
     @property
     def k_sw_SI(self):
-        return self.k_signal_SI - self.k_control_SI
+        return np.linalg.norm(self.k_sw_SI_vector)
 
     @property
     def lambda_sw_SI(self) -> float:
-        return 2.0 * math.pi / abs(self.k_sw_SI)
+        return 2.0 * math.pi / np.linalg.norm(self.k_sw_SI)
+
+    @property 
+    def f_sw (self): 
+        return C/ self.lambda_sw_SI
 
     # wavevectors in chosen units
     @property
@@ -72,6 +77,10 @@ class AtomSpeciment:
 
     @property
     def k_sw(self) -> float:
+        return np.linalg.norm(self.k_sw_SI) * self.ref_length
+    
+    @property 
+    def k_sw_vector(self) -> np.array: 
         return self.k_sw_SI * self.ref_length
 
     @property
@@ -157,6 +166,22 @@ class CloudModel:
     def mean_spacing(self): 
         return 1 / (self.sim_density ** (1/3))
 
+    def mc_density_weight(self, physical_density_code: float) -> float:
+        """
+        How many real atoms are represented by one simulated atom.
+        physical_density_code: atoms / code_length^3
+        sim_density: simulated atoms / code_length^3
+        """
+        if self.sim_density <= 0:
+            raise ValueError("sim_density must be > 0")
+        return physical_density_code / self.sim_density
+
+    def mc_amplitude_weight(self, physical_density_code: float) -> float:
+        """
+        Amplitude correction for normalized single-excitation spin waves.
+        """
+        return np.sqrt(self.mc_density_weight(physical_density_code))
+
     def generate_cloud(self, rng=None) -> np.ndarray:
         log.info("Constructing atom positions...  rng = %s", rng) 
         self.r_xyz =  make_positions(self, rng=rng)
@@ -226,9 +251,11 @@ class CloudModel:
         return self.motion_phase
 
 
-    def generate_velocity_distribution(self ):
+    def generate_velocity_distribution(self, rng= None ):
         """ generates Velocity distibution according to Boltzman law, normalize to ref velocity == most prob speed"""
-        self.v_xyz = np.random.normal(loc = 0.0, scale = 1 / np.sqrt(2), size = (self.n_atoms, 3)) 
+        if rng is None:
+            rng = np.random.default_rng()
+        self.v_xyz = rng.normal(loc = 0.0, scale = 1 / np.sqrt(2), size = (self.n_atoms, 3)) 
         return self.v_xyz
 
 
@@ -349,8 +376,7 @@ class CloudModel:
             )
 
         # Spin-wave optical phase
-        k_sw = self.atoms.k_sw * np.array([0.0, 0.0, 1.0])
-        phase = np.exp(-1j * (self.r_xyz @ k_sw))
+        phase = np.exp(-1j * (self.r_xyz @ self.atoms.k_sw_vector))
 
         # Transverse signal mode
         r2_perp = x*x + y*y
@@ -550,3 +576,58 @@ class CloudModel:
                 f" z={z:>8.4f}, n_local={n_local:>4d},"
                 f" rho_local={rho_local:.6g}"
             )
+
+    def __str__(self):
+        lines = [f"{self.__class__.__name__}("]
+
+        # basic config
+        lines.append(f"  geometry      = {self.geometry}")
+        lines.append(f"  distribution  = {self.distribution}")
+
+        # atom info
+        if self.atoms is not None:
+            lines.append(f"  atoms         = {self.atoms.name}")
+            lines.append(f"  lambda_ctrl   = {self.atoms.lambda_control_m:.6e} m")
+            lines.append(f"  k_signal      = {self.atoms.k_signal:.6g} code units")
+            lines.append(f"  k_control     = {self.atoms.k_control:.6g} code units")
+            lines.append(f"  k_sw          = {self.atoms.k_sw:.6g} code units")
+
+        # geometry
+        lines.append(f"  Lx            = {self.Lx}")
+        lines.append(f"  Ly            = {self.Ly}")
+        lines.append(f"  Lz            = {self.Lz}")
+        lines.append(f"  R             = {self.R}")
+
+        # gaussian widths
+        lines.append(f"  sigma_x       = {self.sigma_x}")
+        lines.append(f"  sigma_y       = {self.sigma_y}")
+        lines.append(f"  sigma_z       = {self.sigma_z}")
+
+        # simulation density
+        lines.append(f"  sim_density   = {self.sim_density}")
+
+        try:
+            lines.append(f"  volume        = {self.volumen:.6g}")
+            lines.append(f"  n_atoms       = {self.n_atoms}")
+            lines.append(f"  mean_spacing  = {self.mean_spacing:.6g}")
+        except Exception:
+            lines.append("  volume        = unavailable")
+            lines.append("  n_atoms       = unavailable")
+
+        try:
+            lines.append(f"  box_size      = {self.box_size}")
+        except Exception:
+            lines.append("  box_size      = unavailable")
+
+        # generated arrays, only if they exist
+        if hasattr(self, "r_xyz"):
+            lines.append(f"  r_xyz.shape   = {self.r_xyz.shape}")
+
+        if hasattr(self, "v_xyz"):
+            lines.append(f"  v_xyz.shape   = {self.v_xyz.shape}")
+
+        if hasattr(self, "S"):
+            lines.append(f"  S.shape       = {self.S.shape}")
+
+        lines.append(")")
+        return "\n".join(lines)

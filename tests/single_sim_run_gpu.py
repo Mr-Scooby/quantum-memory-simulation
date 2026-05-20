@@ -7,7 +7,7 @@ import time
 import numpy as np
 from copy import deepcopy
 
-from radpattern.physics.rpattern_gpu import array_factor_general_gpu, cp 
+from radpattern.physics.rpattern_gpu import array_factor_general_gpu
 from coupling_calcualtion import intensity_overlap_on_sphere
 
 
@@ -47,7 +47,7 @@ def run_single_mc_gpu(
 
     # Generate one cloud realization
     cloud.generate_cloud(rng=rng)
-    cloud.generate_velocity_distribution()
+    cloud.generate_velocity_distribution(rng = rng)
     cloud.generate_S_profile(exp.w0_signal)
     cloud.r0_xyz = cloud.r_xyz.copy()
 
@@ -81,7 +81,10 @@ def run_single_mc_gpu(
             B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
         )
 
-        weights = cloud.S * beam.w * motion_phase
+        # Amplitud weight for how many sim atoms vs real atoms.  to reescale the system. 
+        amp_weight = cloud.mc_amplitude_weight(exp.density_rescalled)
+
+        weights = amp_weight * cloud.S * beam.w * motion_phase
 
         # GPU array factor
         AF = array_factor_general_gpu(
@@ -92,7 +95,6 @@ def run_single_mc_gpu(
             w=weights,
             chunk_atoms=sim.chunk_atoms,
         )
-        AF = cp.asnumpy(AF)
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole
 

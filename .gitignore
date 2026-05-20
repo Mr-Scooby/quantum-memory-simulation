@@ -53,3 +53,4 @@ tests/locals_runs/rb87_cold_cloud_template.json
 tests/locals_runs/template.json
 tests/log.txt
 tests/old_metadata.json
+config_file_template.json

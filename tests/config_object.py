@@ -7,7 +7,7 @@ Create simulation objects from a JSON config.
 Input
 -----
 config_path : str
-    Path to a JSON file with exp, sim, cloud, and beam sections.
+    Path to a JSON file with exp, sim.
 
 Output
 ------
@@ -184,8 +184,8 @@ def build_cloud(sim: SimParams, exp: ExperimentalParams) -> CloudModel:
 
     defaults = {
         "geometry": geometry,
+        "atoms" : exp.atom,
         "distribution": distribution,
-        "atoms": exp.atom,
         "Lz": Lz,
         "R": R,
         "sim_density": sim.sim_density,
@@ -201,19 +201,23 @@ def build_beam(
 ) -> BeamModel:
     """
     Build BeamModel from ExperimentalParams and CloudModel.
-
     The beam is derived from the experimental setup.
     """
 
     defaults = {
         "beam_type": "gaussian_pulse",
         "w0": exp.w0_control,
-        "sigma_long": 3.0,
-        "k_in_hat": np.array([0.0, 0.0, 1.0], dtype=float),
+        "sigma_long": exp.control_sigma_long,
+        "k_in_hat": exp.control_beam_direction, 
         "k_in": exp.atom.k_control,
         "box_size": cloud.box_size,
         "pcenter_at_origin": True,
+        "margin": [0,0,0],
+        "pulse_center_t0": True,
+        "v_front": 0, 
+        "center": (0,0,0) 
     }
+
 
     beam_kwargs = dataclass_kwargs(BeamModel, defaults)
     return BeamModel(**beam_kwargs)
@@ -243,3 +247,18 @@ def build_run_objects(config_path: str) -> RunObjects:
         cloud=cloud,
         beam=beam,
     )
+
+
+
+# TESTING FUNCTIONALITY. 
+if __name__ == "__main__": 
+
+    from pathlib import Path
+    # test file
+    file = Path("config_file_template.json")
+    objs = build_run_objects(str(file)) 
+
+    print(objs.exp)
+    print(objs.sim)
+    print(objs.cloud)
+    print(objs.beam)

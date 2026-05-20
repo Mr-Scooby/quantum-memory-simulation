@@ -3,6 +3,7 @@
 
 from dataclasses import dataclass, asdict
 import math
+import numpy as np
 from typing import Dict, Any, Optional
 import logging 
 from radpattern.geometry.cloud_model import CloudModel, AtomSpeciment
@@ -39,57 +40,76 @@ class ExperimentalParams:
     cell_diameter_m: float           # cylinder diameter [m]
 
     signal_fwhm_diameter_m: float    # signal beam FWHM diameter [m]
+    signal_beam_direction: tuple           # Signal beam direction. 
     control_fwhm_diameter_m: float   # control beam FWHM diameter [m]
+    control_pulse_fwhm_ns: float #= 25  # control intensity FWHM duration [ns] e-9
+    control_beam_direction: tuple          # Control beam direction.  
 
-    cell_geometry: str = "cylinder" 
-    Control_beam_AxisOffset_nm : tuple = (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
+
+    cell_geometry: str #= "cylinder" 
+    Control_beam_AxisOffset_nm : tuple #= (0.0,0.0,0.0)   # offset of the control beam relative to teh center of signal beam. Units nm (10^-9 m )
     
-    # |g> = |F=1, mF=+1>
-    g_g:float = -0.5018
-    m_g:float = +1
+    # |g> #= |F#=1, mF#=+1>
+    g_g:float
+    m_g:float 
 
-    # |s> = |F=2, mF=+1>
-    g_s:float = +0.4998
-    m_s:float = +1
+    # |s> #= |F#=2, mF#=+1>
+    g_s:float
+    m_s:float 
 
+    density_cm3 : float           # atoms/ cm^3 
+    temperature: float #= 75+ 273.15          # Temperature in Kelvin 
 
+    buffer_gas : str #= "N2"
+    buffer_pressure_Torr : float #= 0.0          # Torr #= 1/760 atm #= 101325/760 Pa
+    diffusion_D0_cm2_s: float #= 0.24
+    diffusion_T0_K: float #= 273.15
+    diffusion_P0_Torr: float #= 1.0
 
-    density_cm3 : float = 1e11           # atoms/ cm^3 
-    temperature: float = 75+ 273.15          # Temperature in Kelvin 
+    B0_T: float 
+    B_gradient: float 
 
-    buffer_gas : str = "N2"
-    buffer_pressure_Torr : float = 0.0          # Torr = 1/760 atm = 101325/760 Pa
-    diffusion_D0_cm2_s: float = 0.24
-    diffusion_T0_K: float = 273.15
-    diffusion_P0_Torr: float = 1.0
+    scalling: int 
+    label: str 
 
-    B0_T: float = 0.0 # Magnetic field
-    B_gradient: float = 0
-
-    scalling: int = 1
-    label: str = "experiment"
-
-    spin_destruction_cross_section_CsN2_m2: float = 2.9e-26  # verify
-    spin_exchange_alpha_CsCs_m3_s: float = 6.5e-16
+    spin_destruction_cross_section_CsN2_m2: float
+    spin_exchange_alpha_CsCs_m3_s: float 
 
     def __post_init__(self): 
-        self.atom = AtomSpeciment( self.atoms,
-                                  self.lambda_control_m,
-                                  self.delta_f_hz,
-                                  self.ref_length, 
-                                  g_g = self.g_g , 
-                                  m_g = self.m_g , 
-                                  g_s = self.g_s , 
-                                  m_s = self.m_s , 
-                                  ) 
-
         if self.buffer_gas is None: 
             self.buffer_pressure_Torr : float = 0.0         # Torr = 1/760 atm = 101325/760 Pa
             self.diffusion_D0_cm2_s: float    = 0.0
             self.diffusion_T0_K: float        = 0.0
             self.diffusion_P0_Torr: float     = 0.0
 
+        self.control_beam_direction = normalize_vector(
+            self.control_beam_direction,
+            "control_beam_direction",
+        )
 
+        self.signal_beam_direction = normalize_vector(
+            self.signal_beam_direction,
+            "signal_beam_direction",
+        )
+
+        f_control = C / self.lambda_control_m
+        f_signal = f_control + self.delta_f_hz
+        lambda_signal_m = C / f_signal
+
+        k_signal = 2.0 * np.pi / lambda_signal_m * self.signal_beam_direction
+        k_control = 2.0 * np.pi / self.lambda_control_m * self.control_beam_direction
+
+
+        self.atom = AtomSpeciment(name= self.atoms,
+                                  lambda_control_m = self.lambda_control_m,
+                                  delta_f_hz = self.delta_f_hz,
+                                  k_sw_SI_vector = ( k_signal - k_control),
+                                  ref_length = self.ref_length, 
+                                  g_g = self.g_g , 
+                                  m_g = self.m_g , 
+                                  g_s = self.g_s , 
+                                  m_s = self.m_s , 
+                                  ) 
 
 
     @property
@@ -121,6 +141,30 @@ class ExperimentalParams:
     @property
     def w0_control_m(self):
         return self.fwhm_diameter_to_w0(self.control_fwhm_diameter_m)
+
+    @property
+    def control_pulse_fwhm_s(self):
+        """ convert ns to s """ 
+        return self.control_pulse_fwhm_ns * 1e-9
+
+    @property
+    def control_sigma_long_m(self) -> float:
+        """
+        Longitudinal Gaussian amplitude width used by BeamModel.
+
+        BeamModel uses:
+            env_long = exp(-(u_par**2) / sigma_long**2)
+
+        If control_pulse_fwhm_s is the INTENSITY FWHM duration:
+            sigma_long_m = c * tau_fwhm / sqrt(2 ln 2)
+        """
+        return C * self.control_pulse_fwhm_s / math.sqrt(2.0 * math.log(2.0))
+
+
+    @property
+    def control_sigma_long(self) -> float:
+        """Longitudinal pulse width in code length units."""
+        return self.control_sigma_long_m / self.ref_length
 
     # chosen simulation reference unit
     # 1 code unit = unit_scale_lambda * lambda_control
@@ -368,7 +412,21 @@ class ExperimentalParams:
         lines.append("--- wave numbers SI ---")
         lines.append(f"k_control [1/m]            : {self.atom.k_control_SI:.6e}")
         lines.append(f"k_signal  [1/m]            : {self.atom.k_signal_SI:.6e}")
+        lines.append(f"k_sw expected  copropagating[1/m]: {2*np.pi* self.atom.delta_f_hz/C:.6e}")
         lines.append(f"k_sw      [1/m]            : {self.atom.k_sw_SI:.6e}")
+
+        lines.append("")
+        lines.append("--- frequencies SI ---")
+        lines.append(f"f_control [1/s]            : {self.atom.f_control:.6e}")
+        lines.append(f"f_signal  [1/s]            : {self.atom.f_signal:.6e}")
+        lines.append(f"f_sw      [1/s]            : {self.atom.f_sw:.6e}")
+
+        lines.append("")
+        lines.append("--- Beam directions ---")
+        lines.append(f"control             : {self.control_beam_direction}")
+        lines.append(f"signal              : {self.signal_beam_direction}")
+        lines.append(f"sw                  : {self.atom.k_sw_SI_vector/ np.linalg.norm(self.atom.k_sw_SI_vector)}")
+        lines.append(f"control beam off axis offset [nm]: {self.Control_beam_AxisOffset_nm}")
     
         lines.append("")
         lines.append("--- geometry in code units ---")
@@ -433,3 +491,14 @@ class ExperimentalParams:
         lines.append("")
         lines.append("==============================")
         return "\n".join(lines)
+
+
+
+def normalize_vector(v, name):
+    v = np.asarray(v, dtype=float)
+    norm = np.linalg.norm(v)
+
+    if norm == 0.0:
+        raise ValueError(f"{name} cannot be the zero vector.")
+
+    return v / norm

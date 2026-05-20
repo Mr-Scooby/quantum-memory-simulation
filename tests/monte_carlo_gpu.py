@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # radpattern/simulation/monte_carlo_gpu.py
-
+"""
+Run Monte Carlo GPU simulations and return averaged radiation/coupling results.
+"""
 import numpy as np
 
 from radpattern.helpers.helpers import single_dipole_E
@@ -13,12 +15,14 @@ from pathlib import Path
 from single_sim_run_gpu import run_single_mc_gpu
 
 def run_monte_carlo_gpu(
-    *, # So all consecuent variables are keyword variables
+    *, # Force following arguments to be keyword-only.
     objs,
     save_full_mc=False,
     mc_dir=None,
     ):
-
+    """
+    Run all MC realizations on GPU, average outputs, and optionally save each run.
+    """
     print(f"SAVE_FULL_MC = {save_full_mc}")
     exp = objs.exp
     sim = objs.sim
