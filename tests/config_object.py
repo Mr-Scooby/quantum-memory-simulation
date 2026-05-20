@@ -208,7 +208,7 @@ def build_beam(
         "beam_type": "gaussian_pulse",
         "w0": exp.w0_control,
         "sigma_long": exp.control_sigma_long,
-        "k_in_hat": exp.control_k_in_hat, 
+        "k_in_hat": exp.control_beam_direction, 
         "k_in": exp.atom.k_control,
         "box_size": cloud.box_size,
         "pcenter_at_origin": True,

@@ -22,7 +22,7 @@ class AtomSpeciment:
     name : str
     lambda_control_m : float
     delta_f_hz : float
-    k_sw_SI: tuple
+    k_sw_SI_vector: tuple
     ref_length: float 
 
     g_g: float 
@@ -54,13 +54,17 @@ class AtomSpeciment:
     def k_signal_SI(self):
         return 2.0 * math.pi / self.lambda_signal_m
 
-#    @property
-#    def k_sw_SI(self):
-#        return self.k_signal_SI - self.k_control_SI
+    @property
+    def k_sw_SI(self):
+        return np.linalg.norm(self.k_sw_SI_vector)
 
     @property
     def lambda_sw_SI(self) -> float:
         return 2.0 * math.pi / np.linalg.norm(self.k_sw_SI)
+
+    @property 
+    def f_sw (self): 
+        return C/ self.lambda_sw_SI
 
     # wavevectors in chosen units
     @property

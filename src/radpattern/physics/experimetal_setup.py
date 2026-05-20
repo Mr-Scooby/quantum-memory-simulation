@@ -3,6 +3,7 @@
 
 from dataclasses import dataclass, asdict
 import math
+import numpy as np
 from typing import Dict, Any, Optional
 import logging 
 from radpattern.geometry.cloud_model import CloudModel, AtomSpeciment
@@ -81,17 +82,28 @@ class ExperimentalParams:
             self.diffusion_T0_K: float        = 0.0
             self.diffusion_P0_Torr: float     = 0.0
 
+        self.control_beam_direction = normalize_vector(
+            self.control_beam_direction,
+            "control_beam_direction",
+        )
 
-        self.control_beam_direction  /= np.linalg.norm(self.control_beam_direction) 
-        self.signal_beam_direction  /= np.linalg.norm(self.signal_beam_direction) 
-        
-        k_signal = 2.0 * np.pi /  (self.lambda_control_m + delta_f_hz / C ) * signal_beam_direction 
-        k_control = 2.0 * np.pi /  (self.lambda_control_m ) * control_beam_direction 
+        self.signal_beam_direction = normalize_vector(
+            self.signal_beam_direction,
+            "signal_beam_direction",
+        )
+
+        f_control = C / self.lambda_control_m
+        f_signal = f_control + self.delta_f_hz
+        lambda_signal_m = C / f_signal
+
+        k_signal = 2.0 * np.pi / lambda_signal_m * self.signal_beam_direction
+        k_control = 2.0 * np.pi / self.lambda_control_m * self.control_beam_direction
+
 
         self.atom = AtomSpeciment(name= self.atoms,
                                   lambda_control_m = self.lambda_control_m,
                                   delta_f_hz = self.delta_f_hz,
-                                  k_sw_SI = ( k_signal - k_control)
+                                  k_sw_SI_vector = ( k_signal - k_control),
                                   ref_length = self.ref_length, 
                                   g_g = self.g_g , 
                                   m_g = self.m_g , 
@@ -400,7 +412,21 @@ class ExperimentalParams:
         lines.append("--- wave numbers SI ---")
         lines.append(f"k_control [1/m]            : {self.atom.k_control_SI:.6e}")
         lines.append(f"k_signal  [1/m]            : {self.atom.k_signal_SI:.6e}")
+        lines.append(f"k_sw expected  copropagating[1/m]: {2*np.pi* self.atom.delta_f_hz/C:.6e}")
         lines.append(f"k_sw      [1/m]            : {self.atom.k_sw_SI:.6e}")
+
+        lines.append("")
+        lines.append("--- frequencies SI ---")
+        lines.append(f"f_control [1/s]            : {self.atom.f_control:.6e}")
+        lines.append(f"f_signal  [1/s]            : {self.atom.f_signal:.6e}")
+        lines.append(f"f_sw      [1/s]            : {self.atom.f_sw:.6e}")
+
+        lines.append("")
+        lines.append("--- Beam directions ---")
+        lines.append(f"control             : {self.control_beam_direction}")
+        lines.append(f"signal              : {self.signal_beam_direction}")
+        lines.append(f"sw                  : {self.atom.k_sw_SI_vector/ np.linalg.norm(self.atom.k_sw_SI_vector)}")
+        lines.append(f"control beam off axis offset [nm]: {self.Control_beam_AxisOffset_nm}")
     
         lines.append("")
         lines.append("--- geometry in code units ---")
@@ -465,3 +491,14 @@ class ExperimentalParams:
         lines.append("")
         lines.append("==============================")
         return "\n".join(lines)
+
+
+
+def normalize_vector(v, name):
+    v = np.asarray(v, dtype=float)
+    norm = np.linalg.norm(v)
+
+    if norm == 0.0:
+        raise ValueError(f"{name} cannot be the zero vector.")
+
+    return v / norm

@@ -46,3 +46,4 @@ tests/temp_test.py
 tests/test_jsonConfig.py
 tests/try_fit.py
 
+config_file_template.json
