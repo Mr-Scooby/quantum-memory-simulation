@@ -42,11 +42,19 @@ from coupling_calcualtion import (
     intensity_overlap_on_sphere,
 )
 
+import inspect
 
 def dataclass_kwargs(cls, data):
-    """Keep only keys accepted by a dataclass constructor."""
+    """Keep only keys accepted by a dataclass constructor.
+    adds None if not found (backwards compatability
+    """
     valid = {f.name for f in fields(cls) if f.init}
-    return {k: v for k, v in data.items() if k in valid}
+    return {
+        name: data[name] if name in data else None
+        for name in valid
+        }
+
+
 
 
 def load_metadata(parent_npz_path):
@@ -72,10 +80,7 @@ def build_grid_from_metadata(metadata):
 
 def build_exp_from_metadata(metadata):
     exp_meta = metadata["experiment"]
-    exp_meta ["control_beam_AxisOffset_nm"] = (0,0,0)
-    exp_meta ["signal_beam_direction"] = (0,0,1)
-    exp_meta ["control_beam_direction"] = (0,0,1)
-    exp_meta ["control_pulse_fwhm_ns"] = 25
+
     exp_kwargs = dataclass_kwargs(ExperimentalParams, exp_meta)
     return ExperimentalParams(**exp_kwargs)
 
