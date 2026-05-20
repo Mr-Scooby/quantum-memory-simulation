@@ -17,6 +17,16 @@ C = 299_792_458.0  # m/s
 KB = 1.380649*10**(-23) # J / K
 AMU = 1.66053906660 * 10**(-27) # Kg 
 
+# Helper
+def normalize_vector(v, name):
+    v = np.asarray(v, dtype=float)
+    norm = np.linalg.norm(v)
+
+    if norm == 0.0:
+        raise ValueError(f"{name} cannot be the zero vector.")
+
+    return v / norm
+
 
 @dataclass
 class ExperimentalParams:
@@ -356,150 +366,318 @@ class ExperimentalParams:
 
     @property
     def B_gradient_z_T_per_code(self):
-        """ retruns B gradient in code units"""
-        return self.B_gradiendt * self.ref_length
-
+        """Magnetic-field gradient in code units: [T / code_length]."""
+        return self.B_gradient * self.ref_length
 
     def __str__(self) -> str:
+        """
+        Human-readable report for ExperimentalParams.
+        Layout:
+        1. Raw input fields, exactly as stored in the dataclass.
+        2. Main physical quantities in SI units.
+        3. Relevant derived rates, times, and dimensionless ratios.
+        4. Same geometry / beam / wave quantities in code units.
+        """
+
+        def fmt(x, precision: int = 6) -> str:
+            """Format scalars, vectors, arrays, None, and strings consistently."""
+            if x is None:
+                return "None"
+
+            if isinstance(x, np.ndarray):
+                return np.array2string(
+                    x,
+                    precision=precision,
+                    suppress_small=False,
+                    separator=", ",
+                )
+
+            if isinstance(x, (tuple, list)):
+                return "(" + ", ".join(fmt(v, precision=precision) for v in x) + ")"
+
+            if isinstance(x, (np.integer, int)) and not isinstance(x, bool):
+                return f"{x:d}"
+
+            if isinstance(x, (np.floating, float)):
+                if not math.isfinite(float(x)):
+                    return str(x)
+
+                ax = abs(float(x))
+                if ax == 0.0:
+                    return "0"
+                if ax < 1e-3 or ax >= 1e4:
+                    return f"{x:.{precision}e}"
+                return f"{x:.{precision}g}"
+
+            return str(x)
+
+        def safe(getter):
+            """Evaluate derived quantities without letting __str__ crash."""
+            try:
+                return getter()
+            except Exception as exc:
+                return f"<error: {type(exc).__name__}: {exc}>"
+
         lines = []
-        lines.append("==============================")
-        lines.append("Experimental parameters")
-        lines.append("==============================")
-        lines.append("")
-        lines.append(f"atoms type {self.atoms}")
-        lines.append(f"density {self.density:.3E} [atoms/ m^3]")
-        lines.append(f"geometry: cylinder")
-        lines.append(f"dimensions: Lz {self.cell_length_m}[m], Diameter: {self.cell_diameter_m} [m]") 
-        lines.append(f"Signal diameter_FWHM at center: {self.signal_fwhm_diameter_m:.3e} [m]")
-        lines.append(f"control diameter_FWHM at center: {self.control_fwhm_diameter_m:.3e} [m]")
-        lines.append(f" Temperature : {self.temperature} K. Most probable velocity: {self.probable_speed:.4f} m/s, mean speed: {self.mean_speed:.3f} m/s")
-        lines.append(f"char time {self.char_time:.4e} [s]")
-        lines.append(f"lobe angular size 1/ ( k_s w_s0)  : {self.forwardlobe_angular_width:.4e} [rad]")
-        lines.append("")
-        lines.append("--- buffer gas / diffusion ---")
-        try:
-            lines.append(f"buffer gas                  : {self.buffer_gas}")
-            lines.append(f"buffer pressure [Torr]      : {self.buffer_pressure_Torr:.6g}")
-            lines.append(f"cell temperature [C]        : {self.temperature - 273.15:.6g}")
-            lines.append(f"diffusion D [m^2/s]         : {self.diffusion_coeff_SI:.6e}")
-            lines.append(f"diffusion D0 [cm^2/s]       : {self.diffusion_D0_cm2_s:.6g}")
-            lines.append(f"diffusion T0 [K]            : {self.diffusion_T0_K:.6g}")
-            lines.append(f"diffusion P0 [Torr]         : {self.diffusion_P0_Torr:.6g}")
-            lines.append(f"diffusion D code units      : {self.diffusion_coeff_code:.6e}")
+
+        def title(text: str) -> None:
             lines.append("")
-        except TypeError: 
-            lines.append(" NONE Buffer Gas")
+            lines.append("=" * 78)
+            lines.append(text)
+            lines.append("=" * 78)
+
+        def section(text: str) -> None:
+            lines.append("")
+            lines.append(f"--- {text} ---")
+
+        def add(name: str, value, unit: str = "", note: str = "") -> None:
+            unit_text = f" [{unit}]" if unit else ""
+            note_text = f"    # {note}" if note else ""
+            lines.append(f"{name:<42s}: {fmt(value):>18s}{unit_text}{note_text}")
+
+        def add_vec(name: str, value, unit: str = "", note: str = "") -> None:
+            unit_text = f" [{unit}]" if unit else ""
+            note_text = f"    # {note}" if note else ""
+            lines.append(f"{name:<42s}: {fmt(value)}{unit_text}{note_text}")
+
+        def div(a, b):
+            try:
+                return a / b
+            except Exception:
+                return np.nan
+
+        # ------------------------------------------------------------------
+        # Header
+        # ------------------------------------------------------------------
+        title("ExperimentalParams report")
+        add("label", self.label)
+        add("atoms", self.atoms)
+        add("cell geometry", self.cell_geometry)
+
+        # ------------------------------------------------------------------
+        # Raw input fields
+        # ------------------------------------------------------------------
+        title("Raw input data")
+
+        for field_name, field_info in self.__dataclass_fields__.items():
+            if not getattr(field_info, "init", True):
+                continue
+
+            value = getattr(self, field_name)
+            add_vec(field_name, value)
+
+        # ------------------------------------------------------------------
+        # SI inputs and directly converted inputs
+        # ------------------------------------------------------------------
+        title("Input data SI units")
+
+        section("geometry")
+        add("cell length", self.cell_length_m, "m")
+        add("cell diameter", self.cell_diameter_m, "m")
+        add("cell radius", self.radius_m, "m")
+
+        section("beams")
+        add("signal FWHM diameter", self.signal_fwhm_diameter_m, "m")
+        add("control FWHM diameter", self.control_fwhm_diameter_m, "m")
+        add("signal amplitude waist w0", self.w0_signal_m, "m")
+        add("control amplitude waist w0", self.w0_control_m, "m")
+        add("control pulse FWHM", self.control_pulse_fwhm_s, "s")
+        add("control longitudinal sigma", self.control_sigma_long_m, "m")
+        add_vec("signal beam direction", self.signal_beam_direction)
+        add_vec("control beam direction", self.control_beam_direction)
+        add_vec(
+            "control beam axis offset",
+            tuple(np.asarray(self.control_beam_AxisOffset_nm, dtype=float) * 1e-9),
+            "m",
+        )
+
+        section("density and temperature")
+        add("input density", self.density, "m^-3")
+        add("input density", self.density_cm3, "cm^-3")
+        add("mean interparticle distance", self.interparticle_distance, "m")
+        add("temperature", self.temperature, "K")
+        add("temperature", self.temperature - 273.15, "degC")
+
+        section("buffer gas")
+        add("buffer gas", self.buffer_gas)
+        add(
+            "buffer pressure",
+            self.buffer_pressure_Torr * 101325.0 / 760.0,
+            "Pa",
+        )
+        add("buffer pressure", self.buffer_pressure_Torr, "Torr")
+        add("diffusion D0", self.diffusion_D0_cm2_s * 1e-4, "m^2/s")
+        add("diffusion reference T0", self.diffusion_T0_K, "K")
+        add(
+            "diffusion reference P0",
+            self.diffusion_P0_Torr * 101325.0 / 760.0,
+            "Pa",
+        )
+
+        section("magnetic field")
+        add("B0", self.B0_T, "T")
+        add("B gradient", self.B_gradient, "T/m")
+
+        section("Zeeman states")
+        add("g_g", self.g_g)
+        add("m_g", self.m_g)
+        add("g_s", self.g_s)
+        add("m_s", self.m_s)
+        add("g_s*m_s - g_g*m_g", self.g_s * self.m_s - self.g_g * self.m_g)
+
+        section("relaxation input constants")
+        add(
+            "spin destruction cross section Cs-N2",
+            self.spin_destruction_cross_section_CsN2_m2,
+            "m^2",
+        )
+        add(
+            "spin exchange alpha Cs-Cs",
+            self.spin_exchange_alpha_CsCs_m3_s,
+            "m^3/s",
+        )
+
+        # ------------------------------------------------------------------
+        # Derived SI quantities
+        # ------------------------------------------------------------------
+        title("Derived physical quantities in SI units")
+
+        section("optical frequencies and wavelengths")
+        add("control wavelength", self.lambda_control_m, "m")
+        add("signal wavelength", safe(lambda: self.atom.lambda_signal_m), "m")
+        add("spin-wave wavelength", safe(lambda: self.atom.lambda_sw_SI), "m")
+        add("control frequency", safe(lambda: self.atom.f_control), "Hz")
+        add("signal frequency", safe(lambda: self.atom.f_signal), "Hz")
+        add("spin-wave frequency", safe(lambda: self.atom.f_sw), "Hz")
+        add("input delta_f", self.delta_f_hz, "Hz")
+
+        section("wave vectors")
+        add("k_control magnitude", safe(lambda: self.atom.k_control_SI), "m^-1")
+        add("k_signal magnitude", safe(lambda: self.atom.k_signal_SI), "m^-1")
+        add("k_sw magnitude", safe(lambda: self.atom.k_sw_SI), "m^-1")
+        add(
+            "k_sw copropagating estimate",
+            2.0 * np.pi * self.delta_f_hz / C,
+            "m^-1",
+        )
+        add_vec("k_sw vector", safe(lambda: self.atom.k_sw_SI_vector), "m^-1")
+        add_vec(
+            "k_sw direction",
+            safe(lambda: self.atom.k_sw_SI_vector / np.linalg.norm(self.atom.k_sw_SI_vector)),
+        )
+
+        section("atomic motion")
+        add("atomic mass", safe(lambda: self.atom.mass), "amu")
+        add("most probable speed", self.probable_speed, "m/s")
+        add("mean thermal speed", self.mean_speed, "m/s")
+        add("characteristic time", self.char_time, "s")
+
+        section("diffusion and densities")
+        add("diffusion coefficient D", self.diffusion_coeff_SI, "m^2/s")
+        add("Cs vapor pressure", self.cs_vapor_pressure_Torr, "Torr")
+        add("Cs vapor density", self.cs_density_m3, "m^-3")
+        add(f"{self.buffer_gas} buffer density", self.buffer_density_m3, "m^-3")
+        add(
+            f"Cs-{self.buffer_gas} mean relative speed",
+            self.mean_relative_speed(28.0),
+            "m/s",
+        )
+
+        section("broadening / relaxation / dephasing")
+        add("pressure broadening", self.pressure_broadening_signal_Hz, "Hz")
+        add("pressure broadening", self.pressure_broadening_signal_Hz / 1e6, "MHz")
+        add("Cs-Cs spin exchange rate", self.spin_exchange_rate_CsCs_Hz, "Hz")
+        add(f"Cs-{self.buffer_gas} spin destruction rate", self.spin_destruction_rate_CsN2_Hz, "Hz")
+        add("ballistic transit HWHM", self.ballistic_transit_rate_Hz, "Hz")
+        add("diffusive transit HWHM", self.diffusive_transit_rate_Hz, "Hz")
+        add("chosen transit HWHM", self.transit_time_rate_Hz, "Hz")
+        add("transit dephasing time", self.transit_time_s, "s")
+        add("transit dephasing time", self.transit_time_s * 1e6, "us")
+        add(
+            "diffusive beam time w_control^2/(4D)",
+            safe(lambda: self.w0_control_m**2 / (4.0 * self.diffusion_coeff_SI)),
+            "s",
+        )
+        add(
+            "spin-wave diffusion dephasing time",
+            safe(lambda: 1.0 / (self.diffusion_coeff_SI * self.atom.k_sw_SI**2)),
+            "s",
+        )
+
+        section("spin-wave and emission geometry")
+        add("forward lobe angular width", self.forwardlobe_angular_width, "rad")
+        add("|k_sw| * Lz", self.kz_phase_accumulation, "rad")
+        add("spin-wave periods across Lz", self.sw_periods_across_cell)
+
+        # ------------------------------------------------------------------
+        # Dimensionless ratios
+        # ------------------------------------------------------------------
+        title("Useful dimensionless ratios")
+
+        add("cell aspect ratio Lz/D", self.aspect_ratio_full_cell)
+        add("signal/control waist ratio", self.signal_to_control_waist_ratio)
+        add("control/signal waist ratio", self.control_to_signal_waist_ratio)
+        add("signal w0 / cell diameter", self.signal_illumination_ratio_full_cell)
+        add("control w0 / cell diameter", self.control_illumination_ratio_full_cell)
+        add("w0_signal / mean spacing", div(self.w0_signal_m, self.interparticle_distance))
+        add("w0_control / mean spacing", div(self.w0_control_m, self.interparticle_distance))
+        add("cell length / mean spacing", div(self.cell_length_m, self.interparticle_distance))
+        add("ballistic transverse time w0_control/v_mean", div(self.w0_control_m, self.mean_speed), "s")
+        add("ballistic axial time Lz/v_mean", div(self.cell_length_m, self.mean_speed), "s")
+
+        # ------------------------------------------------------------------
+        # Code units
+        # ------------------------------------------------------------------
+        title("Computational scaling and code units")
+
+        section("base units")
+        add("scalling", self.scalling)
+        add("1 code length", self.ref_length, "m")
+        add("1 code time", self.char_time, "s")
+        add("1 code velocity", self.ref_length / self.char_time, "m/s")
+        add("1 code diffusion", self.ref_length**2 / self.char_time, "m^2/s")
+
+        section("geometry in code length units")
+        add("Lz", self.Lz)
+        add("D", self.D)
+        add("R", self.R)
+
+        section("beams in code length units")
+        add("signal FWHM diameter", self.signal_fwhm_diameter_m / self.ref_length)
+        add("control FWHM diameter", self.control_fwhm_diameter_m / self.ref_length)
+        add("signal w0", self.w0_signal)
+        add("control w0", self.w0_control)
+        add("control longitudinal sigma", self.control_sigma_long)
+        add_vec(
+            "control beam axis offset",
+            tuple(np.asarray(self.control_beam_AxisOffset_nm, dtype=float) * 1e-9 / self.ref_length),
+        )
+
+        section("density and spacing in code units")
+        add("density", self.density_rescalled, "code_length^-3")
+        add("mean interparticle spacing", self.a_spacing_reescaled)
+
+        section("waves in code units")
+        add("lambda_control", self.lambda_control_m / self.ref_length)
+        add("lambda_signal", safe(lambda: self.atom.lambda_signal))
+        add("lambda_sw", safe(lambda: self.atom.lambda_sw))
+        add("k_control", safe(lambda: self.atom.k_control))
+        add("k_signal", safe(lambda: self.atom.k_signal))
+        add("k_sw", safe(lambda: self.atom.k_sw))
+        add_vec(
+            "k_sw vector",
+            safe(lambda: self.atom.k_sw_SI_vector * self.ref_length),
+            "code_length^-1",
+        )
+
+        section("transport and magnetic field in code units")
+        add("diffusion coefficient", self.diffusion_coeff_code)
+        add("B gradient", safe(lambda: self.B_gradient_z_T_per_code), "T/code_length")
 
         lines.append("")
-        lines.append("--- B field ---------------")
-        lines.append(f"B0_T                       : {self.B0_T}")
-        lines.append(f"B gradient                       : {self.B_gradient}")
+        lines.append("=" * 78)
 
-        lines.append("==============================")
-        lines.append("Experimental -> computational scaling")
-        lines.append("==============================")
-        lines.append(f"label                       : {self.label}")
-        lines.append(f"atoms                       : {self.atoms}")
-        lines.append(f"1 code length unit          : {self.scalling:g} * lambda_control")
-        lines.append(f"length reference [m]        : {self.ref_length:.6e}")
-    
-        lines.append("")
-        lines.append("--- wavelengths ---")
-        lines.append(f"lambda_control [m]          : {self.lambda_control_m:.6e}")
-        lines.append(f"lambda_signal  [m]          : {self.atom.lambda_signal_m:.6e}")
-        lines.append(f"lambda_sw      [m]          : {self.atom.lambda_sw_SI:.6e}")
-    
-        lines.append("")
-        lines.append("--- wave numbers SI ---")
-        lines.append(f"k_control [1/m]            : {self.atom.k_control_SI:.6e}")
-        lines.append(f"k_signal  [1/m]            : {self.atom.k_signal_SI:.6e}")
-        lines.append(f"k_sw expected  copropagating[1/m]: {2*np.pi* self.atom.delta_f_hz/C:.6e}")
-        lines.append(f"k_sw      [1/m]            : {self.atom.k_sw_SI:.6e}")
-
-        lines.append("")
-        lines.append("--- frequencies SI ---")
-        lines.append(f"f_control [1/s]            : {self.atom.f_control:.6e}")
-        lines.append(f"f_signal  [1/s]            : {self.atom.f_signal:.6e}")
-        lines.append(f"f_sw      [1/s]            : {self.atom.f_sw:.6e}")
-
-        lines.append("")
-        lines.append("--- Beam directions ---")
-        lines.append(f"control             : {self.control_beam_direction}")
-        lines.append(f"signal              : {self.signal_beam_direction}")
-        lines.append(f"sw                  : {self.atom.k_sw_SI_vector/ np.linalg.norm(self.atom.k_sw_SI_vector)}")
-        lines.append(f"control beam off axis offset [nm]: {self.control_beam_AxisOffset_nm}")
-    
-        lines.append("")
-        lines.append("--- geometry in code units ---")
-        lines.append(f"Lz                          : {self.Lz:.6f}")
-        lines.append(f"D                           : {self.D:.6f}")
-        lines.append(f"R                           : {self.R:.6f}")
-        lines.append(f"density                     : {self.density_rescalled:.3E}")
-        lines.append(f"interspacing                 :{self.a_spacing_reescaled:.3E}")
-    
-        lines.append("")
-        lines.append("--- beams in code units ---")
-        lines.append(f"signal FWHM diameter        : {self.signal_fwhm_diameter_m / self.ref_length:.6f}")
-        lines.append(f"control FWHM diameter       : {self.control_fwhm_diameter_m / self.ref_length:.6f}")
-        lines.append(f"signal w0                   : {self.w0_signal:.6f}")
-        lines.append(f"control w0                  : {self.w0_control:.6f}")
-    
-        lines.append("")
-        lines.append("--- wave quantities in code units ---")
-        lines.append(f"lambda_signal               : {self.atom.lambda_signal:.6f}")
-        lines.append(f"lambda_sw                   : {self.atom.lambda_sw:.6f}")
-        lines.append(f"k_control                   : {self.atom.k_control:.12f}")
-        lines.append(f"k_signal                    : {self.atom.k_signal:.12f}")
-        lines.append(f"k_sw                        : {self.atom.k_sw:.12e}")
-        lines.append("")
-        lines.append("--- vapor / buffer gas / intrinsic relaxation ---")
-        lines.append(f"Cs vapor pressure [Torr]    : {self.cs_vapor_pressure_Torr:.6e}")
-        lines.append(f"Cs density [m^-3]           : {self.cs_density_m3:.6e}")
-        lines.append(f"{self.buffer_gas} density [m^-3]        : {self.buffer_density_m3:.6e}")
-        lines.append(f"mean Cs speed [m/s]         : {self.mean_speed:.6f}")
-        lines.append(f"Cs-{self.buffer_gas} v_rel [m/s]        : {self.mean_relative_speed(28.0):.6f}")
-        lines.append(f"pressure broadening [Hz]    : {self.pressure_broadening_signal_Hz:.6e}")
-        lines.append(f"pressure broadening [MHz]   : {self.pressure_broadening_signal_Hz / 1e6:.6f}")
-        lines.append(f"Cs-Cs spin exchange [Hz]    : {self.spin_exchange_rate_CsCs_Hz:.6e}")
-        lines.append(f"Cs-{self.buffer_gas} spin destruction [Hz]: {self.spin_destruction_rate_CsN2_Hz:.6e}")
-        lines.append("")
-        lines.append("--- transit-time broadening ---")
-        lines.append(f"ballistic transit HWHM [Hz]  : {self.ballistic_transit_rate_Hz:.6e}")
-        lines.append(f"ballistic transit HWHM [kHz] : {self.ballistic_transit_rate_Hz / 1e3:.6f}")
-        lines.append(f"diffusive transit HWHM [Hz]  : {self.diffusive_transit_rate_Hz:.6e}")
-        lines.append(f"diffusive transit HWHM [kHz] : {self.diffusive_transit_rate_Hz / 1e3:.6f}")
-        lines.append(f"chosen transit HWHM [Hz]     : {self.transit_time_rate_Hz:.6e}")
-        lines.append(f"transit dephasing time [us]  : {self.transit_time_s * 1e6:.6f}")
-        lines.append("")
-        lines.append("--- ratios ---")
-        lines.append(f"aspect ratio full cell      : {self.aspect_ratio_full_cell:.6f}")
-        lines.append(f"signal/control waist        : {self.signal_to_control_waist_ratio:.6f}")
-        lines.append(f"signal w0 / cell diameter   : {self.signal_illumination_ratio_full_cell:.6f}")
-        lines.append(f"control w0 / cell diameter  : {self.control_illumination_ratio_full_cell:.6f}")
-        lines.append(f"w0_control/a                : {self.w0_control / self.a_spacing_reescaled}") 
-        lines.append(f"w0_signal/a                 : {self.w0_signal / self.a_spacing_reescaled}") 
-        lines.append(f"Lz/a                        : {self.Lz/ self.a_spacing_reescaled}") 
-        lines.append(f"t_perp = w_control / v_mean : {self.w0_control_m/ self.mean_speed :.4e} [s]") 
-        lines.append(f"t_z = Lz/ V_mean            : {self.cell_length_m/ self.mean_speed :.4e} [s]") 
-        lines.append(f"tau_beam = w_c0^2 / 4D       : {self.w0_control_m**2 / (4 * self.diffusion_coeff_SI ):.4e} [s]") 
-        lines.append(f"sw_dephasing tau_sw = 1 / (D* k_sw^2) : {1 / (self.diffusion_coeff_SI * self.atom.k_sw_SI**2) :.4e} [s]") 
-
-        lines.append("")
-        lines.append("--- spin-wave across sample ---")
-        lines.append(f"|k_sw| * Lz                 : {self.kz_phase_accumulation:.6f}")
-        lines.append(f"spin-wave periods in Lz     : {self.sw_periods_across_cell:.6f}")
-    
-        lines.append("")
-        lines.append("==============================")
         return "\n".join(lines)
 
 
 
-def normalize_vector(v, name):
-    v = np.asarray(v, dtype=float)
-    norm = np.linalg.norm(v)
-
-    if norm == 0.0:
-        raise ValueError(f"{name} cannot be the zero vector.")
-
-    return v / norm
