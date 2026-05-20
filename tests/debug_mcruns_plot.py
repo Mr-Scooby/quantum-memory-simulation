@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 """
 Plot coupling vs time for each saved MC run.
@@ -36,6 +34,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from radpattern.physics.experimetal_setup import ExperimentalParams
+from radpattern.physics.setup_params import SimParams
 from radpattern.geometry.grids import AngleGrid
 from radpattern.helpers.helpers import single_dipole_E
 from coupling_calcualtion import (
@@ -57,6 +56,7 @@ def load_metadata(parent_npz_path):
 
 
 def build_grid_from_metadata(metadata):
+
     sim_meta = metadata["sim"]
 
     n_theta = sim_meta["n_theta"]
@@ -72,8 +72,16 @@ def build_grid_from_metadata(metadata):
 
 def build_exp_from_metadata(metadata):
     exp_meta = metadata["experiment"]
+    exp_meta ["control_beam_AxisOffset_nm"] = (0,0,0)
+    exp_meta ["signal_beam_direction"] = (0,0,1)
+    exp_meta ["control_beam_direction"] = (0,0,1)
+    exp_meta ["control_pulse_fwhm_ns"] = 25
     exp_kwargs = dataclass_kwargs(ExperimentalParams, exp_meta)
     return ExperimentalParams(**exp_kwargs)
+
+def build_sim_from_metadata(metadata):
+    sim_meta = metadata["sim"]
+    return SimParams(**sim_meta)
 
 
 def find_mc_folder(parent_npz_path):
@@ -144,7 +152,11 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
 
     metadata = load_metadata(parent_npz_path)
     exp = build_exp_from_metadata(metadata)
+    sim = build_sim_from_metadata(metadata)
     grid = build_grid_from_metadata(metadata)
+
+    print(sim)
+    print(exp)
 
     mc_folder = find_mc_folder(parent_npz_path)
     mc_files = find_mc_files(mc_folder)
@@ -176,10 +188,10 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
         AF2_t = data["AF2"]
 
         if "times_code" in data:
-            times_code = data["times_code"]
+            times_code = data["times_code"] * sim.char_time * 1e6
         else:
             parent = np.load(parent_npz_path, allow_pickle=True)
-            times_code = parent["times_code"]
+            times_code = parent["times_code"] * sim.char_time * 1e6
 
         eta_t = coupling_from_AF2(
             AF2_t=AF2_t,
@@ -210,7 +222,7 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
         label="MC mean",
     )
 
-    plt.xlabel("time code")
+    plt.xlabel("time [ns]")
     plt.ylabel("coupling eta")
     plt.title(parent_npz_path.stem)
     plt.grid(True, alpha=0.3)
@@ -222,8 +234,11 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
 
 
 if __name__ == "__main__":
+
+    file = input("File : ")
+
     RESULT_FILE = Path(
-        r"C:\Users\local_admin\radek\simulations\data\test\Cs133_10Torr120SDia_300Cdia_simT100us_nt30_100runs_e418e57e.npz"
+        rf"{file}"
     )
 
     times_code, eta_runs = plot_mc_couplings(

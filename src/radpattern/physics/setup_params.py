@@ -107,7 +107,6 @@ class SetupParams:
     experiment: ExperimentalParams
     sim: SimParams
     beam: BeamModel
-    cloud: CloudModel
 
     # Computed run name: human-readable + hash from all params
     @property
@@ -116,7 +115,6 @@ class SetupParams:
         d = {
             "experiment": asdict(self.experiment),
             "sim": asdict(self.sim),
-            "cloud": asdict(self.cloud),
             "beam": asdict(self.beam),
         }
         h = hashlib.sha1(
