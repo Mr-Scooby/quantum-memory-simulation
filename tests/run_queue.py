@@ -64,7 +64,7 @@ def main():
         else:
             print("done:", config_path)
             try: 
-                dst = output_dir / config_path.name
+                dst = mc_folder / config_path.name
                 shutil.copy2(config_path, dst)
             except (TypeError, FileNotFoundError) as e:
                 print(f" Couldn't copy json file to mc_runs folder. Error {e}")
