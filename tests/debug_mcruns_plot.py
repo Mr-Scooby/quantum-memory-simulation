@@ -267,17 +267,19 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
             parent = np.load(parent_npz_path, allow_pickle=True)
             times_code = parent["times_code"] * sim.char_time * 1e6
 
-       P_fib, P_tot, eta_t = coupling_from_AF2(
+        P_fib, P_tot, eta_t = coupling_from_AF2(
             AF2_t=AF2_t,
             grid=grid,
             dipole=dipole,
             E_fib=E_fib,
             theta0=theta0,
-        )
+            )
+
+        P_fib_over_Ptot0_t = P_fib / (P_tot[0] + 1e-30)
 
         all_eta.append(eta_t)
-        all_P_fib.append(P_fib_t)
-        all_P_tot.append(P_tot_t)
+        all_P_fib.append(P_fib)
+        all_P_tot.append(P_tot)
         all_P_fib_over_Ptot0.append(P_fib_over_Ptot0_t)
         
         label = mc_file.stem if file_idx < 10 else None
@@ -324,7 +326,7 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
 
     # mean fiber power
     ax_power.plot(
-        times_us,
+        times_code,
         P_fib_over_Ptot0_mean,
         color="black",
         linewidth=3,
@@ -343,7 +345,23 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
     return times_code, all_eta
 
 
+def test_main(): 
+    
+    file = Path(r"/Users/radek/Documents/universidad/clases/TFM/codes/data/test/Cs133_5Torr150SDia_300Cdia_simT75.0us_nt10_2runs_47d25087.npz")
+    RESULT_FILE = Path(
+        rf"{file}"
+    )
+
+    times_code, eta_runs = plot_mc_couplings(
+        RESULT_FILE,
+        max_mc=None,
+    )
+
+
 if __name__ == "__main__":
+        
+
+    #test_main()
     
     running = True
     while running == True: 
@@ -352,12 +370,11 @@ if __name__ == "__main__":
             runing = False 
             break
 
-        RESULT_FILE = Path(
-            rf"{file}"
-        )
+       RESULT_FILE = Path(
+           rf"{file}"
+       )
 
-        times_code, eta_runs = plot_mc_couplings(
-            RESULT_FILE,
-            max_mc=None,
-        )
-
+      times_code, eta_runs = plot_mc_couplings(
+           RESULT_FILE,
+           max_mc=None,
+       )
