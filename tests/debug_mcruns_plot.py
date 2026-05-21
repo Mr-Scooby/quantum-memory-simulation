@@ -50,7 +50,7 @@ def default_from_type(name, typ):
     """
     # Generic type-based defaults
     if typ is float:
-        return 999.0
+        return 999.9
 
     if typ is int:
         return 999
@@ -62,10 +62,10 @@ def default_from_type(name, typ):
         return False
 
     if typ is tuple:
-        return (9,9,9)
+        return (-1,-1,-1)
 
     if typ is list:
-        return [9,9,9]
+        return [-1,-1,-1]
 
     if typ is dict:
         return {"None": "None" }
@@ -283,13 +283,19 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
 
 if __name__ == "__main__":
 
-    file = input("File : ")
+    runing = True
+    while runing == True:
 
-    RESULT_FILE = Path(
-        rf"{file}"
-    )
+            file = input("File : ")
+            if file.upper() == "END":
+                runing = False 
+                break
 
-    times_code, eta_runs = plot_mc_couplings(
-        RESULT_FILE,
-        max_mc=None,
-    )
+            RESULT_FILE = Path(
+                rf"{file}"
+            )
+
+            times_code, eta_runs = plot_mc_couplings(
+                RESULT_FILE,
+                max_mc=None,
+            )
