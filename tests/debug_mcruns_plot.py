@@ -181,18 +181,40 @@ def coupling_from_AF2(AF2_t, grid, dipole, E_fib, theta0):
         eta_t shape (T,)
     """
     T = AF2_t.shape[0]
+
+    P_fib_t = np.zeros(T, dtype=float)
+    P_tot_t = np.zeros(T, dtype=float)
     eta_t = np.zeros(T, dtype=float)
+
+    mask = grid.TH <= theta0
+
+    theta = grid.TH[:, 0]
+    phi = grid.PH[0, :]
+    sin_th = np.sin(grid.TH)
+
+    E_fib_masked = np.where(mask, E_fib, 0.0)
 
     for it in range(T):
         I = AF2_t[it] * dipole
-        eta_t[it] = intensity_overlap_on_sphere(
-            grid,
-            I,
-            E_fib,
-            theta0,
+        I_masked = np.where(mask, I, 0.0)
+
+        P_fib = np.trapezoid(
+            np.trapezoid(I_masked * E_fib_masked * sin_th, phi, axis=1),
+            theta,
+            axis=0,
         )
 
-    return eta_t
+        P_tot = np.trapezoid(
+            np.trapezoid(I_masked * sin_th, phi, axis=1),
+            theta,
+            axis=0,
+        )
+
+        P_fib_t[it] = P_fib
+        P_tot_t[it] = P_tot
+        eta_t[it] = P_fib / (P_tot + 1e-30)
+
+    return P_fib_t, P_tot_t, eta_t
 
 
 def plot_mc_couplings(parent_npz_path, max_mc=None):
@@ -227,8 +249,12 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
     E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, theta0)) ** 2
 
     all_eta = []
+    all_P_fib = []
+    all_P_tot = []
+    all_P_fib_over_Ptot0 = []
 
-    plt.figure(figsize=(8, 5))
+    fig_eta, ax_eta = plt.subplots(figsize=(8, 5))
+    fig_power, ax_power = plt.subplots(figsize=(8, 5))
 
     for file_idx, mc_file in enumerate(mc_files):
         data = np.load(mc_file, allow_pickle=True)
@@ -241,7 +267,7 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
             parent = np.load(parent_npz_path, allow_pickle=True)
             times_code = parent["times_code"] * sim.char_time * 1e6
 
-        eta_t = coupling_from_AF2(
+       P_fib, P_tot, eta_t = coupling_from_AF2(
             AF2_t=AF2_t,
             grid=grid,
             dipole=dipole,
@@ -250,19 +276,38 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
         )
 
         all_eta.append(eta_t)
+        all_P_fib.append(P_fib_t)
+        all_P_tot.append(P_tot_t)
+        all_P_fib_over_Ptot0.append(P_fib_over_Ptot0_t)
+        
+        label = mc_file.stem if file_idx < 10 else None
 
-        plt.plot(
+        ax_eta.plot(
             times_code,
             eta_t,
             alpha=0.35,
             linewidth=1.0,
             label=mc_file.stem if file_idx < 10 else None,
         )
+        ax_power.plot(
+            times_code,
+            P_fib_over_Ptot0_t,
+            alpha=0.35,
+            linewidth=1.0,
+            label=label,
+        )
 
     all_eta = np.asarray(all_eta)
-    eta_mean = all_eta.mean(axis=0)
+    all_P_fib = np.asarray(all_P_fib)
+    all_P_tot = np.asarray(all_P_tot)
+    all_P_fib_over_Ptot0 = np.asarray(all_P_fib_over_Ptot0)
 
-    plt.plot(
+    eta_mean = all_eta.mean(axis=0)
+    P_fib_mean = all_P_fib.mean(axis=0)
+    P_tot_mean = all_P_tot.mean(axis=0)
+    P_fib_over_Ptot0_mean = all_P_fib_over_Ptot0.mean(axis=0)
+
+    ax_eta.plot(
         times_code,
         eta_mean,
         color="black",
@@ -270,32 +315,49 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
         label="MC mean",
     )
 
-    plt.xlabel("time [ns]")
-    plt.ylabel("coupling eta")
-    plt.title(parent_npz_path.stem)
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
+    ax_eta.set_xlabel("time [us]")
+    ax_eta.set_ylabel("coupling eta = P_fib / P_tot")
+    ax_eta.set_title(parent_npz_path.stem)
+    ax_eta.grid(True, alpha=0.3)
+    ax_eta.legend()
+    fig_eta.tight_layout()
+
+    # mean fiber power
+    ax_power.plot(
+        times_us,
+        P_fib_over_Ptot0_mean,
+        color="black",
+        linewidth=3,
+        label="MC mean",
+    )
+
+    ax_power.set_xlabel("time [µs]")
+    ax_power.set_ylabel("P_fib / P_tot[0]")
+    ax_power.set_title(parent_npz_path.stem + " — fiber intensity")
+    ax_power.grid(True, alpha=0.3)
+    ax_power.legend()
+    fig_power.tight_layout()
+
     plt.show()
 
     return times_code, all_eta
 
 
 if __name__ == "__main__":
+    
+    running = True
+    while running == True: 
+        file = input("File : ")
+        if file.upper() == "END":
+            runing = False 
+            break
 
-    runing = True
-    while runing == True:
+        RESULT_FILE = Path(
+            rf"{file}"
+        )
 
-            file = input("File : ")
-            if file.upper() == "END":
-                runing = False 
-                break
+        times_code, eta_runs = plot_mc_couplings(
+            RESULT_FILE,
+            max_mc=None,
+        )
 
-            RESULT_FILE = Path(
-                rf"{file}"
-            )
-
-            times_code, eta_runs = plot_mc_couplings(
-                RESULT_FILE,
-                max_mc=None,
-            )
