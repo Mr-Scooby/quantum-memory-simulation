@@ -32,6 +32,7 @@ from pathlib import Path
 from dataclasses import fields
 import numpy as np
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 from radpattern.physics.experimetal_setup import ExperimentalParams
 from radpattern.physics.setup_params import SimParams
@@ -217,8 +218,25 @@ def coupling_from_AF2(AF2_t, grid, dipole, E_fib, theta0):
     return P_fib_t, P_tot_t, eta_t
 
 
-def plot_mc_couplings(parent_npz_path, max_mc=None):
-    parent_npz_path = Path(parent_npz_path)
+def plot_mc_couplings(folder_path , max_mc=None):
+
+    parent_npz_path= Path(folder_path) 
+
+    if parent_npz_path.is_dir():
+        mc_folder = deepcopy(parent_npz_path) 
+
+        parent_stem = mc_folder.name
+        # Searches for the main .npz file with the metadata. (which should have the same name as folder except for _mc_runs) 
+        if parent_stem.endswith("_mc_runs"):
+            parent_stem = parent_stem.removesuffix("_mc_runs")
+
+        parent_npz_path = mc_folder / f"{parent_stem}.npz"
+
+        if not parent_npz_path.exists():
+            raise FileNotFoundError(
+                f"Could not find parent npz inside MC folder:\n"
+                f"  expected: {parent_npz_path}"
+            )
 
     metadata = load_metadata(parent_npz_path)
     exp = build_exp_from_metadata(metadata)
@@ -228,7 +246,7 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
     print(sim)
     print(exp)
 
-    mc_folder = find_mc_folder(parent_npz_path)
+#    mc_folder = find_mc_folder(parent_npz_path)   # deprecated- Before it had the main metada file outside folder. 
     mc_files = find_mc_files(mc_folder)
 
     if max_mc is not None:
@@ -347,7 +365,7 @@ def plot_mc_couplings(parent_npz_path, max_mc=None):
 
 def test_main(): 
     
-    file = Path(r"/Users/radek/Documents/universidad/clases/TFM/codes/data/test/Cs133_5Torr150SDia_300Cdia_simT75.0us_nt10_2runs_47d25087.npz")
+    file = Path(r"/Users/radek/Documents/universidad/clases/TFM/codes/data/test/Cs133_5Torr150SDia_300Cdia_simT75.0us_nt10_2runs_47d25087_mc_runs")
     RESULT_FILE = Path(
         rf"{file}"
     )
