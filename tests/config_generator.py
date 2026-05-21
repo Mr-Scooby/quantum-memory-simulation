@@ -24,14 +24,14 @@ base_config = {
         "density_cm3": 1e13,
         "temperature": 348.15,
         "buffer_gas": "N2",
-        "buffer_pressure_Torr": 10.0,
+        "buffer_pressure_Torr": 5.0,
         "diffusion_D0_cm2_s": 0.24,
         "diffusion_T0_K": 273.15,
-        "diffusion_P0_Torr": 1.0,
+        "diffusion_P0_Torr": 760,
         "B0_T": 0.0,
         "B_gradient": 0,
         "scalling": 10000,
-        "label": "cs133_jutisz_75mm_4mm_120um_300um_75C_10TorrN2_0TpMGradient",
+        "label": "Ref Params",
         'g_g':  -0.5018, 
         'm_g': +1 ,
         'g_s':+0.4998,
@@ -57,7 +57,7 @@ base_config = {
 }
 
 
-def save_config(config, filename, folder=".", preview=True):
+def save_config(config, filename, folder, preview=True):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -75,13 +75,13 @@ def save_config(config, filename, folder=".", preview=True):
     return path
 
 
-def make_single_file():
+def make_single_file(folder):
     config = deepcopy(base_config)
     filename = "config_file_template.json"
-    save_config(config, filename)
+    save_config(config, filename, folder)
 
 
-def loop_over_gradient():
+def loop_over_gradient(folder):
     gradients = [0, 1e-8, 1e-7, 1e-6]
 
     for grad in gradients:
@@ -99,7 +99,7 @@ def loop_over_gradient():
         filename = f"cs133_gradient_{grad:g}TpM.json"
         filename = filename.replace("+", "")
 
-        save_config(config, filename, preview=False)
+        save_config(config, filename, folder, preview=False)
 
 
 def loop_over_many_variables():
@@ -138,8 +138,9 @@ def loop_over_many_variables():
 # 
 if __name__ == "__main__":
 
+    folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
     # Use only ONE of these at a time:
-    make_single_file()
+    make_single_file(folder)
 
     # loop_over_gradient()
     # loop_over_many_variables()
