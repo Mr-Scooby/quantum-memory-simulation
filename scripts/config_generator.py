@@ -75,11 +75,11 @@ def loop_over_variable(folder, system):
 
         # Also update label so you know what file is what
         config["exp"]["label"] = (
-            f"cs133_jutisz_75mm_4mm_120um_300um_75C_10TorrN2_"
+            f"Rb87 CHNAGING B field gradient Test."
             f"{grad:g}TpMGradient"
         )
 
-        filename = f"cs133_gradient_{grad:g}TpM.json"
+        filename = f"{system}_gradient_{grad:g}TpM.json"
         filename = filename.replace("+", "")
 
         save_config(config, filename, folder, preview=False)
@@ -122,11 +122,10 @@ def loop_over_many_variables():
 if __name__ == "__main__":
 
     folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
-    folder = "."
-    system = "cs133" # or rb87
+    system = "rb87" # or rb87
     # Use only ONE of these at a time:
     #make_single_file(folder, system, filename = "test_default_config.json" )
     
-    #loop_over_variable(folder, system)
+    loop_over_variable(folder, system)
     
     # loop_over_many_variables()
