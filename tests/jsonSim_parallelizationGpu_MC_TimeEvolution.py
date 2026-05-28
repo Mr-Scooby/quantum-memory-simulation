@@ -34,7 +34,7 @@ def run_one_config(objs, output_dir, **kwargs):
 
     print(f"File save in {path}")
     save_simulation_npz(
-        path,
+        mc_dir/ setp.run_name,
         metadata=asdict(setp),
         times_code=result["times_code"],
         AF=result["AF_mean"],
