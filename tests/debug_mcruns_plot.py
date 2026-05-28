@@ -123,14 +123,22 @@ def build_grid_from_metadata(metadata):
 
 
 def build_exp_from_metadata(metadata):
-    exp_meta = metadata["experiment"]
+    try:
+
+        exp_meta = metadata["experiment"]
+
+    except KeyError: 
+        exp_meta = metadata["regime"]
 
     exp_kwargs = dataclass_kwargs(ExperimentalParams, exp_meta)
     return ExperimentalParams(**exp_kwargs)
 
 def build_sim_from_metadata(metadata):
     sim_meta = metadata["sim"]
-    return SimParams(**sim_meta)
+
+    sim_kwargs = dataclass_kwargs(SimParams, sim_meta) 
+
+    return SimParams(**sim_kwargs)
 
 
 def find_mc_folder(parent_npz_path):

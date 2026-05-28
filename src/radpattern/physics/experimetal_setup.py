@@ -214,7 +214,7 @@ class ExperimentalParams:
         
         Note. if buffer_gas == None => D = mfp * v_average / 3
         """
-        if self.buffer_gas is None: 
+        if self.buffer_gas is None or float(self.buffer_pressure_Torr) <= 0.0: 
             log.info("No buffer gas. Diffusion coeff = 1/3 * mfp * v_average""") 
             return self.interparticle_distance * self.mean_speed /3 
 

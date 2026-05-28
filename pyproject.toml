@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "radpattern"
-version = "0.1.0"
-description = "Simulation and analytical tools for radiation and scattering patterns"
+version = "0.2.0"
+description = "Simulation and analytical tools for radiation and scattering patterns, with dephasing and motion"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 authors = [
@@ -24,3 +24,5 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"radpattern.config.defaults" = ["*.json"]

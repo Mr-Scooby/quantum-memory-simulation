@@ -2,12 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import matplotlib.pyplot as plt
-
-from radpattern.helpers import helpers
-from radpattern.physics import rpattern
-from radpattern.plotting.pattern_3d import plot_pattern_3d
-from radpattern.geometry import grids
 
 def gaussian_fiber_mode_on_sphere(grid, theta_f=0.1 ):
     """ gaussian profile """

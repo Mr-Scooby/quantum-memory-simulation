@@ -8,7 +8,7 @@ import numpy as np
 from copy import deepcopy
 
 from radpattern.physics.rpattern_gpu import array_factor_general_gpu
-from coupling_calcualtion import intensity_overlap_on_sphere
+from radpattern.physics.coupling import intensity_overlap_on_sphere
 
 
 def run_single_mc_gpu(
