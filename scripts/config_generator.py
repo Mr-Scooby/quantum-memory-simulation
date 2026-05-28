@@ -1,60 +1,40 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+Generates json files for the simulations. Reads the default json files in radpattern.config.default. 
+
+allows for variable rewrite and looping over values to genarete various files. 
+"""
+
 import json
+from importlib.resources import files # For files import from package. 
 from pathlib import Path
 from copy import deepcopy
 
 
-#JSON-EQUIVALENT CONFIG
-base_config = {
-    "exp": {
-        "atoms": "Cs133",
-        "lambda_control_m": 8.95e-07,
-        "delta_f_hz": 9192631770.0,
-        "cell_length_m": 0.075,
-        "cell_diameter_m": 0.004,
-        "signal_fwhm_diameter_m": 0.00012,
-        "signal_beam_direction": ( 0,0,1), 
-        "control_fwhm_diameter_m": 0.00030,
-        "control_pulse_fwhm_ns": 25 , 
-        "control_beam_direction": (0,0,1),
-        "control_beam_AxisOffset_nm": (0,0,0), 
-        "cell_geometry": "cylinder",
-        "density_cm3": 1e13,
-        "temperature": 348.15,
-        "buffer_gas": "N2",
-        "buffer_pressure_Torr": 5.0,
-        "diffusion_D0_cm2_s": 0.24,
-        "diffusion_T0_K": 273.15,
-        "diffusion_P0_Torr": 760,
-        "B0_T": 0.0,
-        "B_gradient": 0,
-        "scalling": 10000,
-        "label": "Ref Params",
-        'g_g':  -0.5018, 
-        'm_g': +1 ,
-        'g_s':+0.4998,
-        'm_s':+1 ,
-        'spin_destruction_cross_section_CsN2_m2': 2.9e-26,
-        'spin_exchange_alpha_CsCs_m3_s':6.5e-16
-    },
+DEFAULT_PACKAGE = "radpattern.config.defaults"
 
-    "sim": {
-        "n_mc": 100,
-        "sim_time_us": 75.0,
-        "time_divisions": 100,
-        "time_spacing": "linspace",
-        "n_theta": 91,
-        "n_phi": 181,
-        "simulation_window_radius_w0_cutoff": 3.0,
-        "sim_density": 1_000_000,
-        "chunk_atoms": 2000,
-        "normalize_each_time": False,
-        "plane_restricted": False,
-        "seed": None,
-    },
+DEFAULT_FILES = {
+    "cs133": "cs133_default.json",
+    "rb87": "rb87_default.json",
 }
+
+
+def load_default_config(system):
+    system = system.lower()
+
+    if system not in DEFAULT_FILES:
+        raise ValueError(
+            f"Unknown system {system!r}. Available: {list(DEFAULT_FILES.keys())}"
+        )
+
+    path = DEFAULT_FILES[system]
+
+    path = files(DEFAULT_PACKAGE).joinpath(DEFAULT_FILES[system])
+
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def save_config(config, filename, folder, preview=True):
@@ -74,14 +54,17 @@ def save_config(config, filename, folder, preview=True):
     print(f"\nSaved: {path}")
     return path
 
-
-def make_single_file(folder):
+def make_single_file(folder, system, filename = None):
+    base_config = load_default_config(system )
     config = deepcopy(base_config)
-    filename = "config_file_template.json"
+    if filename is None: 
+        filename = "config_file_template.json"
     save_config(config, filename, folder)
 
 
-def loop_over_gradient(folder):
+def loop_over_variable(folder, system):
+    base_config = load_default_config(system) 
+
     gradients = [0, 1e-8, 1e-7, 1e-6]
 
     for grad in gradients:
@@ -139,8 +122,11 @@ def loop_over_many_variables():
 if __name__ == "__main__":
 
     folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
+    folder = "."
+    system = "cs133" # or rb87
     # Use only ONE of these at a time:
-    make_single_file(folder)
-
-    # loop_over_gradient()
+    #make_single_file(folder, system, filename = "test_default_config.json" )
+    
+    #loop_over_variable(folder, system)
+    
     # loop_over_many_variables()

@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+""" Look into a queue folder and picks the json files, constructs the objects for the simulation 
+and calls the runner to run the simulation based on the file. 
+
+creates folder in destination with the sim_name and stores the mc_runs.npz, parent mc run npz file
+and the json file. 
+
+loops over the queue folder until no more files in it. 
+copies json file to done/ directory for tracking. 
+if error arises moves file to failed/ directory with a txt error traceback and continues to next file 
+
+"""
+
+
 from pathlib import Path
 import shutil
 import traceback
 
-from config_object import build_run_objects
-
-from jsonSim_parallelizationGpu_MC_TimeEvolution import run_one_config
-
+from radpattern.config.builder import build_run_objects
+from radpattern.simulation.runner import run_one_config 
 
 def move_file(src, dst_dir):
     """

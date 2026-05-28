@@ -1,0 +1,59 @@
+{
+  "exp": {
+    "atoms": "Rb87",
+    "lambda_control_m": 7.95e-07,
+    "delta_f_hz": 6.834e9,
+    "cell_length_m": 0.06,
+    "cell_diameter_m": 0.006,
+    "signal_fwhm_diameter_m": 3.36403e-4,
+    "signal_beam_direction": [
+      0,
+      0,
+      1
+    ],
+    "control_fwhm_diameter_m": 5.88705e-4,
+    "control_pulse_fwhm_ns": 25,
+    "control_beam_direction": [
+      0,
+      0,
+      1
+    ],
+    "control_beam_AxisOffset_nm": [
+      0,
+      0,
+      0
+    ],
+    "cell_geometry": "cylinder",
+    "density_cm3": 1e8,
+    "temperature": 1.0e-5,
+    "buffer_gas": null,
+    "buffer_pressure_Torr": 0.0,
+    "diffusion_D0_cm2_s": 0.0,
+    "diffusion_T0_K": 273.15,
+    "diffusion_P0_Torr": 760,
+    "B0_T": 0.0,
+    "B_gradient": 0,
+    "scalling": 10000,
+    "label": "Rb87 Default ",
+    "g_g": -0.5,
+    "m_g": 1,
+    "g_s": 0.5,
+    "m_s": 1,
+    "spin_destruction_cross_section_CsN2_m2": 0.0,
+    "spin_exchange_alpha_CsCs_m3_s": 0.0
+  },
+  "sim": {
+    "n_mc": 100,
+    "sim_time_us": 200e3,
+    "time_divisions": 100,
+    "time_spacing": "linspace",
+    "n_theta": 91,
+    "n_phi": 181,
+    "simulation_window_radius_w0_cutoff": 3.0,
+    "sim_density": 1e5,
+    "chunk_atoms": 2000,
+    "normalize_each_time": false,
+    "plane_restricted": false,
+    "seed": null
+  }
+}

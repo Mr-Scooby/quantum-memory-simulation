@@ -7,7 +7,6 @@ __pycache__/
 .DS_Store
 
 # Project files
-__init__.py
 tasks.txt
 
 # Data / run outputs
@@ -23,6 +22,8 @@ src/radpattern/geometry/__pycache__/
 src/radpattern/helpers/__pycache__/
 src/radpattern/physics/__pycache__/
 src/radpattern/plotting/__pycache__/
+src/radpattern/simulation/__pycache__/
+src/radpattern/config/__pycache__/
 
 # Specific ignored file
 src/radpattern/plotting/beam_test.py
