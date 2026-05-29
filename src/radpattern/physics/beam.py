@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class BeamModel: 
-    """ Beam model Info""" 
+    """Generates Beam field amplitude and phase""" 
     # Gaussian-pulse parameters
     w0: float  # gaussian with ( transverse direction ) 
     sigma_long: float # Gaussina width ( longitudinal direction) 
@@ -115,6 +115,48 @@ class BeamModel:
         return u_perp2 <= (radius_factor * self.w0)**2
 
 
+    def transverse_gaussian_mode_amplitude(self, r_xyz) -> np.array :
+        """
+        Generates the Beam amplitude weight given by a gaussian beam. 
+        Generates the transverse amplitude weight. Accounts for Beam direction
+        
+                        E(r) = exp ( - r_perp^2 / w_oSignal^2)
+
+        returns: array
+        """
+
+        # Center the beam
+        dr = r_xyz - self.center[None, :]
+
+        # getting r_perp.  
+        u_par = dr @ self.k_in_hat
+        u_perp2 = np.sum(dr * dr, axis=1) - u_par**2
+
+        return np.exp(-u_perp2 / self.w0**2)
+
+    def longitudinal_gaussian_mode_amplitude(self, r_xyz) -> np.array :
+        """
+        Generates the Beam amplitude weight given by a gaussian beam. 
+        Generates the longitudinal amplitude weight. Accounts for Beam direction
+        
+                        E(r) = exp ( - r_lon^2 / w_oSignal^2)
+        returns: array
+        """
+
+        # Center the beam
+        dr = r_xyz - self.center[None, :]
+
+        # getting r_long.  
+        u_par = dr @ self.k_in_hat
+
+        return np.exp(-u_par**2 / self.sigma_long**2)
+
+    def optical_phase(self, r_xyz): 
+        """ returns the optical phase inprinted by the beam
+        exp ( -1j * k_in @ r_xyz)
+        """
+        return np.exp(-1j * self.k_in * (r_xyz @ self.k_in_hat))
+
 
     def generate_weights(self, r_xyz, t: float = 0.0):
         """
@@ -132,40 +174,16 @@ class BeamModel:
         np.ndarray, shape (N,)
             Complex weights.
         """
-        r_xyz = np.asarray(r_xyz, dtype=float)
-
+        # Dimension check
         if r_xyz.ndim != 2 or r_xyz.shape[1] != 3:
             raise ValueError(f"r_xyz must have shape (N, 3), got {r_xyz.shape}")
 
-        # -------- Plane wave --------
-        if self.beam_type == "plane_wave":
-            phase = np.exp(-1j * self.k_in * (r_xyz @ self.k_in_hat))
-            self.w = phase.astype(np.complex128)
-            return self.w
-
-        # -------- Gaussian pulse --------
-        r_front_t = self.pulse_center(t)
-
-        # Relative coordinates to the moving pulse center
-        dr = r_xyz - r_front_t[None, :]
-
-        # Longitudinal coordinate along beam propagation
-        u_par = dr @ self.k_in_hat
-
-        # Transverse squared distance to beam axis
-        dr2 = np.sum(dr * dr, axis=1)
-        u_perp2 = dr2 - u_par**2
-
-        # Beam envelopes
-        env_perp = np.exp(-u_perp2 / (self.w0**2))
-        env_long = np.exp(-(u_par**2) / (self.sigma_long**2))
-
-        # Optical phase
-        phase = np.exp(-1j * self.k_in * (r_xyz @ self.k_in_hat))
+        env_perp  = self.transverse_gaussian_mode_amplitude(r_xyz) 
+        env_long  = self.longitudinal_gaussian_mode_amplitude(r_xyz) 
+        phase     = self.optical_phase(r_xyz) 
 
         self.w = (env_perp * env_long * phase).astype(np.complex128)
 
-        return self.w
     
     def log_info(self):
         log.info("====================================================")

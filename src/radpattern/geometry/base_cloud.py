@@ -51,8 +51,137 @@ class BaseCloud:
         self.r_xyz = self.r_xyz + dr
         return self.r_xyz
 
-    def generate_S_profile(self):
-        raise NotImplementedError
+
+    def normalize_coordinates(self, coordinate, span_mode="percentile",
+                              percentiles=(0.5, 99.5)):
+
+        u = coordinate
+        if span_mode == "minmax":
+            u_min = float(np.min(u))
+            u_max = float(np.max(u))
+
+        elif span_mode == "percentile":
+            u_min, u_max = np.percentile(u, percentiles)
+            u_min = float(u_min)
+            u_max = float(u_max)
+
+        else:
+            raise ValueError("span_mode must be 'minmax' or 'percentile'")
+
+        u_center = 0.5 * (u_min + u_max)
+        u_half = 0.5 * (u_max - u_min)
+
+        if u_half <= 0:
+            raise ValueError("Cloud span along signal beam is zero.")
+
+        u_norm = (u - u_center) / u_half
+        u_norm = np.clip(u_norm, -1.0, 1.0)
+
+        u_tilde = 0.5 * (u_norm + 1.0)
+
+        return u_norm, u_tilde
+
+
+    def spinwave_protocol_profile(
+        self,
+        signal_beam,
+        profile="sqrt_1_minus_u2",
+        span_mode="percentile",
+        percentiles=(0.5, 99.5),
+        retrieval_direction="+signal",
+    ):
+        """
+        Protocol-dependent spin-wave amplitude profile.
+
+        This is not the optical beam envelope.
+        It is the target memory profile along the signal direction.
+        """
+        # obtaiain the paralel coordinates in the direction of teh beam
+        dr = self.r_xyz - signal_beam.center[None, :]
+        par_coordinate = dr @ signal_beam.k_in_hat
+
+        u_norm, u_tilde = self.normalize_coordinates(
+            coordinate = par_coordinate, 
+            span_mode=span_mode,
+            percentiles=percentiles,
+        )
+
+        if profile in {"flat", "uniform", None}:
+            return np.ones_like(u_norm)
+
+        if profile == "sqrt_1_minus_u2":
+            return np.sqrt(np.maximum(0.0, 1.0 - u_norm**2))
+
+        if profile in {"forward_sqrt", "gorshkov_forward_high_d"}:
+            if retrieval_direction in {"+signal", "+", "forward"}:
+                return np.sqrt(np.maximum(0.0, u_tilde))
+
+            if retrieval_direction in {"-signal", "-", "backward"}:
+                return np.sqrt(np.maximum(0.0, 1.0 - u_tilde))
+
+            raise ValueError("retrieval_direction must be '+signal' or '-signal'")
+
+        if profile == "gaussian_longitudinal":
+            return np.exp(-0.5 * u_norm**2)
+
+        raise ValueError(f"Unknown spin-wave profile: {profile!r}")
+
+    def generate_S_profile(
+            self,
+            signal_beam,
+            control_beam,
+            profile="sqrt_1_minus_u2",
+            span_mode="percentile",
+            percentiles=(0.5, 99.5),
+            retrieval_direction="+signal",
+        ):
+        """
+        Generate normalized spin-wave profile from signal/control beams.
+
+        Uses:
+
+            S_j ∝ A_protocol(j)
+                  E_signal(r_j)
+                  conj(E_control(r_j))
+
+        Since BeamModel uses:
+
+            E(r) ∝ exp(-i k · r)
+
+        the product gives:
+
+            E_signal * conj(E_control)
+            ∝ exp[-i (k_signal - k_control) · r]
+
+        which is the spin-wave phase.
+        """
+        if not hasattr(self, "r_xyz"):
+            raise ValueError("Call generate_cloud() before generate_S_profile().")
+
+        # Beam amplitudes and phase
+        optical_factor = signal_beam.w * np.conj(control_beam.w)
+
+        # Protocol profile along signal direction
+        amp_protocol = self.spinwave_protocol_profile(
+            signal_beam=signal_beam,
+            profile=profile,
+            span_mode=span_mode,
+            percentiles=percentiles,
+            retrieval_direction=retrieval_direction,
+        )
+
+        # Build and normalize spin wave
+        S_raw = amp_protocol.astype(np.complex128) * optical_factor
+
+        norm = np.linalg.norm(S_raw)
+
+        if norm <= 0:
+            raise ValueError("Spin wave norm is zero.")
+
+        self.S = S_raw / norm
+
+        return self.S
+
 
     def update_motion_phase(
         self,
