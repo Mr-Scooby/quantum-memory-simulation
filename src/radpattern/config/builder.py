@@ -16,6 +16,7 @@ RunObjects
 """
 
 import json
+from importlib.resources import files # For files import from package.
 from dataclasses import dataclass, fields
 from typing import Any, Dict, Optional
 
@@ -253,6 +254,31 @@ def build_run_objects(config_path: str) -> RunObjects:
         beam=beam,
     )
 
+def default_configPath(system):
+    """ Provides defaults json path from defaults"""
+
+    DEFAULT_PACKAGE = "radpattern.config.defaults"
+    DEFAULT_FILES = {
+        "cs133": "cs133_default.json",
+        "rb87": "rb87_default.json",
+    }
+    system = system.lower()
+
+    if system not in DEFAULT_FILES:
+        raise ValueError(
+            f"Unknown system {system!r}. Available: {list(DEFAULT_FILES.keys())}"
+        )
+
+    path = DEFAULT_FILES[system]
+    return files(DEFAULT_PACKAGE).joinpath(DEFAULT_FILES[system])
+
+
+
+
+def build_default_object(system = "cs133"):
+    """ Generates pbjects from default file"""
+    path = default_configPath(system) 
+    return build_run_objects(path) 
 
 
 # TESTING FUNCTIONALITY. 
