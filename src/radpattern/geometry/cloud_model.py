@@ -143,7 +143,6 @@ class CloudModel:
 
     @property 
     def n_atoms(self):
-        """ sim density. Only for diagnostic"""
         return int(self.sim_density *  self.volumen )
 
     @property

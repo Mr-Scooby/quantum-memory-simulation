@@ -34,3 +34,6 @@ class BECModel(BaseCloud):
         )
 
         return self.r_xyz
+    @property
+    def box_size(self):
+        return 6 * self.sigmas
