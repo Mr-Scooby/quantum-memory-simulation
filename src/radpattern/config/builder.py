@@ -23,15 +23,10 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 
 from radpattern.physics.setup_params import SimParams
-from radpattern.physics.WarmVaporExperimentalSetup import WarmVaporExp
-from radpattern.physics.BECExpSetUp import BECExpParams
-from radpattern.geometry.WarmVaporCloud import WarmVaporCloud
-from radpattern.geometry.BECModel import BECModel
+from radpattern.physics import BeamModel, WarmVaporExp, BECExpParams, ExpBaseParams
 
-from radpattern.physics.BaseExpSetUp import ExpBaseParams
-from radpattern.geometry.base_cloud import BaseCloud
+from radpattern.geometry import BaseCloud, WarmVaporCloud, BECModel
 
-from radpattern.physics.beam import BeamModel
 
 
 @dataclass
