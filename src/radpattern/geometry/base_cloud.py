@@ -13,13 +13,11 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class BaseCloud:
-    #atoms: AtomSpeciment #Stores type of atoms, wavelength, K-vectors. 
-
-    sim_density: int # Number of atoms being simulated, Processed by the sim_density. 
+    atoms: AtomSpeciment #Stores type of atoms, wavelength, K-vectors. 
 
     @property
     def n_atoms(self):
-        return int(self.sim_density )
+       raise NotImplementedError
 
     @property
     def box_size(self):

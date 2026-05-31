@@ -20,9 +20,16 @@ class BECModel(BaseCloud):
     All lengths are in code units.
     """
     # Cloud dimensions. 
-    sigmas: tuple[ float, float, float]
+    sigmas: np.asarray([ float, float, float])
+    n_sim_atoms: int # Number of simulated atoms. 
+
+    @property 
+    def n_atoms(self):
+        """ Number of Atoms to form the cloud"""
+        return int(self.n_sim_atoms)
 
     def generate_cloud(self, rng = None): 
+        """ generates Gaussian shape atom cloud """
 
         if rng is None:
             rng = np.random.default_rng()
@@ -34,6 +41,8 @@ class BECModel(BaseCloud):
         )
 
         return self.r_xyz
+
     @property
     def box_size(self):
+        """ Effective cloud box size. twice cutoff cloud dimension. we set for 3* sigmas as cutoff. thus size = 6 * sigmas """
         return 6 * self.sigmas

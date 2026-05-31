@@ -15,6 +15,7 @@ class WarmVaporCloud(BaseCloud):
 
     Lz: float
     R: float 
+    sim_density: int 
 
     @property
     def n_atoms(self): 
