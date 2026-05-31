@@ -15,12 +15,7 @@ def run_one_config(objs, output_dir, **kwargs):
     """
     Run one config, save its mean MC results, and optionally save full MC runs.
     """
-
-    exp = objs.exp
-    sim = objs.sim
-    beam = objs.beam
-
-    setp = sim.sim_metadataSetUp(exp, beam)
+    setp = objs.sim.sim_metadataSetUp(objs.exp, objs.Cbeam)
 
     output_dir = Path(output_dir)
     path = output_dir/ setp.run_name

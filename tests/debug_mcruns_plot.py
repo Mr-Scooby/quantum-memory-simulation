@@ -38,7 +38,7 @@ from radpattern.physics.experimetal_setup import ExperimentalParams
 from radpattern.physics.setup_params import SimParams
 from radpattern.geometry.grids import AngleGrid
 from radpattern.helpers.helpers import single_dipole_E
-from coupling_calcualtion import (
+from radpattern.physics.coupling import (
     gaussian_fiber_mode_on_sphere,
     intensity_overlap_on_sphere,
 )

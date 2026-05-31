@@ -33,7 +33,8 @@ def run_single_mc_gpu(
     exp = objs.exp
     sim = objs.sim
     cloud = deepcopy(objs.cloud) 
-    beam = deepcopy(objs.beam)
+    control_beam = deepcopy(objs.Cbeam)
+    signal_beam = deepcopy(objs.Sbeam)
 
     T = sim.time_divisions
     nt, nphi = grid.shape
@@ -48,7 +49,10 @@ def run_single_mc_gpu(
     # Generate one cloud realization
     cloud.generate_cloud(rng=rng)
     cloud.generate_velocity_distribution(rng = rng)
-    cloud.generate_S_profile(exp.w0_signal)
+    
+    control_beam.generate_weights(cloud.r_xyz)
+    signal_beam.generate_weights(cloud.r_xyz)
+    cloud.generate_S_profile(signal_beam, control_beam)
     cloud.r0_xyz = cloud.r_xyz.copy()
 
     # One-run arrays only
@@ -71,7 +75,7 @@ def run_single_mc_gpu(
         cloud.update_position_diffusive(dt, Diff_coef, rng=rng)
 
         # Update spatial beam weights
-        beam.generate_weights(cloud.r_xyz)
+        control_beam.generate_weights(cloud.r_xyz)
 
         # Spin-wave phase evolution
         dt_s = dt * sim.char_time

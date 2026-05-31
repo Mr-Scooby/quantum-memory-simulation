@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import coupling_calcualtion as cp
+import radpattern.physics.coupling as cp
 from radpattern.physics.setup_params import ExperimentalParams, SimParams 
 from radpattern.physics.beam import BeamModel 
 from radpattern.geometry.cloud_model import CloudModel 
