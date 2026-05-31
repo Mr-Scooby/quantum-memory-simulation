@@ -29,6 +29,7 @@ class BeamModel:
     pulse_center_t0: float #= 0.0
     center: tuple #= (0.0, 0.0, 0.0)
     pcenter_at_origin: bool #= False
+    label: str 
 
     def __post_init__(self):
         #normalize vector
@@ -183,6 +184,7 @@ class BeamModel:
         phase     = self.optical_phase(r_xyz) 
 
         self.w = (env_perp * env_long * phase).astype(np.complex128)
+        return self.w
 
     
     def log_info(self):
@@ -280,6 +282,7 @@ class BeamModel:
     def __str__(self):
         lines = [f"{self.__class__.__name__}("]
 
+        lines.append(f"  beam_name_label    = {self.label}")
         lines.append(f"  beam_type          = {self.beam_type}")
         lines.append(f"  k_in               = {self.k_in:.6g}")
         lines.append(f"  k_in_hat           = {self.k_in_hat}")
