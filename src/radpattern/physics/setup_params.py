@@ -121,14 +121,17 @@ class SetupParams:
             json.dumps(d, sort_keys=True, default=str).encode()
         ).hexdigest()[:8]
 
-        return (
-            f"{self.experiment.atoms}_{self.experiment.buffer_pressure_Torr}Torr"
+
+        filename = (
+            f"{self.experiment.atoms}"
             f"{int(self.experiment.signal_fwhm_diameter_m * 1e6)}SDia_{int(self.experiment.control_fwhm_diameter_m * 1e6) }Cdia"
             f"_simT{self.sim.sim_time_us}us"
             f"_nt{self.sim.time_divisions}"
             f"_{self.sim.n_mc}runs"
-            f"_{h}"
         )
 
+        if self.experiment.atoms.lower() == "cs133": 
+            filename += f"_{self.experiment.buffer_pressure_Torr}Torr"
+        return filename +  f"_{h}"
 
 

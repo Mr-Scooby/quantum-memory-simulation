@@ -85,7 +85,8 @@ def run_single_mc_gpu(
             B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
         )
 
-        weights =  cloud.S * beam.w * motion_phase
+        weights =  cloud.S * control_beam.w * motion_phase
+
 
         # GPU array factor
         AF = array_factor_general_gpu(
@@ -112,6 +113,6 @@ def run_single_mc_gpu(
 
     dt_mc = time.perf_counter() - t0_mc
     print(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
-    del cloud, beam, rng 
+    del cloud, control_beam, rng 
 
     return eta_t, AF_t, AF2_t, I_t
