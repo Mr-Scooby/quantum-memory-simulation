@@ -522,4 +522,132 @@ def animation_atoms_with_pulse(r_pos,T, weights: np.array = None, pulse_center:n
 
     return  ani
 
+def plot_cloud_slices(
+    r_xyz,
+    w=None,
+    center=(0.0, 0.0, 0.0),
+    slab_thickness_code=None,
+    slab_thickness_um=10.0,
+    code_unit_m=None,
+    s=5,
+    alpha=0.7,
+    cmap="viridis",
+    figsize=(15, 4.8),
+):
+    """
+    Plot thin-slab XY, XZ, and YZ cuts of a cloud.
 
+    Parameters
+    ----------
+    r_xyz : ndarray, shape (N, 3)
+        Cloud positions in code units.
+    w : ndarray, shape (N,), optional
+        Optional weights for coloring the points.
+    center : tuple of float
+        Slice center (x0, y0, z0) in code units.
+        The cuts are:
+            XY at z = z0
+            XZ at y = y0
+            YZ at x = x0
+    slab_thickness_code : float, optional
+        Slab thickness in code units.
+        If None, it will be computed from slab_thickness_um and code_unit_m.
+    slab_thickness_um : float
+        Desired slab thickness in microns, used only if slab_thickness_code is None.
+    code_unit_m : float, optional
+        Size of 1 code unit in meters.
+        Needed if you want to convert slab_thickness_um into code units.
+    s : float
+        Marker size for scatter.
+    alpha : float
+        Marker transparency.
+    cmap : str
+        Matplotlib colormap.
+    figsize : tuple
+        Figure size.
+
+    Returns
+    -------
+    fig, axes
+    """
+
+    r_xyz = np.asarray(r_xyz)
+    if r_xyz.ndim != 2 or r_xyz.shape[1] != 3:
+        raise ValueError("r_xyz must have shape (N, 3)")
+
+    if w is not None:
+        w = np.asarray(w)
+        if w.shape[0] != r_xyz.shape[0]:
+            raise ValueError("w must have same length as r_xyz")
+
+    x, y, z = r_xyz[:, 0], r_xyz[:, 1], r_xyz[:, 2]
+    x0, y0, z0 = center
+
+    # Decide slab thickness
+    if slab_thickness_code is None:
+        if code_unit_m is not None:
+            slab_thickness_code = (slab_thickness_um * 1e-6) / code_unit_m
+        else:
+            # fallback: pick something small relative to cloud size
+            extent = np.max(np.ptp(r_xyz, axis=0))
+            slab_thickness_code = 0.02 * extent
+            print(
+                f"[plot_cloud_slices] No code_unit_m provided. "
+                f"Using slab_thickness_code={slab_thickness_code:.4g}"
+            )
+
+    half = slab_thickness_code / 2.0
+
+    # Masks for thin slabs
+    mask_xy = np.abs(z - z0) <= half   # slice around z=z0
+    mask_xz = np.abs(y - y0) <= half   # slice around y=y0
+    mask_yz = np.abs(x - x0) <= half   # slice around x=x0
+
+    fig, axes = plt.subplots(1, 3, figsize=figsize, constrained_layout=True)
+
+    def _scatter(ax, mask, a, b, xlabel, ylabel, title):
+        if np.count_nonzero(mask) == 0:
+            ax.text(0.5, 0.5, "No points in slice", ha="center", va="center",
+                    transform=ax.transAxes)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+            ax.set_title(title)
+            ax.grid(True, alpha=0.3)
+            return None
+
+        if w is None:
+            sc = ax.scatter(a[mask], b[mask], s=s, alpha=alpha)
+        else:
+            sc = ax.scatter(a[mask], b[mask], c=w[mask], s=s, alpha=alpha, cmap=cmap)
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(f"{title}\nN={np.count_nonzero(mask)}")
+        ax.grid(True, alpha=0.3)
+        ax.set_aspect("equal")
+        return sc
+
+    sc0 = _scatter(
+        axes[0], mask_xy, x, y,
+        "x (code units)", "y (code units)",
+        f"XY slice at z={z0:.4g}\nΔz={slab_thickness_code:.4g}"
+    )
+    sc1 = _scatter(
+        axes[1], mask_xz, x, z,
+        "x (code units)", "z (code units)",
+        f"XZ slice at y={y0:.4g}\nΔy={slab_thickness_code:.4g}"
+    )
+    sc2 = _scatter(
+        axes[2], mask_yz, y, z,
+        "y (code units)", "z (code units)",
+        f"YZ slice at x={x0:.4g}\nΔx={slab_thickness_code:.4g}"
+    )
+
+    if w is not None:
+        # use one common colorbar
+        sc_for_cb = sc0 if sc0 is not None else (sc1 if sc1 is not None else sc2)
+        if sc_for_cb is not None:
+            cbar = fig.colorbar(sc_for_cb, ax=axes, shrink=0.9)
+            cbar.set_label("weight")
+
+    return fig, axes
