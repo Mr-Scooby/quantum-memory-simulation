@@ -23,7 +23,7 @@ def array_factor_general_gpu(
     r_xyz,
     w=None,
     chunk_atoms=1000,
-    chunk_dir = 8192, 
+    chunk_dirs = 8192, 
 ):
     """
     GPU version of array_factor_general using CuPy.
@@ -59,9 +59,9 @@ def array_factor_general_gpu(
     r_gpu = cp.asarray(r_xyz, dtype=cp.float32)
 
     if w is None:
-        w_gpu = cp.ones(N, dtype=cp.complex128)
+        w_gpu = cp.ones(N, dtype=cp.complex64)
     else:
-        w_gpu = cp.asarray(w, dtype=cp.complex128)
+        w_gpu = cp.asarray(w, dtype=cp.complex64)
 
     AF_gpu = cp.zeros(M, dtype=cp.complex128)
     k_out_gpu = cp.float32(k_out)
