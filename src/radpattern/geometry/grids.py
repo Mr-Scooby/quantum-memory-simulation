@@ -12,9 +12,9 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class AngleGrid:
-    n_theta: int = 91
-    n_phi: int = 181
-    theta_max: float = np.pi 
+    n_theta: int 
+    n_phi: int
+    theta_max: float 
 
     TH: np.ndarray = field(init=False)
     PH: np.ndarray = field(init=False)
