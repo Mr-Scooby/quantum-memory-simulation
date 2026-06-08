@@ -62,24 +62,32 @@ def make_single_file(folder, system, filename = None):
     save_config(config, filename, folder)
 
 
+def dir_from_mrad_x(theta_mrad):
+    """ Converts mrad into vector direction array. reference signal (0,0,1)"""
+    theta = theta_mrad * 1e-3  # mrad -> rad
+    return np.array([
+        np.sin(theta),
+        0.0,
+        np.cos(theta)
+    ])
+
 def loop_over_variable(folder, system):
     base_config = load_default_config(system) 
 
-    gradients = [0, 1e-8, 1e-7, 1e-6]
+    mrads  = [0,0.1, 0.5, 1, 2 ]
 
-    for grad in gradients:
+    for mrad in mrads:
         config = deepcopy(base_config)
 
         # Change only this value
-        config["exp"]["B_gradient"] = grad
+        config["exp"]["control_beam_direction"] = dir_from_mrad_x(mrad) 
 
         # Also update label so you know what file is what
         config["exp"]["label"] = (
-            f"Rb87 CHNAGING B field gradient Test."
-            f"{grad:g}TpMGradient"
+            f"{system} CHNAGING control beam direction, angle = {mrad} mrad. "
         )
 
-        filename = f"{system}_gradient_{grad:g}TpM.json"
+        filename = f"{system}_Cdirection{mrad}mrad.json"
         filename = filename.replace("+", "")
 
         save_config(config, filename, folder, preview=False)
