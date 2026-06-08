@@ -49,6 +49,7 @@
     "time_spacing": "linspace",
     "n_theta": 91,
     "n_phi": 181,
+    "theta_max": "forward_lobe_10x",
     "simulation_window_radius_w0_cutoff": 3.0,
     "sim_density": 1e5,
     "chunk_atoms": 2000,

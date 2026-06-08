@@ -27,7 +27,7 @@ from radpattern.physics import BeamModel, WarmVaporExp, BECExpParams, ExpBasePar
 
 from radpattern.geometry import BaseCloud, WarmVaporCloud, BECModel
 
-
+from radpattern.config.builder_helpers import resolve_theta_max
 
 @dataclass
 class RunObjects:
@@ -173,8 +173,9 @@ def build_sim(cfg: Dict[str, Any], exp: ExpBaseParams) -> SimParams:
     sim_cfg = dict(cfg.get("sim", {}))
 
     sim_cfg.setdefault("char_time", exp.char_time)
-    sim_cfg.setdefault("theta_max", 10.0 * exp.forwardlobe_angular_width)
+    #sim_cfg.setdefault("theta_max", 10.0 * exp.forwardlobe_angular_width)
 
+    sim_cfg["theta_max"] = resolve_theta_max(sim_cfg["theta_max"], exp)
     sim_cfg = dataclass_kwargs(SimParams, sim_cfg)
     return SimParams(**sim_cfg)
 
