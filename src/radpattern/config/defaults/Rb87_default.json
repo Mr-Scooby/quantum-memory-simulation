@@ -24,7 +24,7 @@
     "g_g": -0.5,
     "m_g": 1,
     "g_s": 0.5,
-    "m_s": 1,
+    "m_s": 2,
     "temperature": 1.0e-5,
     "B0_T": 0.0,
     "B_gradient": 0,
@@ -34,7 +34,7 @@
     "sigmas": [1000,1000,1000]
   },
   "sim": {
-    "n_mc": 100,
+    "n_mc": 30,
     "sim_time_us": 200e3,
     "time_divisions": 100,
     "time_spacing": "linspace",
