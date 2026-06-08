@@ -108,19 +108,31 @@ def load_data(path):
     Prints values. 
     creates grid object for plotting. 
     updates time array to be real experimental time
-    returns data loaded. 
+    returns:
+    - data dict loaded. 
+    - grid object
+    - exp object 
+    - sim object
     """
 
     print(f"loading file = {path}")
-    file = path.strip()
     
+    # Checks if file has extension .npz
+    if path.suffix == ".npz": 
+        # Removes extension if present
+        path = path.with_suffix("") 
+
+    # Loads data
     try:
-        metadata = load_metadata(file )
+        print(f"reading {path}") 
+        metadata = load_metadata(path )
     except FileNotFoundError as e: 
         print(e) 
-        file = file + ".npz" 
-        metadata = load_metadata(file )
+        # If file not found without extension adds it back and retries. 
+        path = path.with_suffix(path.suffix + ".npz")
+        metadata = load_metadata(path )
 
+    #Builds exp,sim, and grid bjects. 
     exp = build_exp_from_metadata(metadata)
     sim = build_sim_from_metadata(metadata)
     grid = sim.create_grid()
@@ -128,7 +140,7 @@ def load_data(path):
     print(sim)
     print(exp)
 
-    npz = np.load(file, allow_pickle=True)
+    npz = np.load(path, allow_pickle=True)
 
     # Convert npz to normal mutable dict
     data = {key: npz[key] for key in npz.files}
@@ -137,6 +149,6 @@ def load_data(path):
     if "times_code" in data:
         data["times_us"] = data["times_code"] * sim.char_time * 1e6
 
-    return data, grid
+    return data, grid, exp, sim
         
 

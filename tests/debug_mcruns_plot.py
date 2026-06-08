@@ -396,11 +396,9 @@ if __name__ == "__main__":
             runing = False 
             break
 
-       RESULT_FILE = Path(
-           rf"{file}"
-       )
+        RESULT_FILE = Path(rf"{file}")
 
-      times_code, eta_runs = plot_mc_couplings(
+        times_code, eta_runs = plot_mc_couplings(
            RESULT_FILE,
            max_mc=None,
-       )
+        )
