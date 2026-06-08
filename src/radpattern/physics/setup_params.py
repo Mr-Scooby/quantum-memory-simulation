@@ -37,6 +37,7 @@ class SimParams:
 
     # Performance / implementation
     chunk_atoms: int #= 2000
+    chunk_dirs: int
     normalize_each_time: bool 
     plane_restricted: bool 
     seed: int 

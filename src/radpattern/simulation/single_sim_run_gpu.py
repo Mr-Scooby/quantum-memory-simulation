@@ -96,6 +96,7 @@ def run_single_mc_gpu(
             r_xyz=cloud.r_xyz,
             w=weights,
             chunk_atoms=sim.chunk_atoms,
+            chunk_dir = sim.chunk_dirs, 
         )
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole

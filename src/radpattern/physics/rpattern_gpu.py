@@ -23,6 +23,7 @@ def array_factor_general_gpu(
     r_xyz,
     w=None,
     chunk_atoms=1000,
+    chunk_dir = 8192, 
 ):
     """
     GPU version of array_factor_general using CuPy.
@@ -55,7 +56,7 @@ def array_factor_general_gpu(
     M = n_hat_flat.shape[0]
 
     # Move fixed arrays to GPU
-    r_gpu = cp.asarray(r_xyz, dtype=cp.float64)
+    r_gpu = cp.asarray(r_xyz, dtype=cp.float32)
 
     if w is None:
         w_gpu = cp.ones(N, dtype=cp.complex128)
@@ -64,21 +65,30 @@ def array_factor_general_gpu(
 
     AF_gpu = cp.zeros(M, dtype=cp.complex128)
     k_out_gpu = cp.float32(k_out)
+    
+    # Loop over angular direction chunks
+    for d0 in range(0, M, chunk_dirs):
+        d1 = min(d0 + chunk_dirs, M)
 
-    for a0 in range(0, N, chunk_atoms):
-        a1 = min(a0 + chunk_atoms, N)
+        n_block = n_hat_flat[d0:d1]          # shape: (chunk_dirs, 3)
+        AF_block = cp.zeros(d1 - d0, dtype=cp.complex64)
 
-        r_chunk = r_gpu[a0:a1]      # shape (chunk, 3)
-        w_chunk = w_gpu[a0:a1]      # shape (chunk,)
+        for a0 in range(0, N, chunk_atoms):
+            a1 = min(a0 + chunk_atoms, N)
 
-        # shape: (M, chunk)
-        phase = k_out_gpu * (n_hat_flat @ r_chunk.T)
+            r_chunk = r_gpu[a0:a1]      # shape (chunk, 3)
+            w_chunk = w_gpu[a0:a1]      # shape (chunk,)
 
-        # sum over atoms in this chunk
-        AF_gpu += cp.exp(1j * phase).astype(cp.complex64) @ w_chunk
+            # shape: (M, chunk)
+            phase = k_out_gpu * (n_block @ r_chunk.T)
 
-        # Optional: free temporary memory between chunks
-        del phase
+            # sum over atoms in this chunk
+            AF_block += cp.exp(1j * phase).astype(cp.complex64) @ w_chunk
+
+            # Optional: free temporary memory between chunks
+            del phase
+
+        AF_gpu[d0:d1] = AF_block
 
     AF = cp.asnumpy(AF_gpu).reshape(nt, np_)
 
