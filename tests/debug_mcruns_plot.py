@@ -317,6 +317,8 @@ def plot_mc_couplings(folder_path , max_mc=None):
             linewidth=1.0,
             label=mc_file.stem if file_idx < 10 else None,
         )
+
+            
         ax_power.plot(
             times_code,
             P_fib_over_Ptot0_t,
@@ -364,6 +366,25 @@ def plot_mc_couplings(folder_path , max_mc=None):
     ax_power.set_title(parent_npz_path.stem + " — fiber intensity")
     ax_power.grid(True, alpha=0.3)
     ax_power.legend()
+
+     # Extractimg the original npz data to compare 
+    OGdata = np.load(parent_npz_path, allow_pickle=True)
+    P_fib_OG, P_tot_OG, eta_t_OG = coupling_from_AF2(
+        AF2_t=OGdata["AF2"],
+        grid=grid,
+        dipole=dipole,
+        E_fib=E_fib,
+        theta0=theta0,
+        )
+    # Ploting the main .npz file for comparation
+    ax_eta.plot(
+                times_code,
+                eta_t_OG,
+                alpha=1,
+                linewidth=1.0,
+                label= "Original_npz",
+                color="r"
+            )
     fig_power.tight_layout()
 
     plt.show()

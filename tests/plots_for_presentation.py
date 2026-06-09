@@ -19,106 +19,14 @@ here = Path.cwd()
 PATH = (Path.cwd() / ".." / "data" / "results_sims" ).resolve()
 #PATH = (Path.cwd() / ".." / "data" / "test").resolve()
 
-files = [
-         "DiffusiveBufferN2_2Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_c2e6fcd3",
-         #"DiffusiveBufferN2_3Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_260f4b5d.npz",
-         #"DiffusiveBufferN2_4Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_88032039.npz",
-#         "DiffusiveBufferN2_5Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_1a93c62c",
-#         #"DiffusiveBufferN2_6Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_14e191de.npz",
-#         "DiffusiveBufferN2_7Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_7c19ae1e",
-#         #"DiffusiveBufferN2_8Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_3c2c60c5.npz",
-#         #"DiffusiveBufferN2_9Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_1c3f4742.npz",
-#         "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_582bdb8b",
-#         #"DiffusiveBufferN2_11Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_6e487271.npz",
-#         "DiffusiveBufferN2_12Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_286e4962",
-         ]
-#
-##files = [
-##        "DiffusiveBufferN2_1Torr_simDens1e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_b943d55c.npz",
-##        "DiffusiveBufferN2_2Torr_simDens1e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_4f4c8533.npz",
-##        "DiffusiveBufferN2_3Torr_simDens1e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_2dfc3fc2.npz",
-##        "DiffusiveBufferN2_4Torr_simDens1e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_a50b2201.npz",
-##        "DiffusiveBufferN2_5Torr_simDens1e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_NormalizeWeights_simT50us_nt16_6c059ef2.npz",
-##        ]
-##
-#files = [
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_300Cdiamter_simT50us_nt16_582bdb8b",
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_400Cdiamter_simT50us_nt16_db008155",
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_500Cdiamter_simT50us_nt16_04f05c8e",
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_600Cdiamter_simT50us_nt16_28abe6c2",
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_700Cdiamter_simT50us_nt16_110992e2",
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_800Cdiamter_simT50us_nt16_cec61e39",
-#            "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_900Cdiamter_simT50us_nt16_287b99bb",
-#]
+PATH = Path(input("folder path "))
 
-# CS. Changing signal 
-#files = [
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_120Sdiamter_simT50us_nt16_f1118cef",
-##"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_150Sdiamter_simT50us_nt16_72859d29",
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_180Sdiamter_simT50us_nt16_deede175",
-##"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_210Sdiamter_simT50us_nt16_db316c0c",
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_240Sdiamter_simT50us_nt16_30183bee",
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_270Sdiamter_simT50us_nt16_6c0a1957",
-#]
-#
-### Beam Ratios change 
-#files =[
-#        "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_1ratioCS_simT50us_nt16_f1118cef",
-#        #"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_1.3ratioCS_simT50us_nt16_5fa362c1",
-#        "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_1.5ratioCS_simT50us_nt16_0a558c77",
-#        #"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_1.7ratioCS_simT50us_nt16_ae75dd25",
-#        "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_2ratioCS_simT50us_nt16_90252e96",
-#        #"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_2.3ratioCS_simT50us_nt16_3e6d918a",
-#        "DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_2.5ratioCS_simT50us_nt16_bcc75753",
-#]
-##
-##
-### Cs133 Sim Changing Control beam. 
-#files =[
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_300Cdiam_fixedR_simT50us_nt16_1636c86f",
-##"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_400Cdiam_fixedR_simT50us_nt16_50205c0c",
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_500Cdiam_fixedR_simT50us_nt16_fceee68b",
-##"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_600Cdiam_fixedR_simT50us_nt16_a30e91bb",
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_700Cdiam_fixedR_simT50us_nt16_29da55fe",
-##"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_800Cdiam_fixedR_simT50us_nt16_f01e48b9",
-#"DiffusiveBufferN2_10Torr_simDens0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_900Cdiam_fixedR_simT50us_nt16_537225a9",
-#]
-#
-# RB87 sim with changing control beam. The signal is 100 um
-#files = [
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.7ControlBeamfactor_simT200000us_nt15_0bd1783f",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_0.9ControlBeamfactor_simT200000us_nt15_4596d951",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1ControlBeamfactor_simT200000us_nt15_05856623",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.2ControlBeamfactor_simT200000us_nt15_8fec7ff7",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ef27abec",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.7ControlBeamfactor_simT200000us_nt15_c51d58be",
-#"ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_2ControlBeamfactor_simT200000us_nt15_78ade96a",
-#         ]
-#
-#files = ["ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace_1.5ControlBeamfactor_simT200000us_nt15_ef27abec"]
-
-
-# RB87 Sim with changing control beam.  A  signal beam of 17 um
-#files = [
-#"Cs133_10Torr120SDia_300Cdia_simT100us_nt30_100runs_e418e57e"
-#]
-
-#
-#files =[ 
-#"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_50runs_ad9b5931",
-#"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_10runs_468ef87d",
-#"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_1runs_9b0fea05",
-#"Cs133_2Torr120SDia_300Cdia_simT50us_nt16_100runs_942014b1"
-#]
-
-#files = [
-#"Cs133_10Torr120SDia_300Cdia_simT75.0us_nt100_100runs_759fd982.npz ",
-#"Cs133_20Torr120SDia_300Cdia_simT75.0us_nt100_20runs_283b5245.npz",
-#"Cs133_0Torr120SDia_300Cdia_simT75.0us_nt100_100runs_8400b548.npz",
-#"Cs133_5Torr120SDia_300Cdia_simT75.0us_nt100_20runs_fee5a36e.npz",
-#]
-
-
+try:
+        files = [file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz"]
+except NotADirectoryError as e: 
+        print(e)
+        files =[PATH.name]
+        PATH = PATH.parent
 
 #
 title = "Cs133. N2 @ 10 Torr. Varying Control diameter" 
@@ -135,7 +43,7 @@ labels = [None] * len(files)
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
 
-Time_division = 16
+Time_division = 100
 
 etas = np.zeros((len(files), Time_division)) 
 
@@ -189,7 +97,7 @@ def fiber_coupling_vs_time(I_t, grid, theta_f):
 for file_idx, file in enumerate(files): 
     
     data, grid, exp, sim  = load_data(PATH/file)
-    AF = np.abs(data["AF"])**2
+    AF = np.abs(data["AF2"])
     #print(data.files) 
     Intensity =data["intensity"]
 
@@ -240,15 +148,16 @@ for file_idx, file in enumerate(files):
     P_total[file_idx,:] = P_tot
     P_OverTotal0[file_idx,:] = P_fib_over_Ptot0_t
 
-    match = re.search(regex_pattern, str(file))
-
-    if match:
-        value = match.group(1)      # string, e.g. "120"
-        labels[file_idx] = value 
-    else:
-        labels[file_idx] = None
-
-
+    labels[file_idx] = exp.B_gradient
+#    match = re.search(regex_pattern, str(file))
+#
+#    if match:
+#        value = match.group(1)      # string, e.g. "120"
+#        labels[file_idx] = value 
+#    else:
+#        labels[file_idx] = None
+#
+#
 ########################################
 
 plt.rcParams.update({
@@ -266,6 +175,9 @@ plt.rcParams.update({
 if timeScale.upper() == "MS": 
     times_us /= 1e3    # Convet us to ms
 
+arg_sorted = np.argsort(labels)
+
+
 # plot title and legend title
 # To match from file name for labels 
 #regex_pattern =r'_(\d+)runs#'
@@ -276,13 +188,17 @@ beamRatios = np.zeros(len(files)) # Control/signal ratio
 
 #labels = [0, 0.1, 1, 10]
 
+sorted_files = np.array(files)[arg_sorted]
+labels = np.array(labels)[arg_sorted]
+etas = etas[arg_sorted]
+P_OverTotal0 = P_OverTotal0[arg_sorted]
 
 ##### coupling / dephasing plot ---
 fig, ax = plt.subplots(figsize=(7, 4.8))
 
-for idx, file in enumerate(files[:7]): 
-    ax.plot(times_us, etas[idx, : ], "o-", label=labels[idx])
-for idx, file in enumerate(files[7:],7): 
+for idx, file in enumerate(sorted_files[:7]): 
+    ax.plot(times_us, etas[idx, :], "o-", label=labels[idx])
+for idx, file in enumerate(sorted_files[7:],7): 
     ax.plot(times_us, etas[idx, : ], "*--", label=labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
@@ -292,13 +208,12 @@ ax.set_title(title)
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
 
-plt.show()
 print(beamRatios)
 
 # Plots total emitted power vs time
 fig, ax = plt.subplots(figsize=(7, 4.8))
-for idx, file in enumerate(files[:7]): 
-    ax.plot(times_us[:14], P_OverTotal0[idx,:14 ], "o-", label=labels[idx])
+for idx, file in enumerate(sorted_files[:7]): 
+    ax.plot(times_us, P_OverTotal0[idx,: ], "o-", label=labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
