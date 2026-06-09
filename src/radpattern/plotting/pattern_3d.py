@@ -37,6 +37,8 @@ def plot_pattern_3d(grid, I, title="", alpha=1.0, stride=2, cmap="viridis", info
 
      # Make sure intensity is a numpy array
     I = np.asarray(I, dtype=float)
+    if I.ndim == 3: 
+        I = I[0] 
 
     log.info("Creating pattern 3D plot. Grid_shape = %s, I (max, min) = (%.3e, %.3e) ", grid.shape, I.max(), I.min())
     # Convert intensity into a plotted radius
