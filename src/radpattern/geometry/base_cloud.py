@@ -28,6 +28,7 @@ class BaseCloud:
 
     def generate_velocity_distribution(self, rng= None ):
         """ generates Velocity distibution according to Boltzman law, normalize to ref velocity == most prob speed"""
+        log.debug("Generating velocity distribution")
         if rng is None:
             rng = np.random.default_rng()
         self.v_xyz = rng.normal(loc = 0.0, scale = 1 / np.sqrt(2), size = (self.n_atoms, 3)) 
@@ -39,7 +40,9 @@ class BaseCloud:
 
     def update_position_diffusive(self, dt_code, D_code, rng=None):
         """ Difussive update position. Updates r(t0 + dt) = r(t0) + sqrt(2 D dt)* randVector """
+        log.debug("Updating atom position. diffusive motion.")
         if rng is None:
+            log.debug("Update atom pos() generating rng object") 
             rng = np.random.default_rng()
 
         step_std = np.sqrt(2.0 * D_code * dt_code)
@@ -53,6 +56,7 @@ class BaseCloud:
     def normalize_coordinates(self, coordinate, span_mode="percentile",
                               percentiles=(0.5, 99.5)):
 
+        log.debug("Normalizing coordinates...") 
         u = coordinate
         if span_mode == "minmax":
             u_min = float(np.min(u))
@@ -94,6 +98,7 @@ class BaseCloud:
         This is not the optical beam envelope.
         It is the target memory profile along the signal direction.
         """
+        log.debug("SpinWave profile protocol") 
         # obtaiain the paralel coordinates in the direction of teh beam
         dr = self.r_xyz - signal_beam.center[None, :]
         par_coordinate = dr @ signal_beam.k_in_hat
@@ -177,6 +182,7 @@ class BaseCloud:
             raise ValueError("Spin wave norm is zero.")
 
         self.S = S_raw / norm
+        log.debug("SpinWaveProfile generated")
 
         return self.S
 
@@ -204,6 +210,7 @@ class BaseCloud:
 
             omega_j = (mu_B / hbar) (g_s m_s - g_g m_g) B_j
         """
+        log.debug("Motion magnetic phase update")
 
         if not hasattr(self, "r_xyz"):
             raise ValueError("Call generate_cloud() before update_motion_phase().")

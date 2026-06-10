@@ -122,6 +122,19 @@ class WarmVaporExp(ExpBaseParams):
         """Use slower escape mechanism as rough estimate."""
         return min(self.ballistic_transit_rate_Hz, self.diffusive_transit_rate_Hz)
 
+    def should_apply_boundary_conditions(self, simulation_window_radius_w0_cutoff):
+        """
+        Decide whether atom-wall reflection matters.
+
+        Activate if the relevant optical region is comparable to the real cell size.
+        """
+        control_limit = simulation_window_radius_w0_cutoff * self.w0_control_m > self.radius_m 
+        log.debug("Control dimention similar to cell diameter? %s", control_limit) 
+        signal_limit = simulation_window_radius_w0_cutoff * self.w0_signal_m > self.radius_m 
+        log.debug("Signal dimention similar to cell diameter? %s", signal_limit) 
+
+        return control_limit or signal_limit
+
     # useful ratios
     @property
     def aspect_ratio_full_cell(self):

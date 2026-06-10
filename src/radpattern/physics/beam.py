@@ -175,6 +175,7 @@ class BeamModel:
         np.ndarray, shape (N,)
             Complex weights.
         """
+        log.debug("Generating beam %s waights...", self.label ) 
         # Dimension check
         if r_xyz.ndim != 2 or r_xyz.shape[1] != 3:
             raise ValueError(f"r_xyz must have shape (N, 3), got {r_xyz.shape}")
