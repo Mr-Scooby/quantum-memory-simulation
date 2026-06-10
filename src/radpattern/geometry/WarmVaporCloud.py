@@ -33,7 +33,7 @@ class WarmVaporCloud(BaseCloud):
         return np.array([2 * self.R, 2 * self.R, self.Lz])
 
     @debug_timer()  
-    def generate_cloud(self, rng=None):
+    def _generate_cloud_impl(self, rng=None):
         log.debug("Generating cloud...") 
         if rng is None:
             rng = np.random.default_rng()

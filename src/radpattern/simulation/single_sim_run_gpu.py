@@ -10,6 +10,9 @@ from copy import deepcopy
 from radpattern.physics.rpattern_gpu import array_factor_general_gpu
 from radpattern.physics.coupling import intensity_overlap_on_sphere
 
+import logging 
+log = logging.getLogger(__name__) 
+
 
 def run_single_mc_gpu(
     *, # So all next variables must be called by name.
@@ -85,7 +88,17 @@ def run_single_mc_gpu(
             B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
         )
 
+        # Generating weights
         weights =  cloud.S * control_beam.w * motion_phase
+
+        # Warning control if weights goes to zero. 
+        if np.max(np.abs(weights)) < 1e-14:
+            log.warning(
+                "MC %d timestep %d: all retrieval weights are near zero. "
+                "Coupling/AF result may be meaningless.",
+                mc,
+                it,
+            )
 
 
         # GPU array factor
@@ -114,6 +127,7 @@ def run_single_mc_gpu(
 
     dt_mc = time.perf_counter() - t0_mc
     print(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
+    log.info(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s") 
     del cloud, control_beam, rng 
 
     return eta_t, AF_t, AF2_t, I_t

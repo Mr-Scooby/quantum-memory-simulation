@@ -28,7 +28,7 @@ class BECModel(BaseCloud):
         """ Number of Atoms to form the cloud"""
         return int(self.n_sim_atoms)
 
-    def generate_cloud(self, rng = None): 
+    def _generate_cloud_impl(self, rng = None): 
         """ generates Gaussian shape atom cloud """
 
         if rng is None:
@@ -41,6 +41,19 @@ class BECModel(BaseCloud):
         )
 
         return self.r_xyz
+
+    @property
+    def sigma_x(self):
+        return self.sigmas[0]
+
+    @property
+    def sigma_y(self):
+        return self.sigmas[1]
+
+    @property
+    def sigma_z(self):
+        return self.sigmas[2]
+
 
     @property
     def box_size(self):

@@ -15,6 +15,14 @@ log = logging.getLogger(__name__)
 class BaseCloud:
     atoms: AtomSpeciment #Stores type of atoms, wavelength, K-vectors. 
 
+    def __post_init__(self): 
+        if self.n_atoms > 10_000:
+            log.warning(
+                "Very large warm-vapor cloud: n_atoms=%d. GPU/CPU memory may be high.",
+                self.n_atoms,
+            )
+        self._warned_diffusion_large_step = False
+
     @property
     def n_atoms(self):
        raise NotImplementedError
@@ -24,6 +32,18 @@ class BaseCloud:
         raise NotImplementedError
 
     def generate_cloud(self, rng=None):
+
+        # Wrapper so it can log the memory ussage of the cloud.
+        self._generate_cloud_impl(rng)
+        log.info(
+            "r_xyz size %s,  memory usage : %.2f MB / %.3f GB",
+            self.r_xyz.shape,
+            self.r_xyz.nbytes / 1024**2,
+            self.r_xyz.nbytes / 1024**3,
+             )
+        return self.r_xyz
+    
+    def _generate_cloud_impl(self, rng = None):
         raise NotImplementedError
 
     def generate_velocity_distribution(self, rng= None ):
@@ -46,6 +66,15 @@ class BaseCloud:
             rng = np.random.default_rng()
 
         step_std = np.sqrt(2.0 * D_code * dt_code)
+
+        if step_std > 0.1 * min(self.box_size) and not self._warned_diffusion_large_step:
+            log.warning(
+                "Large diffusive step: step_std=%.3e code units, char. size =%.3e. "
+                "Boundary reflection may be inaccurate; reduce dt.",
+                step_std,
+                min(self.box_size),
+            )
+            self._warned_diffusion_large_step = True
         # generates random vecotos displacement. 
         dr = rng.normal(0.0, step_std, size=self.r_xyz.shape)
 
@@ -176,6 +205,17 @@ class BaseCloud:
         # Build and normalize spin wave
         S_raw = amp_protocol.astype(np.complex128) * optical_factor
 
+        # Check that the numbers of atoms with SW is significant.
+        abs_S = np.abs(S_raw)
+        active_frac = np.count_nonzero(abs_S > 1e-12 * abs_S.max()) / abs_S.size
+
+        if active_frac < 0.01:
+            log.warning(
+                "Very small active spin-wave fraction: %.3g. "
+                "Beam may miss cloud or waist/units may be wrong.",
+                active_frac,
+            )
+
         norm = np.linalg.norm(S_raw)
 
         if norm <= 0:
@@ -183,6 +223,12 @@ class BaseCloud:
 
         self.S = S_raw / norm
         log.debug("SpinWaveProfile generated")
+
+        log.info(
+            "SW  memory usage : %.2f MB / %.3f GB",
+            self.S.nbytes / 1024**2,
+            self.S.nbytes / 1024**3,
+             )
 
         return self.S
 

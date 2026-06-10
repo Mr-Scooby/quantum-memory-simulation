@@ -34,7 +34,12 @@ class BeamModel:
     def __post_init__(self):
         #normalize vector
         self.k_in_hat = np.asarray(self.k_in_hat, dtype=float)
-        self.k_in_hat /= (np.linalg.norm(self.k_in_hat) + 1e-15)
+
+        norm = np.linalg.norm(self.k_in_hat)
+        if norm < 1e-15:
+            log.error("Beam direction has near-zero norm: %s", self.k_in_hat)
+            raise ValueError("k_in_hat cannot be zero")
+        self.k_in_hat /= norm 
 
         self.center = np.asarray(self.center, dtype=float)
         self.box_size = np.asarray(self.box_size, dtype=float)
@@ -68,7 +73,8 @@ class BeamModel:
         else:
             raise ValueError(f"Unsupported beam_type: {self.beam_type!r},\n only gaussian_pulse, plane_wave  supported")
 
-        self.log_info()
+        #self.log_info()
+        self._logged_memory_size = False
 
     @staticmethod
     def upstream_front_position(center, box_size, k_in_hat, margin=1.0) -> np.array:
@@ -185,6 +191,22 @@ class BeamModel:
         phase     = self.optical_phase(r_xyz) 
 
         self.w = (env_perp * env_long * phase).astype(np.complex128)
+
+        # Check amplitude of weights is nonzero 
+        max_abs = np.max(np.abs(self.w))
+        if max_abs < 1e-12:
+            log.warning(
+                "Beam %s generated near-zero weights for all atoms. "
+                "Beam may miss cloud or units may be wrong.",
+                self.label,
+            )
+        if not self._logged_memory_size: 
+            log.info( "Beam %s Weight memory: %.2f MB / %.3f GB",
+                self.label,
+                self.w.nbytes / 1024**2,
+                self.w.nbytes / 1024**3,
+                )
+            self._logged_memory_size = True
         return self.w
 
     
