@@ -245,11 +245,11 @@ class ExpBaseParams:
                 "This may clip the stored spin wave.",
                 self.control_to_signal_waist_ratio,
             )
-        if theta_lobe > 0.1:
+        if self.forwardlobe_angular_width > 0.1:
             log.warning(
                 "Forward lobe is very wide: theta≈%.3e rad. "
                 "Check beam waist and code-unit conversion.",
-                theta_lobe,
+                self.forwardlobe_angular_width,
             )
         if abs(self.B_gradient) > 0 and abs(self.atom.magnetic_sensitivity_rad_s_T) < 1e-30:
             log.warning(
