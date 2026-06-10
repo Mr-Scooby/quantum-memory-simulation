@@ -270,6 +270,15 @@ class BaseCloud:
 
         omega_j = self.atoms.magnetic_sensitivity_rad_s_T * B_j
 
+        # Control that phase step is not too big
+        max_phase_step = np.max(np.abs(omega_j * dt_s))
+        if max_phase_step > np.pi:
+            log.warning(
+                "Large magnetic phase step: max Δphi=%.3g rad. "
+                "Time step may undersample dephasing.",
+                max_phase_step,
+            )
+
         self.motion_phase *= np.exp(-1j * omega_j * dt_s)
 
         return self.motion_phase

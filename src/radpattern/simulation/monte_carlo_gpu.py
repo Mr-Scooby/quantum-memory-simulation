@@ -14,6 +14,9 @@ from radpattern.physics.coupling import gaussian_fiber_mode_on_sphere
 from pathlib import Path
 from .single_sim_run_gpu import run_single_mc_gpu
 
+import logging
+log = logging.getLogger(__name__)
+
 def run_monte_carlo_gpu(
     *, # Force following arguments to be keyword-only.
     objs,
@@ -23,6 +26,7 @@ def run_monte_carlo_gpu(
     """
     Run all MC realizations on GPU, average outputs, and optionally save each run.
     """
+    log.info("Starting MC simulation")
     print(f"SAVE_FULL_MC = {save_full_mc}")
     
     # Extracts dataObjects
@@ -46,6 +50,16 @@ def run_monte_carlo_gpu(
 
     # Coupling fiber gaussian mode
     theta0 = 12 / (exp.atom.k_signal * exp.w0_signal)
+
+    # Coupling control. 
+    if theta0 > grid.theta_max:
+        log.warning(
+            "Fiber mode angular width theta0=%.3e is larger than grid theta_max=%.3e. "
+            "Coupling integral may be truncated.",
+            theta0,
+            grid.theta_max,
+        )
+
     E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, theta0)) ** 2
 
     # Saves direction array to gpu memory
@@ -60,6 +74,7 @@ def run_monte_carlo_gpu(
         mc_dir.mkdir(parents=True, exist_ok=True)
 
     # Storage array adjudication 
+    log.debug("Preparing temporal storage array") 
     eta_sum = np.zeros(T, dtype=np.float64)
     AF_sum = np.zeros((T, nt, nphi), dtype=np.complex128)
     AF2_sum = np.zeros((T, nt, nphi), dtype=np.float64)

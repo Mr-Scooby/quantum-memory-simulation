@@ -101,7 +101,7 @@ class ExpBaseParams:
                                   m_s = self.m_s , 
                                   ) 
 
-
+        self._validation_and_warnings()
     @property
     def density(self): 
         raise NotImplementedError

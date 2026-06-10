@@ -43,10 +43,14 @@ def run_single_mc_gpu(
     nt, nphi = grid.shape
 
     print(f"Run {mc + 1}/{sim.n_mc}")
+    log.info("Run %d / %d", mc + 1 , sim.n_mc)
+    # Perfomace timing of the whole time simulation
     t0_mc = time.perf_counter()
 
     # Independent RNG per MC run
     seed = 1000 if sim.seed is None else int(sim.seed)
+    log.debug("Seed = %d", seed)
+
     rng = np.random.default_rng(seed + mc)
 
     # Generate one cloud realization
@@ -66,6 +70,7 @@ def run_single_mc_gpu(
 
     Diff_coef = exp.diffusion_coeff_code
 
+    # Running time step simulation
     for it, t in enumerate(times_code):
         print(
             f"[MC {mc + 1}/{sim.n_mc}] time step {it + 1}/{T}",
@@ -102,6 +107,8 @@ def run_single_mc_gpu(
 
 
         # GPU array factor
+        ## timing control of the AF calculation
+        t0_af = time.perf_counter() 
         AF = array_factor_general_gpu(
             n_hat_flat=n_hat_gpu,
             grid_shape=grid.shape,
@@ -111,6 +118,7 @@ def run_single_mc_gpu(
             chunk_atoms=sim.chunk_atoms,
             chunk_dirs = sim.chunk_dirs, 
         )
+        log.info("AF calculation runtime %.5f", time.perf_counter() - t0_af) 
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole
 

@@ -33,10 +33,14 @@ class AngleGrid:
         self.n_hat = np.stack([self.nx, self.ny, self.nz], axis=-1)
         self.n_hat_flat = self.n_hat.reshape(-1, 3)
         
-        log.info("grid size %s, memory usage : %.2f MB / %.3f GB",
-                     self.shape, 
-                     self.n_hat_flat.nbytes / 1024**2,
-                     self.n_hat_flat.nbytes / 1024**3)
+        log.info(
+            "Grid: shape=(%d,%d), n_dirs=%d, theta_max=%.3e rad, memory=%.2f MB | %.3f GB",
+            self.n_theta,
+            self.n_phi,
+            self.n_hat_flat.shape[0],
+            self.theta_max,
+            self.n_hat_flat.nbytes / 1024**2,
+            self.n_hat_flat.nbytes / 1024**3)
         
         
     @property

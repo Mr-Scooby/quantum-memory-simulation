@@ -59,7 +59,7 @@ class BECExpParams(ExpBaseParams):
         """
         Buffer-gas diffusion estimate [m^2/s].
         """
-        log.info("No buffer gas. Diffusion coeff = 1/3 * mfp * v_average""") 
+        log.warning("No buffer gas. Diffusion coeff = 1/3 * mfp * v_average""") 
         return self.interparticle_distance * self.mean_speed /3 
 
 
