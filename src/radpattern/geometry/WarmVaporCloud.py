@@ -101,9 +101,9 @@ class WarmVaporCloud(BaseCloud):
         log.debug("Application of boundary condition met") 
         return self.r_xyz
 
-    def update_position_diffusive(self, **kwargs):
+    def update_position_diffusive(self,*args,  **kwargs):
         """ Diffusive motion. takes reflection into account if necessary """
-        super().update_position_diffusive(**kwargs)
+        super().update_position_diffusive(*args,**kwargs)
         if self.boundary_condition_apply:
             self.apply_boundary_conditions()
 
