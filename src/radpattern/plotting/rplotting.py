@@ -624,7 +624,7 @@ def plot_cloud_slices(
         ax.set_ylabel(ylabel)
         ax.set_title(f"{title}\nN={np.count_nonzero(mask)}")
         ax.grid(True, alpha=0.3)
-        ax.set_aspect("equal")
+        ax.set_aspect("auto")
         return sc
 
     sc0 = _scatter(
