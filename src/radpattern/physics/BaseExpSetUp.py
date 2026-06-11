@@ -101,7 +101,7 @@ class ExpBaseParams:
                                   m_s = self.m_s , 
                                   ) 
 
-
+        self._validation_and_warnings()
     @property
     def density(self): 
         raise NotImplementedError
@@ -237,6 +237,25 @@ class ExpBaseParams:
     def B_gradient_z_T_per_code(self):
         """Magnetic-field gradient in code units: [T / code_length]."""
         return self.B_gradient * self.ref_length
+
+    def _validation_and_warnings(self): 
+        if self.control_to_signal_waist_ratio < 1.0:
+            log.warning(
+                "Control beam is narrower than signal beam: w_control/w_signal=%.3g. "
+                "This may clip the stored spin wave.",
+                self.control_to_signal_waist_ratio,
+            )
+        if self.forwardlobe_angular_width > 0.1:
+            log.warning(
+                "Forward lobe is very wide: theta≈%.3e rad. "
+                "Check beam waist and code-unit conversion.",
+                self.forwardlobe_angular_width,
+            )
+        if abs(self.B_gradient) > 0 and abs(self.atom.magnetic_sensitivity_rad_s_T) < 1e-30:
+            log.warning(
+                "B_gradient is nonzero but magnetic sensitivity is ~0. "
+                "Motion phase will not change."
+            )
 
     def __str__(self):
         lines = [f"{self.__class__.__name__}("]

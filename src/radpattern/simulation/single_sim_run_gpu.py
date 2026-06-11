@@ -10,6 +10,9 @@ from copy import deepcopy
 from radpattern.physics.rpattern_gpu import array_factor_general_gpu
 from radpattern.physics.coupling import intensity_overlap_on_sphere
 
+import logging 
+log = logging.getLogger(__name__) 
+
 
 def run_single_mc_gpu(
     *, # So all next variables must be called by name.
@@ -40,10 +43,14 @@ def run_single_mc_gpu(
     nt, nphi = grid.shape
 
     print(f"Run {mc + 1}/{sim.n_mc}")
+    log.info("Run %d / %d", mc + 1 , sim.n_mc)
+    # Perfomace timing of the whole time simulation
     t0_mc = time.perf_counter()
 
     # Independent RNG per MC run
     seed = 1000 if sim.seed is None else int(sim.seed)
+    log.debug("Seed = %d", seed)
+
     rng = np.random.default_rng(seed + mc)
 
     # Generate one cloud realization
@@ -63,6 +70,7 @@ def run_single_mc_gpu(
 
     Diff_coef = exp.diffusion_coeff_code
 
+    # Running time step simulation
     for it, t in enumerate(times_code):
         print(
             f"[MC {mc + 1}/{sim.n_mc}] time step {it + 1}/{T}",
@@ -85,10 +93,22 @@ def run_single_mc_gpu(
             B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
         )
 
+        # Generating weights
         weights =  cloud.S * control_beam.w * motion_phase
+
+        # Warning control if weights goes to zero. 
+        if np.max(np.abs(weights)) < 1e-14:
+            log.warning(
+                "MC %d timestep %d: all retrieval weights are near zero. "
+                "Coupling/AF result may be meaningless.",
+                mc,
+                it,
+            )
 
 
         # GPU array factor
+        ## timing control of the AF calculation
+        t0_af = time.perf_counter() 
         AF = array_factor_general_gpu(
             n_hat_flat=n_hat_gpu,
             grid_shape=grid.shape,
@@ -98,6 +118,7 @@ def run_single_mc_gpu(
             chunk_atoms=sim.chunk_atoms,
             chunk_dirs = sim.chunk_dirs, 
         )
+        log.info("AF calculation runtime %.5f", time.perf_counter() - t0_af) 
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole
 
@@ -114,6 +135,7 @@ def run_single_mc_gpu(
 
     dt_mc = time.perf_counter() - t0_mc
     print(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
+    log.info(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s") 
     del cloud, control_beam, rng 
 
     return eta_t, AF_t, AF2_t, I_t

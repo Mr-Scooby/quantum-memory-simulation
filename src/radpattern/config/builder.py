@@ -29,6 +29,11 @@ from radpattern.geometry import BaseCloud, WarmVaporCloud, BECModel
 
 from radpattern.config.builder_helpers import resolve_theta_max
 
+import logging
+log = logging.getLogger(__name__)
+
+
+
 @dataclass
 class RunObjects:
     """
@@ -134,14 +139,16 @@ def build_exp(cfg: Dict[str, Any]): # -> ExperimentalParams:
     ExperimentalParams
         Experiment object with derived code units.
     """
-
+    log.debug("Building Exp object") 
     atom = cfg["exp"].get("atoms", "").lower()
 
     if atom in {"cs133", "cs", "cesium", "cesium133"}:
+        log.debug("WarmVaporExp instance")
         exp_cfg = dataclass_kwargs(WarmVaporExp, cfg["exp"])
         return WarmVaporExp(**exp_cfg)
 
     if atom in {"rb87", "rb", "rubidium", "rubidium87"}:
+        log.debug("BEC instance")
         exp_cfg = dataclass_kwargs(BECExpParams, cfg["exp"])
         return BECExpParams(**exp_cfg)
 
@@ -169,6 +176,7 @@ def build_sim(cfg: Dict[str, Any], exp: ExpBaseParams) -> SimParams:
     SimParams
         Simulation object.
     """
+    log.debug("Building Sim object")
 
     sim_cfg = dict(cfg.get("sim", {}))
 
@@ -190,7 +198,7 @@ def build_cloud(
     Cs133 / WarmVaporExp -> WarmVaporCloud
     Rb87  / BECExpParams    -> BECModel
     """
-
+    log.debug("Building atom Cloud...") 
     atom = getattr(exp, "atoms", "").lower()
 
     # Warm vapor Cs cloud
@@ -201,9 +209,11 @@ def build_cloud(
             "sim_density": sim.sim_density,
             "Lz": exp.Lz,
             "R": sim.simulation_window_radius_w0_cutoff * exp.w0_control,
+            "boundary_condition_apply": exp.should_apply_boundary_conditions(sim.simulation_window_radius_w0_cutoff)
         }
 
         cloud_kwargs = dataclass_kwargs(WarmVaporCloud, defaults)
+        log.debug("cloud type : WarmVaporCloud. Params passed : %s", cloud_kwargs) 
         return WarmVaporCloud(**cloud_kwargs)
 
     # BEC / cold Rb cloud
@@ -215,6 +225,7 @@ def build_cloud(
         }
 
         cloud_kwargs = dataclass_kwargs(BECModel, defaults)
+        log.debug("cloud type : BECCloud. Params passed : %s", cloud_kwargs) 
         return BECModel(**cloud_kwargs)
 
     raise ValueError(
@@ -231,6 +242,8 @@ def build_control_beam(
     Build BeamModel from ExperimentalParams and CloudModel.
     The beam is derived from the experimental setup.
     """
+    
+    log.debug("Building Beam obj") 
 
     control_offset_code = (
         np.asarray(exp.control_beam_AxisOffset_nm, dtype=float)
@@ -295,6 +308,7 @@ def build_run_objects(config_path: str) -> RunObjects:
     Input: config_path : str Path to the run config.
     Output : RunObjects: Ready-to-use objects for the runner.
     """
+    log.debug("Generating objects from json file") 
 
     cfg = load_json(config_path)
     print(cfg)
@@ -317,6 +331,7 @@ def build_run_objects(config_path: str) -> RunObjects:
 def default_configPath(system):
     """ Provides defaults json path from defaults"""
 
+    log.info("Building Sim SetUp by default json files") 
     DEFAULT_PACKAGE = "radpattern.config.defaults"
     DEFAULT_FILES = {
         "cs133": "cs133_default.json",

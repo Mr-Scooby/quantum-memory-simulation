@@ -72,7 +72,7 @@ class SimParams:
         geomspace array. 
         params: char_time, time_divisions. 
         """
-        log.info("Time array creation. Sim_time_window = %f [us], divisions = %i", self.sim_time_us, self.time_divisions )
+        log.info("Time array creation. Sim_time_window = %f [us], divisions = %i, spacing = %s", self.sim_time_us, self.time_divisions, self.time_spacing.lower() )
         if self.time_spacing.upper() == "LINSPACE":
             times_us = np.linspace(0.0, self.sim_time_us, self.time_divisions)
         elif self.time_spacing.upper() == "GEOMSPACE":

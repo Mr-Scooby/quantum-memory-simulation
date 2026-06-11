@@ -63,7 +63,7 @@ class WarmVaporExp(ExpBaseParams):
         Note. if buffer_gas == None => D = mfp * v_average / 3
         """
         if self.buffer_gas is None or float(self.buffer_pressure_Torr) <= 0.0: 
-            log.info("No buffer gas. Diffusion coeff = 1/3 * mfp * v_average""") 
+            log.warning("No buffer gas or non positive pressure. Diffusion coeff = 1/3 * mfp * v_average""") 
             return self.interparticle_distance * self.mean_speed /3 
 
         else: 
@@ -121,6 +121,26 @@ class WarmVaporExp(ExpBaseParams):
     def transit_time_rate_Hz(self):
         """Use slower escape mechanism as rough estimate."""
         return min(self.ballistic_transit_rate_Hz, self.diffusive_transit_rate_Hz)
+
+    def should_apply_boundary_conditions(self, simulation_window_radius_w0_cutoff):
+        """
+        Decide whether atom-wall reflection matters.
+
+        Activate if the relevant optical region is comparable to the real cell size.
+        """
+        control_limit = simulation_window_radius_w0_cutoff * self.w0_control_m > self.radius_m 
+        log.debug("Control dimention similar to cell diameter? %s", control_limit) 
+        signal_limit = simulation_window_radius_w0_cutoff * self.w0_signal_m > self.radius_m 
+        log.debug("Signal dimention similar to cell diameter? %s", signal_limit) 
+
+        if control_limit or signal_limit:
+            log.warning(
+                "Warm vapor boundary reflection active: simulation window is comparable "
+                "to the real cell radius. Check coating/wall-collision assumptions."
+                    )
+
+
+        return control_limit or signal_limit
 
     # useful ratios
     @property
