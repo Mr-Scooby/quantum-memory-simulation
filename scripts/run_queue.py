@@ -15,6 +15,7 @@ if error arises moves file to failed/ directory with a txt error traceback and c
 
 
 from pathlib import Path
+import time
 import shutil
 import traceback
 
@@ -105,20 +106,32 @@ def main():
 
         try:
 
+            # Read config file and create objs
             objs = build_run_objects(str(config_path))
 
+            # Obtain folder name and create folder
             setp = objs.sim.sim_metadataSetUp(objs.exp, objs.Cbeam)
             mc_folder = output_dir / f"{setp.run_name}_mc_runs"
             mc_folder.mkdir(parents=True, exist_ok=True)
 
+            # set up logger handler console and logfile
             setup_run_logging(mc_folder)
             log = logging.getLogger(__name__)
 
             log.info("Starting config: %s", config_path)
             log.info("Output folder: %s", mc_folder)
             
+            # MC simulations. 
+            ## timing simulation runtime 
+            t0_mcsim = time.perf_counter()
             mc_folder = run_one_config(objs, output_dir, save_full_mc = True)
+
+            # final runtime logs
             log.info("Finished config: %s", config_path)
+            dt_mcsim = time.perf_counter() - t0_mcsim 
+            log.info("Simulation runtime : %.3f s | %.3f min | %.3f h ", dt_mcsim, dt_mcsim / 60 , dt_mcsim / 1440) 
+            avetime = dt_mcsim / objs.sim.n_mc
+            log.info("Simulated %d runs. Average runtime : %2.f s, %3.f min, %3.f h", objs.sim.n_mc, avetime, avetime / 60, avetime/ 1440)
 
             print("done:", config_path)
             try: 
