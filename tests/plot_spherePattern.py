@@ -12,5 +12,5 @@ file = Path(input("File: "))
 data,grid, exp, sim =  load_data(file)
 
 print(data.keys()) 
-plot_pattern_3d(grid, data["intensity"][99], title= exp.label )
+plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
 plt.show()

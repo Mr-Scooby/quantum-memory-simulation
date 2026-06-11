@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+        #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import radpattern.physics.coupling as cp
@@ -6,10 +6,15 @@ from radpattern.physics.setup_params import ExperimentalParams, SimParams
 from radpattern.physics.beam import BeamModel 
 from radpattern.geometry.cloud_model import CloudModel 
 from radpattern.helpers.helpers import single_dipole_E
+
+from radpattern.plotting.pattern_3d import plot_pattern_3d
+from plotting_atomsSystem import plotting_cloud_from_json
 import matplotlib.pyplot as plt 
+
 import numpy as np
 import re 
 from pathlib import Path
+
 
 from radpattern.plotting import load_data
 
@@ -29,11 +34,13 @@ except NotADirectoryError as e:
         PATH = PATH.parent
 
 #
-title = "Cs133. N2 @ 10 Torr. Varying Control diameter" 
+title = "Rb87 changing Cbeam Angle "
 # plot title and legend title
-legend_title = r"Diameter [$\mu$m]" 
-timeScale = "us" 
-timeScale = r"$\mu$s" 
+#legend_title = r"Diameter [$\mu$m]" 
+legend_title = r"Cbeam angle [mrad]"
+timeScale = "ms" 
+#timeScale = r"$\mu$s" 
+
 # To match from file name for labels 
 regex_pattern =r'_(\d+)ControlBeamfactor'
 
@@ -148,7 +155,12 @@ for file_idx, file in enumerate(files):
     P_total[file_idx,:] = P_tot
     P_OverTotal0[file_idx,:] = P_fib_over_Ptot0_t
 
-    labels[file_idx] = exp.B_gradient
+    _label= exp.label 
+    match = re.search(re.compile(r"angle\s*=\s*([\d.]+)"), _label)
+    labels[file_idx] = float(match.group(1))
+
+#    labels[file_idx] = exp.B_gradient
+        
 #    match = re.search(regex_pattern, str(file))
 #
 #    if match:
@@ -187,9 +199,9 @@ arg_sorted = np.argsort(labels)
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
 #labels = [0, 0.1, 1, 10]
-
+#times_us= times_us * 1e-3
 sorted_files = np.array(files)[arg_sorted]
-labels = np.array(labels)[arg_sorted]
+labels = np.array(labels)[arg_sorted] 
 etas = etas[arg_sorted]
 P_OverTotal0 = P_OverTotal0[arg_sorted]
 
@@ -199,7 +211,7 @@ fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(sorted_files[:7]): 
     ax.plot(times_us, etas[idx, :], "o-", label=labels[idx])
 for idx, file in enumerate(sorted_files[7:],7): 
-    ax.plot(times_us, etas[idx, : ], "*--", label=labels[idx])
+    ax.plot(times_us[20], etas[idx, :20 ], "*--", label=labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"coupling $\eta$")
@@ -213,11 +225,32 @@ print(beamRatios)
 # Plots total emitted power vs time
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(sorted_files[:7]): 
-    ax.plot(times_us, P_OverTotal0[idx,: ], "o-", label=labels[idx])
+    ax.plot(times_us[:20], P_OverTotal0[idx,:20 ], "o-", label=labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
 ax.set_title(title)
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
+
+
+# Plotting the emission pattern.
+plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
+
+
+#
+## Plotting one of the Cloud setups
+### Searching for the .json file
+#try:
+#        json_file= None
+#        for file in PATH.iterdir():
+#            if file.is_file() and file.suffix == ".json":
+#                json_file = file 
+#        if json_file is not None: 
+#            fig1, ax1, fig2, ax2 = plotting_cloud_from_json(file)
+#except NotADirectoryError as e: 
+#        print(" No json file found.") 
+#
+#
+#
 plt.show()
