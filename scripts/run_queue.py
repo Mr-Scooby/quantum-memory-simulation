@@ -109,6 +109,7 @@ def main():
 
             setp = objs.sim.sim_metadataSetUp(objs.exp, objs.Cbeam)
             mc_folder = output_dir / f"{setp.run_name}_mc_runs"
+            mc_folder.mkdir(parents=True, exist_ok=True)
 
             setup_run_logging(mc_folder)
             log = logging.getLogger(__name__)
