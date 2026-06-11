@@ -21,6 +21,53 @@ import traceback
 from radpattern.config.builder import build_run_objects
 from radpattern.simulation.runner import run_one_config 
 
+import logging 
+import sys
+
+class ShortNameFilter(logging.Filter):
+    def filter(self, record):
+        record.shortname = record.name.replace("radpattern.", "")
+        return True
+
+def setup_run_logging(output_dir):
+    """Handles logging to file and console"""
+
+    # Creates log info file 
+    output_dir = Path(output_dir)
+
+    log_path = output_dir / "run.log"
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+
+    # Avoid duplicated logs if setup_run_logging() is called twice
+    root.handlers.clear()
+
+
+    fmt = "%(asctime)s | %(levelname)s | %(shortname)s | %(message)s"
+    datefmt = "%H:%M:%S"
+
+    formatter = logging.Formatter(fmt, datefmt=datefmt)
+
+    # File: INFO, WARNING, ERROR...
+    file_handler = logging.FileHandler(log_path, mode="w", encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    file_handler.addFilter(ShortNameFilter())
+
+    # Console: only WARNING, ERROR...
+    console_handler = logging.StreamHandler(sys.stderr)
+    console_handler.setLevel(logging.WARNING)
+    console_handler.setFormatter(formatter)
+    console_handler.addFilter(ShortNameFilter())
+
+    root.addHandler(file_handler)
+    root.addHandler(console_handler)
+
+    logging.getLogger(__name__).info("Logging initialized. Log file: %s", log_path)
+
+    return log_path
+
 def move_file(src, dst_dir):
     """
     Move one file into a folder.
@@ -46,6 +93,7 @@ def move_file(src, dst_dir):
 
 
 def main():
+
     queue_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue")
     done_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\done")
     failed_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\failed")
@@ -58,8 +106,29 @@ def main():
         try:
 
             objs = build_run_objects(str(config_path))
+
+            setp = objs.sim.sim_metadataSetUp(objs.exp, objs.Cbeam)
+            mc_folder = output_dir / f"{setp.run_name}_mc_runs"
+
+            setup_run_logging(mc_folder)
+            log = logging.getLogger(__name__)
+
+            log.info("Starting config: %s", config_path)
+            log.info("Output folder: %s", mc_folder)
             
             mc_folder = run_one_config(objs, output_dir, save_full_mc = True)
+            log.info("Finished config: %s", config_path)
+
+            print("done:", config_path)
+            try: 
+                dst = mc_folder / config_path.name
+                shutil.copy2(config_path, dst)
+            except (TypeError, FileNotFoundError) as e:
+                print(f" Couldn't copy json file to mc_runs folder. Error {e}")
+
+
+            move_file(config_path, done_dir)
+
 
         except Exception:
             print("failed:", config_path)
@@ -71,17 +140,6 @@ def main():
                 traceback.format_exc(),
                 encoding="utf-8",
             )
-
-        else:
-            print("done:", config_path)
-            try: 
-                dst = mc_folder / config_path.name
-                shutil.copy2(config_path, dst)
-            except (TypeError, FileNotFoundError) as e:
-                print(f" Couldn't copy json file to mc_runs folder. Error {e}")
-
-
-            move_file(config_path, done_dir)
 
 
 if __name__ == "__main__":
