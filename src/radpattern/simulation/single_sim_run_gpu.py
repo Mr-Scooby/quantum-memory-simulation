@@ -118,7 +118,7 @@ def run_single_mc_gpu(
             chunk_atoms=sim.chunk_atoms,
             chunk_dirs = sim.chunk_dirs, 
         )
-        log.info("AF calculation runtime %.5f", time.perf_counter() - t0_af) 
+        log.debug("AF timestep %d calculation runtime %.5f", it, time.perf_counter() - t0_af) 
         AF2 = np.abs(AF) ** 2
         I = AF2 * dipole
 
