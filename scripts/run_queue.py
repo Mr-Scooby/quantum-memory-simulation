@@ -141,6 +141,9 @@ def main():
                 traceback.format_exc(),
                 encoding="utf-8",
             )
+            # log also to run.log
+            log = logging.getLogger(__name__)
+            log.exception("Failed config: %s", config_path)
 
 
 if __name__ == "__main__":
