@@ -206,6 +206,7 @@ def build_cloud(
 
          
         sim_R = min( sim.simulation_window_radius_w0_cutoff * exp.w0_control, exp.R) 
+        boundary_condition_apply = exp.should_apply_boundary_conditions(sim.simulation_window_radius_w0_cutoff)
 
         log.info(
             "Warm vapor cloud radius: sim_R=%.6g, physical_cell_R=%.6g, boundary_active=%s",
@@ -219,7 +220,7 @@ def build_cloud(
             "sim_density": sim.sim_density,
             "Lz": exp.Lz,
             "R": sim_R ,
-            "boundary_condition_apply": exp.should_apply_boundary_conditions(sim.simulation_window_radius_w0_cutoff),
+            "boundary_condition_apply": boundary_condition_apply,
             "N_bounces": exp.coating_N_bounces
         }
 
