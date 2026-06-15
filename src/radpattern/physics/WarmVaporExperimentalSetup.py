@@ -25,8 +25,59 @@ class WarmVaporExp(ExpBaseParams):
     diffusion_T0_K: float #= 273.15
     diffusion_P0_Torr: float #= 1.0
 
+    # Coating
+    coating_label: str
+    coating_N_bounces : int
+    coating_max_temp_C : int
+
     spin_destruction_cross_section_CsN2_m2: float
     spin_exchange_alpha_CsCs_m3_s: float 
+
+    def _validation_and_warnings(self):
+    # Perfom data validation and logs info and warnings. 
+        super()._validation_and_warnings() 
+
+        log.debug("Running check validations and Warnings from WarmVaporExperimentalSetUp")
+        if self.coating_label is None:
+            if self.coating_N_bounces is not None:
+                raise ValueError(
+                    "If coating_label is None, coating_N_bounces must also be None."
+                )
+            if self.coating_max_temp_C is not None: 
+                raise ValueError("Coating label set to None, but coating_max_temp_C was given") 
+
+            log.info("No wall decoherence model selected.")
+            return
+
+        if self.coating_N_bounces is None:
+            raise ValueError(
+                "coating_label was set, but coating_N_bounces is None."
+            )
+
+        if self.coating_N_bounces <= 0:
+            raise ValueError(
+                f"coating_N_bounces must be > 0, got {self.coating_N_bounces}."
+            )
+        if self.coating_max_temp_C is None: 
+            raise ValueError(f"Coating_label was set, but coating_max_temp_C is None ")
+
+        if (self.temperature - 273.15)  >= self.coating_max_temp_C : 
+            raise ValueError( f"Cell temperature ({self.temperature - 273.15} C)  above coating max temp ( {self.coating_max_temp_C} C).") 
+
+
+        log.info("Cell Wall coating %s, N_bounces %d, Max_temperature: %2.f C", self.coating_label, self.coating_N_bounces, self.coating_max_temp_C) 
+        # Extra useful info
+        p_depol = 1.0 / self.coating_N_bounces
+        log.info(
+            "Wall depolarization probability per bounce: %.3e",
+            p_depol,
+        )
+
+        log.info(
+            "Wall survival probability per bounce: %.12f",
+            1.0 - p_depol,
+        )
+
 
 
     @property
@@ -164,6 +215,8 @@ class WarmVaporExp(ExpBaseParams):
     def sw_periods_across_cell(self) -> float:
         return self.kz_phase_accumulation / (2.0 * math.pi)
 
+
+
     def __str__(self):
         base = super().__str__()
         base = base[:-1] if base.endswith(")") else base
@@ -195,6 +248,19 @@ class WarmVaporExp(ExpBaseParams):
         lines.append(f"  diffusion_P0_Torr             = {self.diffusion_P0_Torr:.6g}")
         lines.append(f"  diffusion_coeff_SI            = {self.diffusion_coeff_SI:.6e} m^2/s")
         lines.append(f"  diffusion_coeff_code          = {self.diffusion_coeff_code:.6e}")
+
+        lines.append("  --- coating / wall decoherence ---")
+        lines.append(f"  coating_label                  = {self.coating_label}")
+        lines.append(f"  coating_N_bounces              = {self.coating_N_bounces}")
+        lines.append(f"  coating_max_temp_C             = {self.coating_max_temp_C}")
+
+        if self.coating_N_bounces is not None:
+            p_depol = 1.0 / self.coating_N_bounces
+            lines.append(f"  wall_depol_prob_per_bounce     = {p_depol:.6e}")
+            lines.append(f"  wall_survival_prob_per_bounce  = {1.0 - p_depol:.12f}")
+        else:
+            lines.append("  wall_depol_prob_per_bounce     = disabled")
+            lines.append("  wall_survival_prob_per_bounce  = disabled")
 
         lines.append("  --- warm vapor rates ---")
         lines.append(f"  pressure_broadening_signal_Hz = {self.pressure_broadening_signal_Hz:.6e}")
