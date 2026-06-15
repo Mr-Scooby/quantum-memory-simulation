@@ -16,7 +16,7 @@ def run_one_config(objs, output_dir, **kwargs):
     """
     Run one config, save its mean MC results, and optionally save full MC runs.
     """
-    pre_simulation_warnings(objs, 10*ref.exp.forwardlobe_angular_width )
+    pre_simulation_warnings(objs, 10*objs.exp.forwardlobe_angular_width )
 
     setp = objs.sim.sim_metadataSetUp(objs.exp, objs.Cbeam)
 
