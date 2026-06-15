@@ -204,9 +204,16 @@ def build_cloud(
     # Warm vapor Cs cloud
     if isinstance(exp, WarmVaporExp) or atom in {"cs133", "cs", "cesium", "cesium133"}:
 
-        r = sim.simulation_window_radius_w0_cutoff * exp.w0_control
-        sim_R = r if r < exp.R else exp.R
-        
+         
+        sim_R = min( sim.simulation_window_radius_w0_cutoff * exp.w0_control, exp.R) 
+
+        log.info(
+            "Warm vapor cloud radius: sim_R=%.6g, physical_cell_R=%.6g, boundary_active=%s",
+            sim_R,
+            exp.R,
+            boundary_condition_apply,
+        )
+
         defaults = {
             "atoms": exp.atom,
             "sim_density": sim.sim_density,

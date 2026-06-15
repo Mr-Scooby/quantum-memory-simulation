@@ -22,8 +22,14 @@ class WarmVaporCloud(BaseCloud):
 
     def __post_init__(self):
         super().__post_init__()
-        if not self.boundary_condition_apply: 
-            log.info("No Wall reflection active.") 
+
+        if (not self.boundary_condition_apply) and self.N_bounces is not None:
+            log.warning(
+                "N_bounces=%s was provided, but boundary reflections are disabled. "
+                "Wall decoherence will not be applied.",
+                self.N_bounces,
+            )
+
 
     @property
     def n_atoms(self): 
@@ -67,7 +73,7 @@ class WarmVaporCloud(BaseCloud):
         log.debug("radial reflection boundary condition") 
 
         hit_any = np.zeros(self.r_xyz.shape[0], dtype= bool) 
-        for _ in range(max_iter):
+        for it in range(max_iter):
             x = self.r_xyz[:, 0]
             y = self.r_xyz[:, 1]
 
@@ -78,7 +84,8 @@ class WarmVaporCloud(BaseCloud):
             n_outside = np.count_nonzero(outside)
 
             log.debug(
-                "n_atoms outside radial wall: %d / %d (%.3f %%)",
+                "radial reflection iter=%d: n_atoms outside : %d / %d (%.3f %%)",
+                it,
                 n_outside,
                 self.n_atoms,
                 100.0 * n_outside / self.n_atoms,
@@ -109,7 +116,7 @@ class WarmVaporCloud(BaseCloud):
         z_max =  0.5 * self.Lz
     
         hit_any = np.zeros(self.r_xyz.shape[0], dtype = bool) 
-        for _ in range(max_iter):
+        for it in range(max_iter):
             z = self.r_xyz[:, 2]
 
             above = z > z_max
@@ -120,7 +127,8 @@ class WarmVaporCloud(BaseCloud):
 
             n_outside = np.count_nonzero(outside)
             log.debug(
-                "n_atoms outside z coordinate caps: %d / %d (%.3f %%)",
+                "z cap reflection iter=%d: n_atoms outside: %d / %d (%.3f %%)",
+                it, 
                 n_outside,
                 self.n_atoms,
                 100.0 * n_outside / self.n_atoms,
@@ -145,7 +153,8 @@ class WarmVaporCloud(BaseCloud):
         """
         log.debug("wall decoherence survival calculation") 
         if self.N_bounces is None:
-            log.debug("No coating selected. no update on weights")
+            log.warning("Wall reflection is active but N_bounces=None. "
+        "Atoms reflect from the cell wall without wall-induced decoherence.")
             return
         if not np.any(atoms_outside):
             log.debug("No wall hits. Skipping wall decoherence.")
@@ -158,6 +167,17 @@ class WarmVaporCloud(BaseCloud):
         coherence = ( ~atoms_outside ) | survive  # atoms not outside automatically survive 
         n_coh =  np.count_nonzero(coherence)
         log.info("atoms decoherence survival : %d / %d (%3.f %%) ",n_coh , self.n_atoms, 100 * n_coh / self.n_atoms)
+
+        n_depol = self.n_atoms - n_coh
+        # Warning if too many atoms depolarize at same time
+        if n_depol / self.n_atoms > 0.01:
+            log.warning(
+                "Large wall decoherence in one timestep: depolarized=%d/%d (%.3f %%). "
+                "Check dt, D, cell size, or N_bounces.",
+                n_depol,
+                self.n_atoms,
+                100.0 * n_depol / self.n_atoms,
+            )
         # update weights 
         self.S *= coherence 
     
@@ -176,6 +196,7 @@ class WarmVaporCloud(BaseCloud):
             wall_bounce = np.count_nonzero(outside)
             log.info("N_atoms bouncing from wall : %d/ %d (%3.f %%)",wall_bounce, self.n_atoms, 100 * wall_bounce / self.n_atoms )  
             self.wall_decoherence_survival(outside, **kwargs)
+
 
 
         return self.r_xyz

@@ -22,6 +22,9 @@ class BaseCloud:
                 self.n_atoms,
             )
         self._warned_diffusion_large_step = False
+        self.stats = {
+                "max_diffusion_step_std_code": 0.0,
+                }
 
     @property
     def n_atoms(self):
@@ -67,6 +70,11 @@ class BaseCloud:
 
         # Difusionn step size.
         step_std = np.sqrt(2.0 * D_code * dt_code)
+        # Stats update. 
+        self.stats["max_diffusion_step_std_code"] = max(
+            self.stats["max_diffusion_step_std_code"],
+            float(step_std),
+        )
 
         # Checking size not too big 
         if step_std > 0.1 * min(self.box_size) and not self._warned_diffusion_large_step:
