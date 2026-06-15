@@ -135,7 +135,7 @@ def run_single_mc_gpu(
 
     dt_mc = time.perf_counter() - t0_mc
     print(f"MC {mc + 1}/{sim.n_mc} runtime: {dt_mc:.2f} s", flush=True)
-    log.info(f"MC %d/%d  runtime: %.2f s || %.3f min", (mc + 1)/sim.n_mc, dt_mc, dt_mc/60 ) 
+    log.info(f"MC %d/%d  runtime: %.2f s || %.3f min", (mc + 1), sim.n_mc, dt_mc, dt_mc/60 ) 
     del cloud, control_beam, rng 
 
     return eta_t, AF_t, AF2_t, I_t
