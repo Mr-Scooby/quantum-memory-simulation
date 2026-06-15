@@ -133,7 +133,7 @@ class WarmVaporCloud(BaseCloud):
             self.r_xyz[above, 2] = 2.0 * z_max - self.r_xyz[above, 2]
             self.r_xyz[below, 2] = 2.0 * z_min - self.r_xyz[below, 2]
 
-        raise runtimeerror(
+        raise RuntimeError(
               "boundary reflection did not converge. "
               "your diffusive timestep is probably too large."
               )
