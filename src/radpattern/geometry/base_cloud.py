@@ -16,7 +16,7 @@ class BaseCloud:
     atoms: AtomSpeciment #Stores type of atoms, wavelength, K-vectors. 
 
     def __post_init__(self): 
-        if self.n_atoms > 10_000:
+        if self.n_atoms > 300_000:
             log.warning(
                 "Very large warm-vapor cloud: n_atoms=%d. GPU/CPU memory may be high.",
                 self.n_atoms,
@@ -31,7 +31,7 @@ class BaseCloud:
     def box_size(self):
         raise NotImplementedError
 
-    def generate_cloud(self, rng=None):
+    def generate_cloud(self, rng):
 
         # Wrapper so it can log the memory ussage of the cloud.
         self._generate_cloud_impl(rng)
@@ -58,15 +58,17 @@ class BaseCloud:
     def update_position(self, dt):
         self.r_xyz = self.r_xyz + self.v_xyz * dt
 
-    def update_position_diffusive(self, dt_code, D_code, rng=None):
+    def update_position_diffusive(self, dt_code, D_code, rng):
         """ Difussive update position. Updates r(t0 + dt) = r(t0) + sqrt(2 D dt)* randVector """
         log.debug("Updating atom position. diffusive motion.")
         if rng is None:
             log.debug("Update atom pos() generating rng object") 
             rng = np.random.default_rng()
 
+        # Difusionn step size.
         step_std = np.sqrt(2.0 * D_code * dt_code)
 
+        # Checking size not too big 
         if step_std > 0.1 * min(self.box_size) and not self._warned_diffusion_large_step:
             log.warning(
                 "Large diffusive step: step_std=%.3e code units, char. size =%.3e. "
@@ -75,9 +77,11 @@ class BaseCloud:
                 min(self.box_size),
             )
             self._warned_diffusion_large_step = True
+
         # generates random vecotos displacement. 
         dr = rng.normal(0.0, step_std, size=self.r_xyz.shape)
 
+        # Updates vector. 
         self.r_xyz = self.r_xyz + dr
         return self.r_xyz
 

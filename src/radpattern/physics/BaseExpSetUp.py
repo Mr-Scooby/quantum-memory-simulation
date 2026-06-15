@@ -102,6 +102,8 @@ class ExpBaseParams:
                                   ) 
 
         self._validation_and_warnings()
+
+
     @property
     def density(self): 
         raise NotImplementedError
@@ -239,6 +241,7 @@ class ExpBaseParams:
         return self.B_gradient * self.ref_length
 
     def _validation_and_warnings(self): 
+        log.debug("Running Validation check and Warnings from BaseExpSetUp") 
         if self.control_to_signal_waist_ratio < 1.0:
             log.warning(
                 "Control beam is narrower than signal beam: w_control/w_signal=%.3g. "
