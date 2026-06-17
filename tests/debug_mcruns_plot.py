@@ -42,6 +42,7 @@ from radpattern.physics.coupling import (
     gaussian_fiber_mode_on_sphere,
     intensity_overlap_on_sphere,
 )
+from scipy.optimize import curve_fit
 
 import inspect
 
@@ -225,6 +226,8 @@ def coupling_from_AF2(AF2_t, grid, dipole, E_fib, theta0):
 
     return P_fib_t, P_tot_t, eta_t
 
+def exp_decay(t, A, tau):
+    return A * np.exp(-t / tau)
 
 def plot_mc_couplings(folder_path , max_mc=None):
 
@@ -281,6 +284,7 @@ def plot_mc_couplings(folder_path , max_mc=None):
 
     fig_eta, ax_eta = plt.subplots(figsize=(8, 5))
     fig_power, ax_power = plt.subplots(figsize=(8, 5))
+    fig_fit, ax_fit = plt.subplots(figsize=(8, 5))
 
     for file_idx, mc_file in enumerate(mc_files):
         data = np.load(mc_file, allow_pickle=True)
@@ -376,6 +380,27 @@ def plot_mc_couplings(folder_path , max_mc=None):
         E_fib=E_fib,
         theta0=theta0,
         )
+
+    popt, pcov = curve_fit(
+                exp_decay,
+                times_code,
+                eta_t_OG,
+                p0=p0,
+                maxfev=10000,
+            )
+
+    A_fit, tau_fit = popt
+    x_fit = np.linspace(times_code[0], times_code[-1], 300)
+    y_fit = exp_decay(x_fit, A_fit, tau_fit)
+    ax_fit.plot(
+                x_fit,
+                y_fit,
+                "--",
+                color="red",
+                alpha=0.8,
+                label="fit"
+            )
+
     # Ploting the main .npz file for comparation
     ax_eta.plot(
                 times_code,
