@@ -75,20 +75,22 @@ def dir_from_mrad_x(theta_mrad):
 def loop_over_variable(folder, system):
     base_config = load_default_config(system) 
 
-    N_bounces_power  = [0,1,3,5,7, 10]
+    Temp  = [20, 30, 40, 50, 60, 70, 80]
 
-    for mrad in N_bounces_power:
+    for mrad in Temp:
         config = deepcopy(base_config)
 
         # Change only this value
-        config["exp"]["coating_N_bounces"] = 10**mrad
-        config["exp"]["coating_max_temp_C"] = 999
-        config["exp"]["coating_label"] = "Test Coating. Artificial"
+        config["exp"]["temperature"] = mrad
+        config["exp"]["coating_N_bounces"] = 1e3
+        config["exp"]["coating_max_temp_C"] = 80 
+        config["exp"]["coating_label"] = "Parafinn"
+        config["sim"]["sim_density"] = 1e6
 
 
         # Also update label so you know what file is what
         config["exp"]["label"] = (
-            f"{system} changing coating bouces. keeping temp same at 75C. not real coating is just testing. Coating bounces 10**{mrad}"
+            f"{system} changing temp-{mrad}. Keeping same coating. paraffin with 1e4 bounces before depolarization"
         )
 
         filename = f"{system}_Nounces1e{mrad}.json"
