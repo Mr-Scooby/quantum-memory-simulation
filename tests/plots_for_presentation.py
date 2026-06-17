@@ -35,15 +35,16 @@ PATH = (Path.cwd() / ".." / "data" / "results_sims" ).resolve()
 #PATH = (Path.cwd() / ".." / "data" / "test").resolve()
 
 PATH = Path(input("folder path "))
-default_title = Path(files[0]).stem
-title = input(f"Plot title? [default: {default_title}]: ").strip() or default_title
-legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
-
 log.info("Reading simulation results from: %s", PATH)
 
 try:
         files = sorted(file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz") 
         log.info("Found %d .npz files in folder", len(files))
+        default_title = Path(files[0]).stem
+        title = input(f"Plot title? [default: {default_title}]: ").strip() or default_title
+        legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
+
+
 except NotADirectoryError as e: 
         log.warning("Input path is not a directory, treating it as a single file: %s", PATH)
         log.debug("NotADirectoryError details", exc_info=e)
@@ -102,6 +103,7 @@ else:
 
 log.info("Using time scale: %s", timeScale)
 
+max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_set)})").strip()
 
 # To match from file name for labels 
 regex_pattern =r'_(\d+)ControlBeamfactor'
@@ -168,7 +170,7 @@ for file_idx, file in enumerate(files):
     log.info("Processing file %d/%d: %s", file_idx + 1, len(files), file)
     data, grid, exp, sim  = load_data(PATH/file)
 
-    log.debug("Loaded keys from npz file: %s", list(data.files))
+    log.debug("Loaded keys from npz file: %s", list(data.keys()))
     log.debug("AF2 shape: %s", data["AF2"].shape)
     log.debug("Intensity shape: %s", data["intensity"].shape)
 
@@ -229,7 +231,11 @@ for file_idx, file in enumerate(files):
 
     _label= exp.label 
     match = re.search(re.compile(r"angle\s*=\s*([\d.]+)"), _label)
-    labels[file_idx] = float(match.group(1))
+    if match is None:
+        log.warning("Could not extract label")
+        labels[file_idx] = np.nan
+    else:
+        labels[file_idx] = float(match.group(1))
 
 
 ########################################
@@ -253,6 +259,21 @@ if np.any(np.isnan(labels)):
     log.warning("Some labels are NaN. Sorting and plotting may be incorrect.")
 else:
     log.info("Sorting files by labels")
+
+# Max time to plot
+if max_time_raw == "":
+     idx_max = len(times_us)
+     max_time_plot = times_us[-1]
+
+else:
+        max_time_plot = float(max_time_raw)
+        max_time_plot = min(max_time_plot, times_us[-1])
+        log.info("max time plot: %s", max_time_plot)
+        #idx_max = np.searchsorted(sorted(times_us), max_time_raw, side="right")
+        idx_max = np.abs(times_us - max_time_plot).argmin()
+
+log.info("plotting up to %.6g %s using %d/%d time points", max_time_plot, timeScale, idx_max, len(times_us))
+
 
 arg_sorted = np.argsort(labels)
 
@@ -294,7 +315,7 @@ print(beamRatios)
 log.info("Creating normalized emitted power plot")
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(sorted_files[:7]): 
-    ax.plot(times_us[:20], P_OverTotal0[idx,:20 ], "o-", label=labels[idx])
+    ax.plot(times_us[:idx_max], P_OverTotal0[idx,:idx_max ], "o-", label=labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
