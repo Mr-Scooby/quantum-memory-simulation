@@ -17,6 +17,7 @@ DEFAULT_PACKAGE = "radpattern.config.defaults"
 
 DEFAULT_FILES = {
     "cs133": "cs133_default.json",
+    "ncs133": "N_Cs133_default.json",
     "rb87": "rb87_default.json",
 }
 
@@ -74,20 +75,23 @@ def dir_from_mrad_x(theta_mrad):
 def loop_over_variable(folder, system):
     base_config = load_default_config(system) 
 
-    mrads  = [0,0.1, 0.5, 1, 2 ]
+    N_bounces_power  = [0,1,3,5,7, 10]
 
-    for mrad in mrads:
+    for mrad in N_bounces_power:
         config = deepcopy(base_config)
 
         # Change only this value
-        config["exp"]["control_beam_direction"] = dir_from_mrad_x(mrad) 
+        config["exp"]["coating_N_bounces"] = 10**mrad
+        config["exp"]["coating_max_temp_C"] = 999
+        config["exp"]["coating_label"] = "Test Coating. Artificial"
+
 
         # Also update label so you know what file is what
         config["exp"]["label"] = (
-            f"{system} CHNAGING control beam direction, angle = {mrad} mrad. "
+            f"{system} changing coating bouces. keeping temp same at 75C. not real coating is just testing. Coating bounces 10**{mrad}"
         )
 
-        filename = f"{system}_Cdirection{mrad}mrad.json"
+        filename = f"{system}_Nounces1e{mrad}.json"
         filename = filename.replace("+", "")
 
         save_config(config, filename, folder, preview=False)
@@ -130,9 +134,9 @@ def loop_over_many_variables():
 if __name__ == "__main__":
 
     folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
-    system = "rb87" # or rb87
+    system = "NCS133" # or rb87
     # Use only ONE of these at a time:
-    #make_single_file(folder, system, filename = "test_default_config.json" )
+    #make_single_file(folder, system, filename = f"{system}test_default_config.json" )
     
     loop_over_variable(folder, system)
     
