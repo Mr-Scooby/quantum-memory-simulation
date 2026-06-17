@@ -166,7 +166,7 @@ class WarmVaporCloud(BaseCloud):
         # crossed with atoms that actually hitted the wall. 
         coherence = ( ~atoms_outside ) | survive  # atoms not outside automatically survive 
         n_coh =  np.count_nonzero(coherence)
-        log.info("atoms decoherence survival : %d / %d (%3.f %%) ",n_coh , self.n_atoms, 100 * n_coh / self.n_atoms)
+        log.debug("atoms decoherence survival : %d / %d (%3.f %%) ",n_coh , self.n_atoms, 100 * n_coh / self.n_atoms)
 
         n_depol = self.n_atoms - n_coh
         # Warning if too many atoms depolarize at same time
@@ -194,7 +194,7 @@ class WarmVaporCloud(BaseCloud):
             
             outside = (cap_out | radial_out ) 
             wall_bounce = np.count_nonzero(outside)
-            log.info("N_atoms bouncing from wall : %d/ %d (%3.f %%)",wall_bounce, self.n_atoms, 100 * wall_bounce / self.n_atoms )  
+            log.debug("N_atoms bouncing from wall : %d/ %d (%3.f %%)",wall_bounce, self.n_atoms, 100 * wall_bounce / self.n_atoms )  
             self.wall_decoherence_survival(outside, **kwargs)
 
 
