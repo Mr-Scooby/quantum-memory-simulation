@@ -180,6 +180,7 @@ class WarmVaporCloud(BaseCloud):
             )
         # update weights 
         self.S *= coherence 
+        return self.S 
     
     def update_position_diffusive(self,*args,  **kwargs):
         """ diffusive motion. takes reflection into account if necessary """
