@@ -381,6 +381,7 @@ def plot_mc_couplings(folder_path , max_mc=None):
         theta0=theta0,
         )
 
+    p0 = [eta_t_OG[0], times_code[-1]/2]
     popt, pcov = curve_fit(
                 exp_decay,
                 times_code,
@@ -433,18 +434,18 @@ def test_main():
 if __name__ == "__main__":
         
 
-    #test_main()
+    test_main()
     
-    running = True
-    while running == True: 
-        file = input("File : ")
-        if file.upper() == "END":
-            runing = False 
-            break
-
-        RESULT_FILE = Path(rf"{file}")
-
-        times_code, eta_runs = plot_mc_couplings(
-           RESULT_FILE,
-           max_mc=None,
-        )
+#    running = True
+#    while running == True: 
+#        file = input("File : ")
+#        if file.upper() == "END":
+#            runing = False 
+#            break
+#
+#        RESULT_FILE = Path(rf"{file}")
+#
+#        times_code, eta_runs = plot_mc_couplings(
+#           RESULT_FILE,
+#           max_mc=None,
+#        )

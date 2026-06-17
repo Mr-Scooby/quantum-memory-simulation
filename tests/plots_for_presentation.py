@@ -52,6 +52,8 @@ except NotADirectoryError as e:
         log.debug("NotADirectoryError details", exc_info=e)
 
         files = [PATH.name]
+        title = files[0]
+        legend_title = "TBD" 
         PATH = PATH.parent
         log.info("Using parent folder: %s", PATH)
         print(e)
@@ -203,6 +205,54 @@ def fit_exp_decay(t, y):
         corr = np.corrcoef(y_fit_data, y_model)[0, 1]
 
     return A_fit, tau_fit, corr
+
+def fit_exp_decay_loglinear(t, y):
+    """
+    Fit y = A exp(-t/tau) using log-linear regression.
+    Returns
+    -------
+    A_fit : float
+    tau_fit : float
+    corr : float
+        Pearson correlation between y and fitted y.
+    """
+    t = np.asarray(t, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    valid = np.isfinite(t) & np.isfinite(y) & (y > 0)
+
+    if np.sum(valid) < 3:
+        raise RuntimeError("Not enough valid positive points for exponential fit")
+
+    t_valid = t[valid]
+    y_valid = y[valid]
+
+    # Shift time for numerical stability.
+    # This does not change tau.
+    t0 = t_valid[0]
+    t_shift = t_valid - t0
+
+    log_y = np.log(y_valid)
+
+    # log(y) = log(A0) - t_shift/tau
+    slope, intercept = np.polyfit(t_shift, log_y, 1)
+
+    if slope >= 0:
+        raise RuntimeError(
+            f"Fit slope is positive: slope={slope:.6g}. Data is not decaying in selected window."
+        )
+
+    tau_fit = -1.0 / slope
+    A0_fit = np.exp(intercept)
+
+    y_model = A0_fit * np.exp(-t_shift / tau_fit)
+
+    if np.std(y_valid) == 0 or np.std(y_model) == 0:
+        corr = np.nan
+    else:
+        corr = np.corrcoef(y_valid, y_model)[0, 1]
+
+    return A0_fit, tau_fit, corr, t0
 
 ### Data extraction and formation of new objects to get the properties values. 
 for file_idx, file in enumerate(files): 
@@ -367,33 +417,35 @@ for idx, file in enumerate(sorted_files[:7]):
 
     ax.plot(x,y, "o-", label=labels[idx])
     try:
-        A_fit, tau_fit, corr = fit_exp_decay(x, y)
+        A_fit, tau_fit, corr, t0_fit = fit_exp_decay_loglinear(x, y)
 
         A_fits[idx] = A_fit
         tau_fits[idx] = tau_fit
         corr_fits[idx] = corr
 
         x_fit = np.linspace(x[0], x[-1], 300)
-        y_fit = exp_decay(x_fit, A_fit, tau_fit)
+        y_fit = A_fit * np.exp(-(x_fit - t0_fit) / tau_fit)
 
         ax.plot(
             x_fit,
             y_fit,
             "--",
             color="red",
-            alpha=0.75,
+            alpha=0.8,
             linewidth=1.5,
         )
 
         log.info(
-            "FIT | hash=%s | label=%s | file=%s | A=%.6g | tau=%.6g %s | corr=%.6f",
+            "FIT | hash=%s | label=%s | file=%s | tau=%.6g %s | corr=%.6f | A0=%.6g | t0=%.6g %s",
             file_hashes[idx],
             labels[idx],
             file,
-            A_fit,
             tau_fit,
             timeScale,
             corr,
+            A_fit,
+            t0_fit,
+            timeScale,
         )
 
         print(
@@ -409,6 +461,7 @@ for idx, file in enumerate(sorted_files[:7]):
             file,
             e,
         )
+
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
 ax.set_title(title)
