@@ -6,6 +6,8 @@ from radpattern.physics.setup_params import ExperimentalParams, SimParams
 from radpattern.physics.beam import BeamModel 
 from radpattern.geometry.cloud_model import CloudModel 
 from radpattern.helpers.helpers import single_dipole_E
+from radpattern.helpers.io import parse_run_filename
+
 
 from radpattern.plotting.pattern_3d import plot_pattern_3d
 from plotting_atomsSystem import plotting_cloud_from_json
@@ -20,26 +22,86 @@ from radpattern.plotting import load_data
 
 from debug_mcruns_plot import  coupling_from_AF2
 
+import logging
+
+log = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
 here = Path.cwd()
 PATH = (Path.cwd() / ".." / "data" / "results_sims" ).resolve()
 #PATH = (Path.cwd() / ".." / "data" / "test").resolve()
 
 PATH = Path(input("folder path "))
+default_title = Path(files[0]).stem
+title = input(f"Plot title? [default: {default_title}]: ").strip() or default_title
+legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
+
+log.info("Reading simulation results from: %s", PATH)
 
 try:
-        files = [file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz"]
+        files = sorted(file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz") 
+        log.info("Found %d .npz files in folder", len(files))
 except NotADirectoryError as e: 
-        print(e)
-        files =[PATH.name]
-        PATH = PATH.parent
+        log.warning("Input path is not a directory, treating it as a single file: %s", PATH)
+        log.debug("NotADirectoryError details", exc_info=e)
 
-#
-title = "Rb87 changing Cbeam Angle "
-# plot title and legend title
-#legend_title = r"Diameter [$\mu$m]" 
-legend_title = r"Cbeam angle [mrad]"
-timeScale = "ms" 
-#timeScale = r"$\mu$s" 
+        files = [PATH.name]
+        PATH = PATH.parent
+        log.info("Using parent folder: %s", PATH)
+        print(e)
+
+# Parse metadata from filenames
+run_info = []
+for file in files:
+    try:
+        info = parse_run_filename(file)
+        run_info.append(info)
+
+        log.debug("Parsed filename %s -> %s", file, info)
+
+    except ValueError as e:
+        log.warning("%s", e)
+        raise
+
+atoms_set = {info["atoms"] for info in run_info}
+sim_time_set = {info["sim_time_us"] for info in run_info}
+time_division_set = {info["time_divisions"] for info in run_info}
+n_mc_set = {info["n_mc"] for info in run_info}
+
+# Checking all files are same system and sim runtime
+if len(atoms_set) > 1:
+    log.warning("Files contain different atoms: %s", sorted(atoms_set))
+
+if len(sim_time_set) > 1:
+    log.warning("Files contain different simulation times [us]: %s", sorted(sim_time_set))
+
+if len(time_division_set) > 1:
+    log.warning("Files contain different time divisions: %s", sorted(time_division_set))
+
+if len(n_mc_set) > 1:
+    log.info("Files contain different Monte Carlo run counts: %s", sorted(n_mc_set))
+
+# Assigning automatic time scale to plot. 
+if len(atoms_set) == 1:
+    atom_name = next(iter(atoms_set)).lower()
+
+    if atom_name == "cs133":
+        timeScale = "us"
+    elif atom_name == "rb87":
+        timeScale = "ms"
+    else:
+        timeScale = "us"
+        log.warning("Unknown atom type %s. Using time scale: us", atom_name)
+
+else:
+    timeScale = "us"
+    log.warning("Mixed atom species found. Using time scale: us")
+
+log.info("Using time scale: %s", timeScale)
+
 
 # To match from file name for labels 
 regex_pattern =r'_(\d+)ControlBeamfactor'
@@ -49,11 +111,11 @@ regex_pattern =r'_(\d+)ControlBeamfactor'
 labels = [None] * len(files)
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
-
-Time_division = 100
+# Allocating arrays from filenameMetadata
+Time_division = max(info["time_divisions"] for info in run_info)
+log.info("Allocating arrays with Time_division = %d", Time_division)
 
 etas = np.zeros((len(files), Time_division)) 
-
 P_fiber = np.zeros((len(files), Time_division)) 
 P_total = np.zeros((len(files), Time_division)) 
 P_OverTotal0 = np.zeros((len(files), Time_division)) 
@@ -66,7 +128,7 @@ seed = np.zeros(len(files))
 
 def fiber_coupling_vs_time(I_t, grid, theta_f):
     """
-    I_t: shape (T, ntheta, nphi), already |AF|^2 * dipole
+ article   I_t: shape (T, ntheta, nphi), already |AF|^2 * dipole
     theta_f: Gaussian fiber intensity radius in radians
 
     Returns
@@ -103,23 +165,32 @@ def fiber_coupling_vs_time(I_t, grid, theta_f):
 ### Data extraction and formation of new objects to get the properties values. 
 for file_idx, file in enumerate(files): 
     
+    log.info("Processing file %d/%d: %s", file_idx + 1, len(files), file)
     data, grid, exp, sim  = load_data(PATH/file)
-    AF = np.abs(data["AF2"])
-    #print(data.files) 
-    Intensity =data["intensity"]
 
-    #if "times_code" in data:
-    #    times_us = data["times_code"] * sim.char_time * 1e6
-    #else:
-    #    parent = np.load(parent_npz_path, allow_pickle=True)
-    #    times_us = parent["times_code"] * sim.char_time * 1e6
+    log.debug("Loaded keys from npz file: %s", list(data.files))
+    log.debug("AF2 shape: %s", data["AF2"].shape)
+    log.debug("Intensity shape: %s", data["intensity"].shape)
+
+    AF = np.abs(data["AF2"])
+    Intensity =data["intensity"]
     times_us = data["times_us"]
+
+    log.debug("Time array shape: %s", times_us.shape)
+    log.debug("Experiment label: %s", exp.label)
 
     ### Calculating Gaussian mode. 
     ### Coupling to gaussian mode calculation.
     theta0 = 12 / (exp.atom.k_signal * exp.w0_signal)
     E_fib = np.abs(cp.gaussian_fiber_mode_on_sphere(grid, theta0)) ** 2
-    print(f"theta0 = {theta0}, forwardLobe = {exp.forwardlobe_angular_width}, equal? {theta0 == exp.forwardlobe_angular_width}") 
+    log.info(
+        "theta0 = %.6e rad, forward lobe = %.6e rad, match = %s",
+        theta0,
+        exp.forwardlobe_angular_width,
+        np.isclose(theta0, exp.forwardlobe_angular_width),
+    )
+
+    log.debug("Building single-dipole radiation pattern")
     dipole = single_dipole_E(
             grid.nx,
             grid.ny,
@@ -135,6 +206,7 @@ for file_idx, file in enumerate(files):
     P_fiber_ =np.zeros(AF.shape[0]) 
     P_total_ =np.zeros(AF.shape[0]) 
 
+    log.info("Computing fiber coupling for file: %s", file)
     P_fib, P_tot, eta_t = coupling_from_AF2(
             AF2_t=AF,
             grid=grid,
@@ -143,14 +215,14 @@ for file_idx, file in enumerate(files):
             theta0=theta0,
             )
 
+    if np.any(P_tot <= 0):
+        log.warning("Some total-power values are zero or negative in file: %s", file)
+
     P_fib_over_Ptot0_t = P_fib / (P_tot[0] + 1e-30)
 
 
 
-   # eta_abs_t
     etas[file_idx, : ] = eta_t
-    #I[file_idx,:] = I_t 
-    #eta_i[file_idx,:] = eta_i_
     P_fiber[file_idx,:] = P_fib
     P_total[file_idx,:] = P_tot
     P_OverTotal0[file_idx,:] = P_fib_over_Ptot0_t
@@ -159,17 +231,7 @@ for file_idx, file in enumerate(files):
     match = re.search(re.compile(r"angle\s*=\s*([\d.]+)"), _label)
     labels[file_idx] = float(match.group(1))
 
-#    labels[file_idx] = exp.B_gradient
-        
-#    match = re.search(regex_pattern, str(file))
-#
-#    if match:
-#        value = match.group(1)      # string, e.g. "120"
-#        labels[file_idx] = value 
-#    else:
-#        labels[file_idx] = None
-#
-#
+
 ########################################
 
 plt.rcParams.update({
@@ -186,6 +248,11 @@ plt.rcParams.update({
 # Setting time sclae [us or ms]
 if timeScale.upper() == "MS": 
     times_us /= 1e3    # Convet us to ms
+
+if np.any(np.isnan(labels)):
+    log.warning("Some labels are NaN. Sorting and plotting may be incorrect.")
+else:
+    log.info("Sorting files by labels")
 
 arg_sorted = np.argsort(labels)
 
@@ -206,6 +273,7 @@ etas = etas[arg_sorted]
 P_OverTotal0 = P_OverTotal0[arg_sorted]
 
 ##### coupling / dephasing plot ---
+log.info("Creating coupling vs time plot")
 fig, ax = plt.subplots(figsize=(7, 4.8))
 
 for idx, file in enumerate(sorted_files[:7]): 
@@ -223,6 +291,7 @@ ax.grid(True, alpha=0.25)
 print(beamRatios)
 
 # Plots total emitted power vs time
+log.info("Creating normalized emitted power plot")
 fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(sorted_files[:7]): 
     ax.plot(times_us[:20], P_OverTotal0[idx,:20 ], "o-", label=labels[idx])
@@ -235,6 +304,7 @@ ax.grid(True, alpha=0.25)
 
 
 # Plotting the emission pattern.
+log.info("Plotting 3D emission pattern for last loaded file: %s", sorted_files[-1])
 plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
 
 

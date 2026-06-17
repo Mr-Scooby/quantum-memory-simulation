@@ -62,3 +62,44 @@ def build_exp_from_metadata(metadata):
     return ExperimentalParams(**exp_kwargs)
 
 
+RUN_NAME_RE = re.compile(
+    r"^"
+    r"(?P<atoms>[A-Za-z]+\d+)"
+    r"(?P<signal_dia_um>\d+)SDia_"
+    r"(?P<control_dia_um>\d+)Cdia"
+    r"_simT(?P<sim_time_us>[\d.]+)us"
+    r"_nt(?P<time_divisions>\d+)"
+    r"_(?P<n_mc>\d+)runs"
+    r"(?:_(?P<buffer_pressure_Torr>[\d.]+)Torr)?"
+    r"_(?P<hash>[0-9a-fA-F]{8})"
+    r"$"
+)
+
+
+def parse_run_filename(file_name: str) -> dict:
+    """
+    Parse filenames produced by SimMetadataSetUp.run_name().
+
+    Expected examples:
+        Rb87120SDia_210Cdia_simT1000us_nt100_50runs_ab12cd34.npz
+        Cs133120SDia_210Cdia_simT10us_nt100_50runs_5Torr_ab12cd34.npz
+    """
+    stem = Path(file_name).stem
+    match = RUN_NAME_RE.match(stem)
+
+    if match is None:
+        raise ValueError(f"Could not parse simulation filename: {file_name}")
+
+    info = match.groupdict()
+
+    info["signal_dia_um"] = int(info["signal_dia_um"])
+    info["control_dia_um"] = int(info["control_dia_um"])
+    info["sim_time_us"] = float(info["sim_time_us"])
+    info["time_divisions"] = int(info["time_divisions"])
+    info["n_mc"] = int(info["n_mc"])
+
+    if info["buffer_pressure_Torr"] is not None:
+        info["buffer_pressure_Torr"] = float(info["buffer_pressure_Torr"])
+
+    return info
+
