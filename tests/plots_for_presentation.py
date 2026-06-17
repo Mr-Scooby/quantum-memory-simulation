@@ -11,7 +11,9 @@ from radpattern.helpers.io import parse_run_filename
 
 from radpattern.plotting.pattern_3d import plot_pattern_3d
 from plotting_atomsSystem import plotting_cloud_from_json
+
 import matplotlib.pyplot as plt 
+from scipy.optimize import curve_fit
 
 import numpy as np
 import re 
@@ -71,6 +73,7 @@ atoms_set = {info["atoms"] for info in run_info}
 sim_time_set = {info["sim_time_us"] for info in run_info}
 time_division_set = {info["time_divisions"] for info in run_info}
 n_mc_set = {info["n_mc"] for info in run_info}
+file_hashes = np.array([info["hash"] for info in run_info ])
 
 # Checking all files are same system and sim runtime
 if len(atoms_set) > 1:
@@ -161,8 +164,45 @@ def fiber_coupling_vs_time(I_t, grid, theta_f):
     return eta, P_fiber, P_total
 
 
+def exp_decay(t, A, tau):
+    return A * np.exp(-t / tau)
 
+def fit_exp_decay(t, y):
+    """
+    Fit y = A exp(-t/tau).
 
+    Returns
+    -------
+    A_fit, tau_fit, corr
+    """
+    valid = np.isfinite(t) & np.isfinite(y) & (y > 0)
+
+    if np.sum(valid) < 3:
+        raise RuntimeError("Not enough valid positive points for exponential fit")
+
+    t_fit_data = t[valid]
+    y_fit_data = y[valid]
+
+    p0 = [y_fit_data[0], (t_fit_data[-1] - t_fit_data[0]) / 2]
+
+    popt, _ = curve_fit(
+        exp_decay,
+        t_fit_data,
+        y_fit_data,
+        p0=p0,
+        maxfev=10000,
+    )
+
+    A_fit, tau_fit = popt
+
+    y_model = exp_decay(t_fit_data, A_fit, tau_fit)
+
+    if np.std(y_fit_data) == 0 or np.std(y_model) == 0:
+        corr = np.nan
+    else:
+        corr = np.corrcoef(y_fit_data, y_model)[0, 1]
+
+    return A_fit, tau_fit, corr
 
 ### Data extraction and formation of new objects to get the properties values. 
 for file_idx, file in enumerate(files): 
@@ -270,7 +310,7 @@ else:
         max_time_plot = min(max_time_plot, times_us[-1])
         log.info("max time plot: %s", max_time_plot)
         #idx_max = np.searchsorted(sorted(times_us), max_time_raw, side="right")
-        idx_max = np.abs(times_us - max_time_plot).argmin()
+        idx_max = np.abs(times_us - max_time_plot).argmin() +1 
 
 log.info("plotting up to %.6g %s using %d/%d time points", max_time_plot, timeScale, idx_max, len(times_us))
 
@@ -292,6 +332,7 @@ sorted_files = np.array(files)[arg_sorted]
 labels = np.array(labels)[arg_sorted] 
 etas = etas[arg_sorted]
 P_OverTotal0 = P_OverTotal0[arg_sorted]
+file_hashes = file_hashes[arg_sorted]
 
 ##### coupling / dephasing plot ---
 log.info("Creating coupling vs time plot")
@@ -314,9 +355,60 @@ print(beamRatios)
 # Plots total emitted power vs time
 log.info("Creating normalized emitted power plot")
 fig, ax = plt.subplots(figsize=(7, 4.8))
-for idx, file in enumerate(sorted_files[:7]): 
-    ax.plot(times_us[:idx_max], P_OverTotal0[idx,:idx_max ], "o-", label=labels[idx])
 
+tau_fits = np.full(len(sorted_files), np.nan)
+corr_fits = np.full(len(sorted_files), np.nan)
+A_fits = np.full(len(sorted_files), np.nan)
+
+for idx, file in enumerate(sorted_files[:7]): 
+    
+    x = times_us[:idx_max]
+    y = P_OverTotal0[idx, :idx_max]
+
+    ax.plot(x,y, "o-", label=labels[idx])
+    try:
+        A_fit, tau_fit, corr = fit_exp_decay(x, y)
+
+        A_fits[idx] = A_fit
+        tau_fits[idx] = tau_fit
+        corr_fits[idx] = corr
+
+        x_fit = np.linspace(x[0], x[-1], 300)
+        y_fit = exp_decay(x_fit, A_fit, tau_fit)
+
+        ax.plot(
+            x_fit,
+            y_fit,
+            "--",
+            color="red",
+            alpha=0.75,
+            linewidth=1.5,
+        )
+
+        log.info(
+            "FIT | hash=%s | label=%s | file=%s | A=%.6g | tau=%.6g %s | corr=%.6f",
+            file_hashes[idx],
+            labels[idx],
+            file,
+            A_fit,
+            tau_fit,
+            timeScale,
+            corr,
+        )
+
+        print(
+            f"FIT | hash={file_hashes[idx]} | label={labels[idx]} | "
+            f"tau={tau_fit:.6g} {timeScale} | corr={corr:.6f}"
+        )
+
+    except RuntimeError as e:
+        log.warning(
+            "FIT FAILED | hash=%s | label=%s | file=%s | reason=%s",
+            file_hashes[idx],
+            labels[idx],
+            file,
+            e,
+        )
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
 ax.set_title(title)
