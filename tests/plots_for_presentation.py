@@ -1,4 +1,4 @@
-        #!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import radpattern.physics.coupling as cp
@@ -166,8 +166,8 @@ def fiber_coupling_vs_time(I_t, grid, theta_f):
     return eta, P_fiber, P_total
 
 
-def exp_decay(t, A, tau):
-    return A * np.exp(-t / tau)
+def exp_decay(t, A, tau , c):
+    return A * np.exp(-t / tau)  + c 
 
 def fit_exp_decay(t, y):
     """
@@ -185,7 +185,7 @@ def fit_exp_decay(t, y):
     t_fit_data = t[valid]
     y_fit_data = y[valid]
 
-    p0 = [y_fit_data[0], (t_fit_data[-1] - t_fit_data[0]) / 2]
+    p0 = [y_fit_data[0], (t_fit_data[-1] - t_fit_data[0]) / 2 , y_fit_data[-1]]  
 
     popt, _ = curve_fit(
         exp_decay,
@@ -195,16 +195,16 @@ def fit_exp_decay(t, y):
         maxfev=10000,
     )
 
-    A_fit, tau_fit = popt
+    A_fit, tau_fit, c_fit = popt
 
-    y_model = exp_decay(t_fit_data, A_fit, tau_fit)
+    y_model = exp_decay(t_fit_data, A_fit, tau_fit, c_fit)
 
     if np.std(y_fit_data) == 0 or np.std(y_model) == 0:
         corr = np.nan
     else:
         corr = np.corrcoef(y_fit_data, y_model)[0, 1]
 
-    return A_fit, tau_fit, corr
+    return A_fit, tau_fit,c_fit, corr 
 
 def fit_exp_decay_loglinear(t, y):
     """
@@ -391,7 +391,7 @@ fig, ax = plt.subplots(figsize=(7, 4.8))
 for idx, file in enumerate(sorted_files[:7]): 
     ax.plot(times_us, etas[idx, :], "o-", label=labels[idx])
 for idx, file in enumerate(sorted_files[7:],7): 
-    ax.plot(times_us[20], etas[idx, :20 ], "*--", label=labels[idx])
+    ax.plot(times_us, etas[idx, :], "*--", label=labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"coupling $\eta$")
@@ -417,14 +417,14 @@ for idx, file in enumerate(sorted_files[:7]):
 
     ax.plot(x,y, "o-", label=labels[idx])
     try:
-        A_fit, tau_fit, corr, t0_fit = fit_exp_decay_loglinear(x, y)
+        A_fit, tau_fit, c_fit, corr = fit_exp_decay(x, y)
 
         A_fits[idx] = A_fit
         tau_fits[idx] = tau_fit
         corr_fits[idx] = corr
 
         x_fit = np.linspace(x[0], x[-1], 300)
-        y_fit = A_fit * np.exp(-(x_fit - t0_fit) / tau_fit)
+        y_fit = A_fit * np.exp(-(x_fit) / tau_fit) + c_fit
 
         ax.plot(
             x_fit,
@@ -436,7 +436,7 @@ for idx, file in enumerate(sorted_files[:7]):
         )
 
         log.info(
-            "FIT | hash=%s | label=%s | file=%s | tau=%.6g %s | corr=%.6f | A0=%.6g | t0=%.6g %s",
+            "FIT | hash=%s | label=%s | file=%s | tau=%.6g %s | corr=%.6f | A0=%.6g | c0=%.6g %s",
             file_hashes[idx],
             labels[idx],
             file,
@@ -444,7 +444,7 @@ for idx, file in enumerate(sorted_files[:7]):
             timeScale,
             corr,
             A_fit,
-            t0_fit,
+            c_fit, 
             timeScale,
         )
 
@@ -470,8 +470,10 @@ ax.grid(True, alpha=0.25)
 
 
 # Plotting the emission pattern.
-log.info("Plotting 3D emission pattern for last loaded file: %s", sorted_files[-1])
-plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
+plot_3d_pattern = input("Plot 3d pattern? (Y/N)") or "N"
+if plot_pattern_3d =="Y":
+        log.info("Plotting 3D emission pattern for last loaded file: %s", sorted_files[-1])
+        plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
 
 
 #
