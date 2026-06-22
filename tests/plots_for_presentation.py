@@ -492,4 +492,28 @@ if plot_3d_pattern.upper() =="Y":
 #
 #
 #
+
+
+# Tau vs temperature plot
+valid = np.isfinite(labels) & np.isfinite(tau_fits)
+
+temps = labels[valid].astype(float)
+taus = tau_fits[valid]
+
+order = np.argsort(temps)
+temps = temps[order]
+taus = taus[order]
+
+fig_tau, ax_tau = plt.subplots(figsize=(7, 4.8))
+
+ax_tau.plot(temps, taus, "o-")
+
+ax_tau.set_xlabel("Temperature")
+ax_tau.set_ylabel(f"Tau [{timeScale}]")
+ax_tau.set_title("Tau vs temperature")
+ax_tau.grid(True, alpha=0.25)
+
+for T, tau in zip(temps, taus):
+    ax_tau.annotate(f"{tau:.2g}", (T, tau), textcoords="offset points", xytext=(0, 6), ha="center")
+
 plt.show()

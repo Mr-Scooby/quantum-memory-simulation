@@ -80,6 +80,54 @@ def intensity_overlap_on_sphere(grid, I_emit, I_mode, theta_max=0.1):
     return num / (den_emit+ 1e-30)
 
 
+# copied from debug_plots
+def coupling_from_AF2(AF2_t, grid, dipole, E_fib, theta0):
+    """
+    AF2_t shape:
+        (T, n_theta, n_phi)
+
+    returns:
+        eta_t shape (T,)
+    """
+    T = AF2_t.shape[0]
+
+    P_fib_t = np.zeros(T, dtype=float)
+    P_tot_t = np.zeros(T, dtype=float)
+    eta_t = np.zeros(T, dtype=float)
+
+    mask = grid.TH <= theta0
+
+    theta = grid.TH[:, 0]
+    phi = grid.PH[0, :]
+    sin_th = np.sin(grid.TH)
+
+    E_fib_masked = np.where(mask, E_fib, 0.0)
+
+    for it in range(T):
+        I = AF2_t[it] * dipole
+        I_masked = np.where(mask, I, 0.0)
+
+        P_fib = np.trapezoid(
+            np.trapezoid(I_masked * E_fib_masked * sin_th, phi, axis=1),
+            theta,
+            axis=0,
+        )
+
+        P_tot = np.trapezoid(
+            np.trapezoid(I_masked * sin_th, phi, axis=1),
+            theta,
+            axis=0,
+        )
+
+        P_fib_t[it] = P_fib
+        P_tot_t[it] = P_tot
+        eta_t[it] = P_fib / (P_tot + 1e-30)
+
+    return P_fib_t, P_tot_t, eta_t
+
+
+
+
 
 
 def analytic_eta_gaussian_width_mismatch(theta1, theta2):
