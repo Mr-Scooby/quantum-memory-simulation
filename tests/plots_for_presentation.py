@@ -111,7 +111,7 @@ log.info("Using time scale: %s", timeScale)
 max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_set)})").strip()
 
 # To match from file name for labels 
-regex_pattern =r'_(\d+)ControlBeamfactor'
+regex_pattern =r'temp-(\d+)'
 
 #Plot labels 
 #labels = np.zeros(len(files))
@@ -319,8 +319,9 @@ for file_idx, file in enumerate(files):
     P_total[file_idx,:] = P_tot
     P_OverTotal0[file_idx,:] = P_fib_over_Ptot0_t
 
+    # Extracting label
     _label= exp.label 
-    match = re.search(re.compile(r"angle\s*=\s*([\d.]+)"), _label)
+    match = re.search(re.compile(regex_pattern), _label)
     if match is None:
         log.warning("Could not extract label")
         labels[file_idx] = np.nan
@@ -410,7 +411,7 @@ tau_fits = np.full(len(sorted_files), np.nan)
 corr_fits = np.full(len(sorted_files), np.nan)
 A_fits = np.full(len(sorted_files), np.nan)
 
-for idx, file in enumerate(sorted_files[:7]): 
+for idx, file in enumerate(sorted_files): 
     
     x = times_us[:idx_max]
     y = P_OverTotal0[idx, :idx_max]
@@ -471,7 +472,7 @@ ax.grid(True, alpha=0.25)
 
 # Plotting the emission pattern.
 plot_3d_pattern = input("Plot 3d pattern? (Y/N)") or "N"
-if plot_pattern_3d =="Y":
+if plot_3d_pattern.upper() =="Y":
         log.info("Plotting 3D emission pattern for last loaded file: %s", sorted_files[-1])
         plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
 
