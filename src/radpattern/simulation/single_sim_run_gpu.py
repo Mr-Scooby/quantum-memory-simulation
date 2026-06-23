@@ -70,6 +70,7 @@ def run_single_mc_gpu(
 
     Diff_coef = exp.diffusion_coeff_code
 
+    max_step_fraction = 0.1
     # Running time step simulation
     for it, t in enumerate(times_code):
         print(
@@ -78,20 +79,42 @@ def run_single_mc_gpu(
         )
 
         dt = 0.0 if it == 0 else times_code[it] - times_code[it - 1]
+        # dt_max is the max time step possible so diffussion step is not larger than char szie of the ensemble 
+        dt_max = (max_step_fraction * cloud.char_size) ** 2 / (2.0 *Diff_coef) 
 
-        # Move atoms
-        cloud.update_position_diffusive(dt, Diff_coef, rng=rng)
+        # If current dt is bigger subdivide accordingly
+        n_sub = max(1, int(np.ceil( dt / dt_max) ))
+        if n_sub > 1:
+            log.warning(
+                "Diffussion substep.  MC=%d step=%d/%d: dt=%.3e > dt_max=%.3e. "
+                "Splitting into %d internal steps to keep rms diffusion step below %.2f * char_size.",
+                mc,
+                it + 1,
+                T,
+                dt,
+                dt_max,
+                n_sub,
+                max_step_fraction,
+            )
+        dt /= n_sub
+        dt_s = dt * sim.char_time
+
+        for _ in range(n_sub):
+
+            # Move atoms
+            cloud.update_position_diffusive(dt, Diff_coef, rng=rng)
+
+            # Spin-wave phase evolution
+            motion_phase = cloud.update_motion_phase(
+                dt_s=dt_s,
+                B0_T=exp.B0_T,
+                B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
+            )
 
         # Update spatial beam weights
         control_beam.generate_weights(cloud.r_xyz)
 
-        # Spin-wave phase evolution
-        dt_s = dt * sim.char_time
-        motion_phase = cloud.update_motion_phase(
-            dt_s=dt_s,
-            B0_T=exp.B0_T,
-            B_gradient_z_T_per_code=exp.B_gradient * exp.ref_length,
-        )
+        
 
         # Generating weights
         weights =  cloud.S * control_beam.w * motion_phase
