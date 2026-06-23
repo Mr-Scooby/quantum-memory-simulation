@@ -34,6 +34,12 @@ class BaseCloud:
     def box_size(self):
         raise NotImplementedError
 
+    @property 
+    def char_size(self):
+            """Returns charatectiristical size of the cell"""
+        return np.min(self.box_size)
+
+
     def generate_cloud(self, rng):
 
         # Wrapper so it can log the memory ussage of the cloud.
