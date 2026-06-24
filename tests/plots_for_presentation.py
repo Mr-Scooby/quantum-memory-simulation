@@ -111,7 +111,8 @@ log.info("Using time scale: %s", timeScale)
 max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_set)})").strip()
 
 # To match from file name for labels 
-regex_pattern =r'temp-(\d+)'
+regex = input(r"Regexpattern (capturation (\d+) added rightaffter)?: ") or "temp-"
+regex_pattern =regex + r'(\d+)'
 
 #Plot labels 
 #labels = np.zeros(len(files))
@@ -385,14 +386,20 @@ etas = etas[arg_sorted]
 P_OverTotal0 = P_OverTotal0[arg_sorted]
 file_hashes = file_hashes[arg_sorted]
 
+
+# Set labels as scientific notation
+sci_notation = input("Labels as sci notation? (Y/N) ").strip().upper() == "Y"
+plots_labels = [f"{x:.0e}" if sci_notation else str(x) for x in labels]
+
+
 ##### coupling / dephasing plot ---
 log.info("Creating coupling vs time plot")
 fig, ax = plt.subplots(figsize=(7, 4.8))
 
 for idx, file in enumerate(sorted_files[:7]): 
-    ax.plot(times_us, etas[idx, :], "o-", label=labels[idx])
+    ax.plot(times_us, etas[idx, :], "o-", label=plots_labels[idx])
 for idx, file in enumerate(sorted_files[7:],7): 
-    ax.plot(times_us, etas[idx, :], "*--", label=labels[idx])
+    ax.plot(times_us, etas[idx, :], "*--", label=plots_labels[idx])
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"coupling $\eta$")
@@ -411,57 +418,61 @@ tau_fits = np.full(len(sorted_files), np.nan)
 corr_fits = np.full(len(sorted_files), np.nan)
 A_fits = np.full(len(sorted_files), np.nan)
 
+plot_fit= input("Plot fit ?") or False
+
+
 for idx, file in enumerate(sorted_files): 
     
     x = times_us[:idx_max]
     y = P_OverTotal0[idx, :idx_max]
 
-    ax.plot(x,y, "o-", label=labels[idx])
-    try:
-        A_fit, tau_fit, c_fit, corr = fit_exp_decay(x, y)
+    ax.plot(x,y, "o-", label=plots_labels[idx])
+    if bool(plot_fit): 
+            try:
+                A_fit, tau_fit, c_fit, corr = fit_exp_decay(x, y)
 
-        A_fits[idx] = A_fit
-        tau_fits[idx] = tau_fit
-        corr_fits[idx] = corr
+                A_fits[idx] = A_fit
+                tau_fits[idx] = tau_fit
+                corr_fits[idx] = corr
 
-        x_fit = np.linspace(x[0], x[-1], 300)
-        y_fit = A_fit * np.exp(-(x_fit) / tau_fit) + c_fit
+                x_fit = np.linspace(x[0], x[-1], 300)
+                y_fit = A_fit * np.exp(-(x_fit) / tau_fit) + c_fit
 
-        ax.plot(
-            x_fit,
-            y_fit,
-            "--",
-            color="red",
-            alpha=0.8,
-            linewidth=1.5,
-        )
+                ax.plot(
+                    x_fit,
+                    y_fit,
+                    "--",
+                    color="red",
+                    alpha=0.8,
+                    linewidth=1.5,
+                )
 
-        log.info(
-            "FIT | hash=%s | label=%s | file=%s | tau=%.6g %s | corr=%.6f | A0=%.6g | c0=%.6g %s",
-            file_hashes[idx],
-            labels[idx],
-            file,
-            tau_fit,
-            timeScale,
-            corr,
-            A_fit,
-            c_fit, 
-            timeScale,
-        )
+                log.info(
+                    "FIT | hash=%s | label=%s | file=%s | tau=%.6g %s | corr=%.6f | A0=%.6g | c0=%.6g %s",
+                    file_hashes[idx],
+                    labels[idx],
+                    file,
+                    tau_fit,
+                    timeScale,
+                    corr,
+                    A_fit,
+                    c_fit, 
+                    timeScale,
+                )
 
-        print(
-            f"FIT | hash={file_hashes[idx]} | label={labels[idx]} | "
-            f"tau={tau_fit:.6g} {timeScale} | corr={corr:.6f}"
-        )
+                print(
+                    f"FIT | hash={file_hashes[idx]} | label={labels[idx]} | "
+                    f"tau={tau_fit:.6g} {timeScale} | corr={corr:.6f}"
+                )
 
-    except RuntimeError as e:
-        log.warning(
-            "FIT FAILED | hash=%s | label=%s | file=%s | reason=%s",
-            file_hashes[idx],
-            labels[idx],
-            file,
-            e,
-        )
+            except RuntimeError as e:
+                log.warning(
+                    "FIT FAILED | hash=%s | label=%s | file=%s | reason=%s",
+                    file_hashes[idx],
+                    labels[idx],
+                    file,
+                    e,
+                )
 
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
@@ -512,8 +523,5 @@ ax_tau.set_xlabel("Temperature")
 ax_tau.set_ylabel(f"Tau [{timeScale}]")
 ax_tau.set_title("Tau vs temperature")
 ax_tau.grid(True, alpha=0.25)
-
-for T, tau in zip(temps, taus):
-    ax_tau.annotate(f"{tau:.2g}", (T, tau), textcoords="offset points", xytext=(0, 6), ha="center")
 
 plt.show()
