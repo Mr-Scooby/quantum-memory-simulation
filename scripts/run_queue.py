@@ -69,6 +69,20 @@ def setup_run_logging(output_dir):
 
     return log_path
 
+def setup_history_logger(history_path):
+    history_logger = logging.getLogger("run_history")   
+    history_logger.setLevel(logging.INFO)
+    history_logger.propagate = False 
+    history_logger.handlers.clear()
+    
+    handler = logging.FileHandler(history_path, mode="a", encoding = "utf-8")
+    handler.setFormatter(logging.Formatter("%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+
+    history_logger.addHandler(handler)
+
+    return history_logger
+    
+
 def move_file(src, dst_dir):
     """
     Move one file into a folder.
@@ -95,10 +109,14 @@ def move_file(src, dst_dir):
 
 def main():
 
-    queue_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue")
-    done_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\done")
-    failed_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\failed")
-    output_dir = Path(r"C:\Users\local_admin\radek\simulations\data\test")
+    queue_dir = Path(r"D:\radek\queue")
+    #done_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\done")
+    failed_dir = Path(r"D:\radek\failed")
+    #output_dir = Path(r"C:\Users\local_admin\radek\simulations\data\test")
+    output_dir = Path(r"D:\radek\sims")
+    
+    history_path = Path(r"D:\radek\history.log")
+    hist_log = setup_history_logger(history_path)
 
     print(queue_dir.glob)
     for config_path in sorted(queue_dir.glob("*.json")):
@@ -133,20 +151,23 @@ def main():
             avetime = dt_mcsim / objs.sim.n_mc
             log.info("Simulated %d runs. Average runtime : %2.f s, %3.f min, %3.f h", objs.sim.n_mc, avetime, avetime / 60, avetime/ 1440)
 
+            hist_log.info("%s -> %s", config_path.name, mc_folder.name) # Logging runs to history. 
             print("done:", config_path)
             try: 
                 dst = mc_folder / config_path.name
-                shutil.copy2(config_path, dst)
+                shutil.move(config_path, dst)
+                log.info("Moved %s to %s", config_path.name, mc_folder)
             except (TypeError, FileNotFoundError) as e:
                 print(f" Couldn't copy json file to mc_runs folder. Error {e}")
 
-
-            move_file(config_path, done_dir)
+            # Running out of diskk space on computer disabled this option
+            #move_file(config_path, done_dir)
 
 
         except Exception:
             print("failed:", config_path)
-
+            
+            hist_log.info("[FAILED] %s -> %s" , config_path.name, mc_folder.name) # Logging runs to history. 
             failed_path = move_file(config_path, failed_dir)
 
             error_path = failed_path.with_suffix(".error.txt")
