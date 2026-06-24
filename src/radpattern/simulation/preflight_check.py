@@ -82,6 +82,14 @@ def pre_simulation_warnings(objs, theta0):
             char_size,
         )
 
+    ## Warning number of substeps for large steps in geomspacing
+    # The code set a dt_max limit of dt_max = 0.1 * min( exp.char_size) **2 / (2.0 * Diff_coef) 
+    # Then for dt bigger it divides into smaller steps. 
+    dt_max_lim = (max_step_fraction * cloud.char_size) ** 2 / (2.0 *Diff_coef) 
+    n_sub = max(1, int(np.ceil( dt_max / dt_max_lim) ))
+    if n_sub >= 2_000: 
+        log.warning("max_n_sub= %d. This run is effectively very expensive. Consider more time points or shorter sim_time.") 
+
     # 4. Boundary condition check, before cloud evolution
     if hasattr(exp, "should_apply_boundary_conditions"):
         exp.should_apply_boundary_conditions(sim.simulation_window_radius_w0_cutoff)
