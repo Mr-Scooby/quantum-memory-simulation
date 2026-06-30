@@ -36,7 +36,7 @@ class BaseCloud:
 
     @property 
     def char_size(self):
-            """Returns charatectiristical size of the cell"""
+        """Returns charatectiristical size of the cell"""
         return np.min(self.box_size)
 
 
