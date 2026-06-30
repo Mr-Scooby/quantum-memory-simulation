@@ -85,6 +85,7 @@ def pre_simulation_warnings(objs, theta0):
     ## Warning number of substeps for large steps in geomspacing
     # The code set a dt_max limit of dt_max = 0.1 * min( exp.char_size) **2 / (2.0 * Diff_coef) 
     # Then for dt bigger it divides into smaller steps. 
+    max_step_fraction = 0.1
     dt_max_lim = (max_step_fraction * cloud.char_size) ** 2 / (2.0 *Diff_coef) 
     n_sub = max(1, int(np.ceil( dt_max / dt_max_lim) ))
     if n_sub >= 2_000: 
