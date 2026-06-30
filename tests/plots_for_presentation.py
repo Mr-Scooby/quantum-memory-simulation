@@ -114,21 +114,23 @@ max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_
 regex = input(r"Regexpattern (capturation (\d+) added rightaffter)?: ") or "temp-"
 regex_pattern =regex + r'(\d+)'
 
+regex_pattern = r"Cell length -\s*([0-9.]+)\s*m"
+
 #Plot labels 
 #labels = np.zeros(len(files))
 labels = [None] * len(files)
 beamRatios = np.zeros(len(files)) # Control/signal ratio 
 
 # Allocating arrays from filenameMetadata
-Time_division = max(info["time_divisions"] for info in run_info)
+Time_division = max(time_division_set)
 log.info("Allocating arrays with Time_division = %d", Time_division)
 
-etas = np.zeros((len(files), Time_division)) 
-P_fiber = np.zeros((len(files), Time_division)) 
-P_total = np.zeros((len(files), Time_division)) 
-P_OverTotal0 = np.zeros((len(files), Time_division)) 
-eta_i = np.zeros((len(files), Time_division)) 
-I = np.zeros((len(files), Time_division))
+etas = np.full((len(files), Time_division), np.nan) 
+P_fiber = np.full((len(files), Time_division), np.nan) 
+P_total = np.full((len(files), Time_division), np.nan) 
+P_OverTotal0 = np.full((len(files), Time_division), np.nan) 
+eta_i = np.full((len(files), Time_division), np.nan) 
+I = np.full((len(files), Time_division), np.nan)
 
 Diffusion_cte = np.zeros(len(files))
 seed = np.zeros(len(files))
@@ -327,7 +329,8 @@ for file_idx, file in enumerate(files):
         log.warning("Could not extract label")
         labels[file_idx] = np.nan
     else:
-        labels[file_idx] = float(match.group(1))
+        labels[file_idx] = 1000 * float(match.group(1))   # m -> mm
+        #labels[file_idx] = float(match.group(1))
 
 
 ########################################
@@ -477,6 +480,7 @@ for idx, file in enumerate(sorted_files):
 ax.set_xlabel(f"time [{timeScale}]")
 ax.set_ylabel(r"Coupling $\eta$")
 ax.set_title(title)
+#ax.set_xscale("log")
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
 
