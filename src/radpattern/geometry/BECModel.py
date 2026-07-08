@@ -59,3 +59,17 @@ class BECModel(BaseCloud):
     def box_size(self):
         """ Effective cloud box size. twice cutoff cloud dimension. we set for 3* sigmas as cutoff. thus size = 6 * sigmas """
         return 6 * self.sigmas
+    
+
+
+    def update_position_diffusive(self,*args,  **kwargs):
+        """ Balistic motion"""
+        self.r_xyz = self.r_xyz + self.v_xyz * dt
+        return self.r_xyz
+
+
+
+
+
+
+
