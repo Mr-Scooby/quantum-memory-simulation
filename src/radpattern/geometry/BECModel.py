@@ -62,9 +62,9 @@ class BECModel(BaseCloud):
     
 
 
-    def update_position_diffusive(self,*args,  **kwargs):
+    def update_position_diffusive(self,dt_code, *args,  **kwargs):
         """ Balistic motion"""
-        self.r_xyz = self.r_xyz + self.v_xyz * dt
+        self.r_xyz = self.r_xyz + self.v_xyz * dt_code
         return self.r_xyz
 
 
