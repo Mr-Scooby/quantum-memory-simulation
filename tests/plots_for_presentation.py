@@ -13,7 +13,6 @@ from radpattern.plotting.pattern_3d import plot_pattern_3d
 from plotting_atomsSystem import plotting_cloud_from_json
 
 
-import matplotlib.pyplot as plt 
 from cycler import cycler
 
 from scipy.optimize import curve_fit
@@ -23,9 +22,14 @@ import re
 from pathlib import Path
 
 
-from radpattern.plotting import load_data
+from radpattern.plotting import load_data, THESIS_STYLE
 
 from debug_mcruns_plot import  coupling_from_AF2
+
+import matplotlib.pyplot as plt 
+plt.style.use(THESIS_STYLE)
+
+
 
 import logging
 
@@ -337,72 +341,6 @@ for file_idx, file in enumerate(files):
 
 
 ########################################
-
-#plt.rcParams.update({
-#    'font.size': 12,          # Default text size
-#    'axes.titlesize': 30,     # Plot title size
-#    'axes.labelsize': 27,     # X/Y axis label size
-#    'xtick.labelsize': 18,    # X-axis tick label size
-#    'ytick.labelsize': 18,    # Y-axis tick label size
-#    'legend.fontsize': 19,     # Legend text size
-#    'legend.title_fontsize': 19 
-#})
-plt.rcParams.update({
-    # Figure size
-    "figure.figsize": (3.4, 2.5),      # single-column style, inches
-    "figure.dpi": 150,
-    "savefig.dpi": 600,
-
-    # Fonts
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
-    "mathtext.fontset": "stix",
-    "font.size": 9,
-
-    # Axes
-    "axes.labelsize": 9,
-    "axes.titlesize": 9,
-    "axes.linewidth": 0.8,
-    "axes.grid": True,
-    "axes.axisbelow": True,
-
-    # Ticks
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8,
-    "xtick.direction": "in",
-    "ytick.direction": "in",
-    "xtick.top": True,
-    "ytick.right": True,
-    "xtick.major.size": 3.5,
-    "ytick.major.size": 3.5,
-    "xtick.minor.size": 2,
-    "ytick.minor.size": 2,
-
-    # Grid
-    "grid.linewidth": 0.4,
-    "grid.alpha": 0.35,
-
-    # Lines
-    "lines.linewidth": 1.4,
-    "lines.markersize": 4,
-
-    # Legend
-    "legend.fontsize": 8,
-    "legend.frameon": False,
-
-    # Export
-    "savefig.bbox": "tight",
-    "savefig.pad_inches": 0.02,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-    "svg.fonttype": "none",
-
-    # Color cycle: clean and colorblind-friendly
-    "axes.prop_cycle": cycler(color=[
-        "#0072B2", "#D55E00", "#009E73",
-        "#CC79A7", "#E69F00", "#56B4E9"
-    ]),
-})
 
 
 # Setting time sclae [us or ms]
