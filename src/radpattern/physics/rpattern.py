@@ -23,56 +23,132 @@ log = logging.getLogger(__name__)
 # Flatten directions: n_hat_flat (M,3), M=nt*np
 #n_hat_flat = np.stack([nx, ny, nz], axis=-1).reshape(-1, 3)
 
-def array_factor_general(n_hat_flat, grid_shape, k_out, r_xyz, w=None, chunk_atoms=2000):
-    """
-    General array factor:
-        AF(n_hat) = sum_j w_j * exp(i k_out n_hat · r_j)
+def array_factor_general(n_hat_flat, grid_shape, k_out, r_xyz, w=None, chunk_atoms=2000 ,chunk_dirs = 8192):
 
-    Inputs:
-      n_hat:_flat: (M,3) array: shpuld be np.stack[nx,ny,nz]: (nt,np) direction cosines on the sphere  #n_hat_flat = np.stack([nx, ny, nz], axis=-1).reshape(-1, 3)
-      grid_shape: (nt, np_) direction cosine. LAter for reshape. 
-      k_out        : scalar wave number
-      r_xyz    : (N,3) atom positions
-      w        : (N,) complex weights (amplitude*exp(i phase)). If None -> all ones.
-      chunk    : atoms per chunk (tune for speed/memory)
-
-    Returns:
-      AF : (nt,np) complex array factor
     """
-    nt, np_ = grid_shape
-    # atom number
-    N = r_xyz.shape[0]
-    # grid size flat
-    M = n_hat_flat.shape[0]
-    
-    # Assign memory 
-    AF_flat = np.zeros(M, dtype=np.complex128)
+    Compute the array factor on CPU using NumPy.
+
+    The calculation is chunked over both atoms and observation
+    directions to limit temporary memory usage.
+
+    AF(n_hat) = sum_j w_j * exp(i * k_out * n_hat · r_j)
+
+    Parameters
+    ----------
+    n_hat_flat : np.ndarray
+        Observation directions with shape (M, 3).
+
+    grid_shape : tuple[int, int]
+        Final angular-grid shape, normally (n_theta, n_phi).
+
+    k_out : float
+        Output wave number.
+
+    r_xyz : np.ndarray
+        Atomic positions with shape (N, 3).
+
+    w : np.ndarray | None
+        Complex atomic weights with shape (N,). If None, all weights
+        are set to one.
+
+    chunk_atoms : int
+        Maximum number of atoms processed at once.
+
+    chunk_dirs : int
+        Maximum number of observation directions processed at once.
+
+    Returns
+    -------
+    np.ndarray
+        Complex array factor with shape ``grid_shape``.
+    """
+    n_hat_flat = np.asarray(n_hat_flat, dtype=np.float64)
+    r_xyz = np.asarray(r_xyz, dtype=np.float64)
+
+    n_atoms = r_xyz.shape[0]
+    n_dirs = n_hat_flat.shape[0]
+
+    if n_hat_flat.ndim != 2 or n_hat_flat.shape[1] != 3:
+        raise ValueError(
+            f"n_hat_flat must have shape (M, 3), got {n_hat_flat.shape}"
+        )
+
+    if r_xyz.ndim != 2 or r_xyz.shape[1] != 3:
+        raise ValueError(
+            f"r_xyz must have shape (N, 3), got {r_xyz.shape}"
+        )
+
+    if np.prod(grid_shape) != n_dirs:
+        raise ValueError(
+            f"grid_shape={grid_shape} contains {np.prod(grid_shape)} "
+            f"directions, but n_hat_flat contains {n_dirs}"
+        )
+
+    if chunk_atoms <= 0:
+        raise ValueError("chunk_atoms must be positive")
+
+    if chunk_dirs <= 0:
+        raise ValueError("chunk_dirs must be positive")
 
     if w is None:
-        w = np.ones(N, dtype=np.complex128)
-        log.info("AF: Weights None") 
+        weights = np.ones(n_atoms, dtype=np.complex128)
     else:
-        w = np.asarray(w, dtype=np.complex128)
-        log.info("AF: Weights provided")
-        if w.shape != (N,):
-            raise ValueError(f"w must have shape (N,), got {w.shape}")
+        weights = np.asarray(w, dtype=np.complex128)
 
-    
-    n_chunks = (N + chunk_atoms - 1) // chunk_atoms
-    # Chunk over atoms to control memory
-    for a0 in range(0, N, chunk_atoms):
-        ci = a0 // chunk_atoms + 1
-        log.info("AF: chunk %d/%d", ci, n_chunks)
-        a1 = min(a0 + chunk_atoms, N)
-        r = r_xyz[a0:a1]
-        ww = w[a0:a1]
+        if weights.shape != (n_atoms,):
+            raise ValueError(
+                f"w must have shape ({n_atoms},), got {weights.shape}"
+            )
 
-        phase = k_out * (n_hat_flat @ r.T)
-        AF_flat +=np.exp(1j * phase) @ ww
+    af_flat = np.zeros(n_dirs, dtype=np.complex128)
 
-    log.info("AF: ended")
-    return AF_flat.reshape(*grid_shape)
+    n_direction_chunks = (
+        n_dirs + chunk_dirs - 1
+    ) // chunk_dirs
 
+    n_atom_chunks = (
+        n_atoms + chunk_atoms - 1
+    ) // chunk_atoms
+
+    for d0 in range(0, n_dirs, chunk_dirs):
+        d1 = min(d0 + chunk_dirs, n_dirs)
+        direction_chunk_index = d0 // chunk_dirs + 1
+
+        log.info(
+            "AF direction chunk %d/%d",
+            direction_chunk_index,
+            n_direction_chunks,
+        )
+
+        directions = n_hat_flat[d0:d1]
+        af_block = np.zeros(d1 - d0, dtype=np.complex128)
+
+        for a0 in range(0, n_atoms, chunk_atoms):
+            a1 = min(a0 + chunk_atoms, n_atoms)
+            atom_chunk_index = a0 // chunk_atoms + 1
+
+            log.debug(
+                "AF direction chunk %d/%d, atom chunk %d/%d",
+                direction_chunk_index,
+                n_direction_chunks,
+                atom_chunk_index,
+                n_atom_chunks,
+            )
+
+            positions = r_xyz[a0:a1]
+            atom_weights = weights[a0:a1]
+
+            # Shape:
+            # (direction chunk, atom chunk)
+            phase = k_out * (directions @ positions.T)
+
+            af_block += np.exp(1j * phase) @ atom_weights
+
+        af_flat[d0:d1] = af_block
+
+    log.info("CPU array-factor calculation finished")
+
+    return af_flat.reshape(grid_shape)
 
 # Array factor (separable lattice)
 # ---------------------------
