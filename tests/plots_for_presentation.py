@@ -46,13 +46,22 @@ PATH = (Path.cwd() / ".." / "data" / "results_sims" ).resolve()
 PATH = Path(input("folder path "))
 log.info("Reading simulation results from: %s", PATH)
 
+
+
+output_path =  "/Users/radek/Documents/universidad/clases/TFM/manuscript/Figures/"
+
 try:
         files = sorted(file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz") 
         log.info("Found %d .npz files in folder", len(files))
         default_title = Path(files[0]).stem
         title = input(f"Plot title? [default: {default_title}]: ").strip() or default_title
-        #legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
-        legend_title = r"FWHM $(\mu m)$"
+        filename = input("File name to save") or "no_name_provided" 
+        legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
+        property_name = input("atribute for legend search?: ") or "temperature"
+        try: 
+            factor = float(input("Factor for unit change? ") )
+        except ValueError as e : 
+            factor = 1 
 
 
 except NotADirectoryError as e: 
@@ -77,7 +86,7 @@ for file in files:
 
     except ValueError as e:
         log.warning("%s", e)
-        raise
+        #raise
 
 atoms_set = {info["atoms"] for info in run_info}
 sim_time_set = {info["sim_time_us"] for info in run_info}
@@ -120,7 +129,8 @@ max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_
 
 # To match from file name for labels 
 # Labels from regex or property of the object. 
-regex_pattern = input(r"Regexpattern (capturation (\d+) )?: ") or ""
+
+#regex_pattern = input(r"Regexpattern (capturation (\d+) )?: ") or ""
 regex_pattern = "angle\s*(\d+(?:\.\d+)?)\s*degrees"
 
 #regex_pattern = r"Cell length\s*[-:]?\s*([0-9.]+)\s*m"
@@ -340,7 +350,7 @@ for file_idx, file in enumerate(files):
 #    else:
 #        labels[file_idx] = float(match.group(1))   # m -> mm
         #labels[file_idx] = float(match.group(1))
-    labels[file_idx] = exp.signal_fwhm_diameter_m * 1e6  # from m to cm
+    labels[file_idx] = getattr(exp, property_name) * factor 
 
 
 ########################################
@@ -530,6 +540,51 @@ ax.grid(True, alpha=0.25)
 #
 print(file_hashes)
 print(file_hashes[arg_sorted])
+print(fig.get_size_inches())
+
+
+# Export the plotted curves for PGFPlots
+curve_names = [
+    "curve_" + re.sub(r"[^A-Za-z0-9]+", "_", f"{label:g}").strip("_")
+    for label in labels
+]
+
+export_data = np.column_stack((
+    times_us[:idx_max],
+    P_OverTotal0[:, :idx_max].T
+))
+
+
+if filename == "no_name_provided": 
+    log.warning("About to save files, no filename provided")
+
+
+for name, label in zip(curve_names, labels):
+    print(f"{name}: label = {label}")
+    
+output_file = output_path + filename
+
+np.savetxt(
+    output_file + ".dat",
+    export_data,
+    header=f"time_{timeScale} " + " ".join(curve_names),
+    comments="",
+    fmt="%.10e"
+)
+
+print(f"PGFPlots data saved to: {output_file}")
+
+
+log.info("Path to files = %s", output_path) 
+log.info("data save to file: %s.dat", filename)
+plt.savefig(output_file + ".pgf") 
+log.info("file name saved: %s.pgf", filename )
+plt.savefig(output_file + ".svg") 
+log.info("file name: %s.svg", filename)
+plt.savefig(output_file + ".png") 
+log.info("file name: %s.png", filename)
+
+
 plt.show()
 
 

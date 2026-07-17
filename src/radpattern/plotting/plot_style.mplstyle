@@ -3,7 +3,7 @@ font.family        : serif
 font.serif         : Times New Roman, Times, DejaVu Serif
 mathtext.fontset   : stix
 mathtext.default   : it
-font.size          : 80
+font.size          : 11
 
 # Grid
 axes.grid          : True
@@ -23,8 +23,8 @@ lines.markeredgewidth  : 1.0
 
 
 # Axis
-axes.labelsize       : 40
-axes.titlesize       : 80
+axes.labelsize       : 13
+axes.titlesize       : 10
 axes.linewidth       : 1.0
 axes.labelpad        : 7
 axes.titlepad        : 8
@@ -45,33 +45,34 @@ axes.formatter.limits       : -3, 3
 image.cmap : magma
 
 # Ticks
+axes.linewidth      : 0.7
 
 ## x ticks
-xtick.labelsize      : 25
+xtick.labelsize      : 9
 xtick.direction      : in
 xtick.top            : True
-xtick.major.size     : 10
+xtick.major.size     : 3
 xtick.minor.size     : 3
-xtick.major.width    : 1.0
-xtick.minor.width    : 0.8
+xtick.major.width    : 0.5
+xtick.minor.width    : 0.5
 xtick.major.pad      : 5
 
 ## y ticks
-ytick.labelsize      : 25
+ytick.labelsize      : 9
 ytick.direction      : in
 ytick.right          : True
-ytick.major.size     : 10
+ytick.major.size     : 3
 ytick.minor.size     : 3
-ytick.major.width    : 1.0
-ytick.minor.width    : 0.8
+ytick.major.width    : 0.5
+ytick.minor.width    : 0.5
 ytick.major.pad      : 5
 
 
 # Legend
 legend.fancybox       : False
 legend.frameon        : True
-legend.fontsize       : 20
-legend.title_fontsize : 30
+legend.fontsize       : 8
+legend.title_fontsize : 9
 legend.labelspacing   : 0.30
 legend.handlelength   : 1.8
 legend.handletextpad  : 0.5
@@ -79,12 +80,19 @@ legend.borderaxespad  : 0.4
 
 
 # Figure
-figure.figsize       : 5.78, 3.6
+figure.figsize        : 5.78851, 3.216
 figure.dpi           : 150
 figure.facecolor     : white
 figure.edgecolor     : white
-figure.titlesize     : 18
+figure.titlesize     : 1
 figure.titleweight   : 600
+figure.subplot.left   : 0.13
+figure.subplot.right  : 0.98
+figure.subplot.bottom : 0.20
+figure.subplot.top    : 0.97
+
+savefig.bbox          : standard
+savefig.pad_inches    : 0
 
 
 # Images / colormaps
@@ -101,15 +109,17 @@ axes3d.grid          : True
 
 
 # Saving
-savefig.format       : png
+savefig.format       : pgf
 savefig.dpi          : 600
 savefig.facecolor    : white
 savefig.edgecolor    : white
 savefig.bbox         : tight
-savefig.pad_inches   : 0.04
+#savefig.pad_inches   : 0.04
 
 # Keep text editable/searchable in vector files.
 pdf.fonttype         : 42
 ps.fonttype          : 42
 svg.fonttype         : none
-pgf.texsystem        : "pdflatex"
+pgf.texsystem        : pdflatex
+text.usetex          : True
+pgf.rcfonts          : False
