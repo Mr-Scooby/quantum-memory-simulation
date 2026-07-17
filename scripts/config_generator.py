@@ -11,6 +11,7 @@ import json
 from importlib.resources import files # For files import from package. 
 from pathlib import Path
 from copy import deepcopy
+import numpy as np
 
 
 DEFAULT_PACKAGE = "radpattern.config.defaults"
@@ -63,37 +64,46 @@ def make_single_file(folder, system, filename = None):
     save_config(config, filename, folder)
 
 
-def dir_from_mrad_x(theta_mrad):
+def dir_from_rad_x(theta):
     """ Converts mrad into vector direction array. reference signal (0,0,1)"""
-    theta = theta_mrad * 1e-3  # mrad -> rad
-    return np.array([
+    return [
         np.sin(theta),
         0.0,
         np.cos(theta)
-    ])
+    ]
 
 def loop_over_variable(folder, system):
     base_config = load_default_config(system) 
 
-    Temp  = [20, 30, 40, 50, 60, 70, 80]
+    #sw_wavelength = 0.033
+    angle = [2,5,7,10, 20] 
 
-    for mrad in Temp:
+
+    for mrad in angle:
         config = deepcopy(base_config)
-
         # Change only this value
-        config["exp"]["temperature"] = mrad
-        config["exp"]["coating_N_bounces"] = 1e3
-        config["exp"]["coating_max_temp_C"] = 80 
-        config["exp"]["coating_label"] = "Parafinn"
-        config["sim"]["sim_density"] = 1e6
-
+        #config["exp"]["temperature"] = mrad
+        #config["exp"]["signal_fwhm_diameter_m"] = mrad * 1e-6 # convert um a m 
+        config["exp"]["buffer_pressure_Torr"] = mrad # convert um a m 
+        #config["exp"]["control_fwhm_diameter_m"] = mrad * 1e-6 # convert um a m 
+#        config["exp"]["cell_length_m"] =  mrad * sw_wavelength
+#        config["exp"]["coating_N_bounces"] = 1e6
+#        config["exp"]["coating_max_temp_C"] =  333
+#        config["exp"]["coating_label"] = "Test arificial coating"
+        #config["exp"]["control_beam_direction"] = dir_from_rad_x(rads)
+        config["sim"]["sim_density"] = 1e5
+        config["sim"]["sim_time_us"] = 30
+        config["sim"]["time_divisions"] = 100
+#        config["sim"]["time_spacing"] = "geomspace"#
+        config["sim"]["n_mc"] = 30 
+#
 
         # Also update label so you know what file is what
         config["exp"]["label"] = (
-            f"{system} changing temp-{mrad}. Keeping same coating. paraffin with 1e4 bounces before depolarization"
+            f"{system} changing Buffer pressure P = {mrad} Tor,. sim time 30 us sim at 100 timesteps " 
         )
 
-        filename = f"{system}_Nounces1e{mrad}.json"
+        filename = f"{system}_with{mrad}Torr.json".replace(" ","_")
         filename = filename.replace("+", "")
 
         save_config(config, filename, folder, preview=False)
@@ -135,8 +145,9 @@ def loop_over_many_variables():
 # 
 if __name__ == "__main__":
 
-    folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
-    system = "NCS133" # or rb87
+    #folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
+    folder = r"D:\radek\queue"
+    system = "cs133" # or rb87
     # Use only ONE of these at a time:
     #make_single_file(folder, system, filename = f"{system}test_default_config.json" )
     

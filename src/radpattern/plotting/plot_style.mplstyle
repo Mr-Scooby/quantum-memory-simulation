@@ -3,7 +3,7 @@ font.family        : serif
 font.serif         : Times New Roman, Times, DejaVu Serif
 mathtext.fontset   : stix
 mathtext.default   : it
-font.size          : 14
+font.size          : 80
 
 # Grid
 axes.grid          : True
@@ -23,8 +23,8 @@ lines.markeredgewidth  : 1.0
 
 
 # Axis
-axes.labelsize       : 16
-axes.titlesize       : 16
+axes.labelsize       : 40
+axes.titlesize       : 80
 axes.linewidth       : 1.0
 axes.labelpad        : 7
 axes.titlepad        : 8
@@ -35,26 +35,32 @@ axes.formatter.use_mathtext : True
 axes.formatter.limits       : -3, 3
 
 # Color cycle for plot lines as list of string color specs.
-axes.prop_cycle: cycler('color', ['0072B2', 'D55E00', '009E73', 'CC79A7', 'E69F00', '56B4E9', '000000'])
-
+#axes.prop_cycle: cycler(color=["#440154", "#414487", "#2a788e", "#22a884", "#7ad151", "#fde725"]) # Sequential Viris 
+#axes.prop_cycle: cycler(color=["#eedd88", "#eeaa44", "#cc6622", "#882255", "#661100"])
+#axes.prop_cycle: cycler(color=["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"]) #oKATBE - ITO 
+#axes.prop_cycle: cycler('color', ['4C6A92', 'C77C73', '6A8F6B', 'B89B5E', '7BA7A8', '8D75A3', 'A67C52', '9A9A9A', '5F8FB3', 'D49A89', '88A878', 'B8A77A']) # Muted style 
+# Soft cyan-lavender palette matching the sketch figures
+# Thesis hand-sketch-compatible palette
+#axes.prop_cycle: cycler('color', ['55CFEA', 'B88CF2', '5FCB9B', 'F28E7F', 'E6C84F', '6F9FD8', 'D77FB3', '8BBE6A', 'C78B5F', '8F8F8F'])
+image.cmap : magma
 
 # Ticks
 
 ## x ticks
-xtick.labelsize      : 13
+xtick.labelsize      : 25
 xtick.direction      : in
 xtick.top            : True
-xtick.major.size     : 5
+xtick.major.size     : 10
 xtick.minor.size     : 3
 xtick.major.width    : 1.0
 xtick.minor.width    : 0.8
 xtick.major.pad      : 5
 
 ## y ticks
-ytick.labelsize      : 13
+ytick.labelsize      : 25
 ytick.direction      : in
 ytick.right          : True
-ytick.major.size     : 5
+ytick.major.size     : 10
 ytick.minor.size     : 3
 ytick.major.width    : 1.0
 ytick.minor.width    : 0.8
@@ -64,8 +70,8 @@ ytick.major.pad      : 5
 # Legend
 legend.fancybox       : False
 legend.frameon        : True
-legend.fontsize       : 12
-legend.title_fontsize : 13
+legend.fontsize       : 20
+legend.title_fontsize : 30
 legend.labelspacing   : 0.30
 legend.handlelength   : 1.8
 legend.handletextpad  : 0.5
@@ -73,7 +79,7 @@ legend.borderaxespad  : 0.4
 
 
 # Figure
-figure.figsize       : 7.0, 5.0
+figure.figsize       : 5.78, 3.6
 figure.dpi           : 150
 figure.facecolor     : white
 figure.edgecolor     : white
@@ -106,3 +112,4 @@ savefig.pad_inches   : 0.04
 pdf.fonttype         : 42
 ps.fonttype          : 42
 svg.fonttype         : none
+pgf.texsystem        : "pdflatex"

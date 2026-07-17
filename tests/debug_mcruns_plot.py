@@ -44,6 +44,10 @@ from radpattern.physics.coupling import (
 )
 from scipy.optimize import curve_fit
 
+from radpattern.plotting import THESIS_STYLE
+plt.style.use(THESIS_STYLE)
+
+
 import inspect
 
 def default_from_type(name, typ):
@@ -297,6 +301,11 @@ def plot_mc_couplings(folder_path , max_mc=None):
             parent = np.load(parent_npz_path, allow_pickle=True)
             times_code = parent["times_code"] * sim.char_time * 1e6
 
+        #max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_set)})").strip()
+        max_time_plot = 200
+        idx_max = np.abs(times_code - max_time_plot).argmin() +1 
+
+
         P_fib, P_tot, eta_t = coupling_from_AF2(
             AF2_t=AF2_t,
             grid=grid,
@@ -319,16 +328,16 @@ def plot_mc_couplings(folder_path , max_mc=None):
             eta_t,
             alpha=0.35,
             linewidth=1.0,
-            label=mc_file.stem if file_idx < 10 else None,
+            #label=mc_file.stem if file_idx < 10 else None,
         )
 
             
         ax_power.plot(
-            times_code,
-            P_fib_over_Ptot0_t,
+            times_code[:idx_max],
+            P_fib_over_Ptot0_t[:idx_max],
             alpha=0.35,
             linewidth=1.0,
-            label=label,
+            #label=label,
         )
 
     all_eta = np.asarray(all_eta)
@@ -356,20 +365,26 @@ def plot_mc_couplings(folder_path , max_mc=None):
     ax_eta.legend()
     fig_eta.tight_layout()
 
+
+
+    
     # mean fiber power
     ax_power.plot(
-        times_code,
-        P_fib_over_Ptot0_mean,
+        times_code[:idx_max],
+        P_fib_over_Ptot0_mean[:idx_max],
         color="black",
         linewidth=3,
-        label="MC mean",
+        label="mean",
     )
 
     ax_power.set_xlabel("time [µs]")
-    ax_power.set_ylabel("P_fib / P_tot[0]")
-    ax_power.set_title(parent_npz_path.stem + " — fiber intensity")
+    ax_power.set_ylabel(r"Coupling $\eta$")
+    #ax_power.set_title(parent_npz_path.stem + " — fiber intensity")
     ax_power.grid(True, alpha=0.3)
     ax_power.legend()
+
+
+    ax_power.set_yticks([0.3,0.5,0.7,0.9], labels=[0,0.4,0.6,0.8])
 
      # Extractimg the original npz data to compare 
     OGdata = np.load(parent_npz_path, allow_pickle=True)
@@ -434,18 +449,18 @@ def test_main():
 if __name__ == "__main__":
         
 
-    test_main()
+    #test_main()
     
-#    running = True
-#    while running == True: 
-#        file = input("File : ")
-#        if file.upper() == "END":
-#            runing = False 
-#            break
-#
-#        RESULT_FILE = Path(rf"{file}")
-#
-#        times_code, eta_runs = plot_mc_couplings(
-#           RESULT_FILE,
-#           max_mc=None,
-#        )
+    running = True
+    while running == True: 
+        file = input("File : ")
+        if file.upper() == "END":
+            runing = False 
+            break
+
+        RESULT_FILE = Path(rf"{file}")
+
+        times_code, eta_runs = plot_mc_couplings(
+           RESULT_FILE,
+           max_mc=None,
+        )

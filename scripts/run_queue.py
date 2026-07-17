@@ -142,7 +142,7 @@ def main():
             # MC simulations. 
             ## timing simulation runtime 
             t0_mcsim = time.perf_counter()
-            mc_folder = run_one_config(objs, output_dir, save_full_mc = True)
+            mc_folder = run_one_config(objs, output_dir, save_full_mc = False)
 
             # final runtime logs
             log.info("Finished config: %s", config_path)

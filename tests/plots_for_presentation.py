@@ -51,7 +51,8 @@ try:
         log.info("Found %d .npz files in folder", len(files))
         default_title = Path(files[0]).stem
         title = input(f"Plot title? [default: {default_title}]: ").strip() or default_title
-        legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
+        #legend_title = input("legend title? (Default: TBD )").strip() or "TBD" 
+        legend_title = r"FWHM $(\mu m)$"
 
 
 except NotADirectoryError as e: 
@@ -118,10 +119,11 @@ log.info("Using time scale: %s", timeScale)
 max_time_raw = input(f"Max time to plot [{timeScale}]?. (Default: {max(sim_time_set)})").strip()
 
 # To match from file name for labels 
-regex = input(r"Regexpattern (capturation (\d+) added rightaffter)?: ") or "temp-"
-regex_pattern =regex + r'(\d+)'
+# Labels from regex or property of the object. 
+regex_pattern = input(r"Regexpattern (capturation (\d+) )?: ") or ""
+regex_pattern = "angle\s*(\d+(?:\.\d+)?)\s*degrees"
 
-regex_pattern = r"Cell length -\s*([0-9.]+)\s*m"
+#regex_pattern = r"Cell length\s*[-:]?\s*([0-9.]+)\s*m"
 
 #Plot labels 
 #labels = np.zeros(len(files))
@@ -330,14 +332,15 @@ for file_idx, file in enumerate(files):
     P_OverTotal0[file_idx,:] = P_fib_over_Ptot0_t
 
     # Extracting label
-    _label= exp.label 
-    match = re.search(re.compile(regex_pattern), _label)
-    if match is None:
-        log.warning("Could not extract label")
-        labels[file_idx] = np.nan
-    else:
-        labels[file_idx] = 1000 * float(match.group(1))   # m -> mm
+#    _label= exp.label 
+#    match = re.search(re.compile(regex_pattern), _label)
+#    if match is None:
+#        log.warning("Could not extract label")
+#        labels[file_idx] = np.nan
+#    else:
+#        labels[file_idx] = float(match.group(1))   # m -> mm
         #labels[file_idx] = float(match.group(1))
+    labels[file_idx] = exp.signal_fwhm_diameter_m * 1e6  # from m to cm
 
 
 ########################################
@@ -390,29 +393,29 @@ file_hashes = file_hashes[arg_sorted]
 # Set labels as scientific notation
 sci_notation = input("Labels as sci notation? (Y/N) ").strip().upper() == "Y"
 plots_labels = [f"{x:.0e}" if sci_notation else str(x) for x in labels]
-
-
-##### coupling / dephasing plot ---
-log.info("Creating coupling vs time plot")
-fig, ax = plt.subplots(figsize=(7, 4.8))
-
-for idx, file in enumerate(sorted_files[:7]): 
-    ax.plot(times_us, etas[idx, :], "o-", label=plots_labels[idx])
-for idx, file in enumerate(sorted_files[7:],7): 
-    ax.plot(times_us, etas[idx, :], "*--", label=plots_labels[idx])
-
-ax.set_xlabel(f"time [{timeScale}]")
-ax.set_ylabel(r"coupling $\eta$")
-ax.set_title(title)
-
-ax.legend(title = legend_title)
-ax.grid(True, alpha=0.25)
-
-print(beamRatios)
-
-# Plots total emitted power vs time
+#
+#
+###### coupling / dephasing plot ---
+#log.info("Creating coupling vs time plot")
+#fig, ax = plt.subplots(figsize=(7, 4.8))
+#
+#for idx, file in enumerate(sorted_files[:7]): 
+#    ax.plot(times_us, etas[idx, :], "o-", label=plots_labels[idx])
+#for idx, file in enumerate(sorted_files[7:],7): 
+#    ax.plot(times_us, etas[idx, :], "*--", label=plots_labels[idx])
+#
+#ax.set_xlabel(rf"time [$\mu s$]")
+#ax.set_ylabel(r"coupling $\eta$")
+##ax.set_title(title)
+#
+#ax.legend(title = legend_title)
+#ax.grid(True, alpha=0.25)
+#
+#print(beamRatios)
+#
+## Plots total emitted power vs time
 log.info("Creating normalized emitted power plot")
-fig, ax = plt.subplots(figsize=(7, 4.8))
+fig, ax = plt.subplots()
 
 tau_fits = np.full(len(sorted_files), np.nan)
 corr_fits = np.full(len(sorted_files), np.nan)
@@ -426,7 +429,7 @@ for idx, file in enumerate(sorted_files):
     x = times_us[:idx_max]
     y = P_OverTotal0[idx, :idx_max]
 
-    ax.plot(x,y, "o-", label=plots_labels[idx])
+    ax.plot(x,y, "-", label=plots_labels[idx])
     if bool(plot_fit): 
             try:
                 A_fit, tau_fit, c_fit, corr = fit_exp_decay(x, y)
@@ -474,20 +477,20 @@ for idx, file in enumerate(sorted_files):
                     e,
                 )
 
-ax.set_xlabel(f"time [{timeScale}]")
+ax.set_xlabel(rf"time [$\mu s$]")
 ax.set_ylabel(r"Coupling $\eta$")
-ax.set_title(title)
+#ax.set_title(title)
 #ax.set_xscale("log")
 ax.legend(title = legend_title)
 ax.grid(True, alpha=0.25)
+#fig.tight_layout()
 
-
-# Plotting the emission pattern.
-plot_3d_pattern = input("Plot 3d pattern? (Y/N)") or "N"
-if plot_3d_pattern.upper() =="Y":
-        log.info("Plotting 3D emission pattern for last loaded file: %s", sorted_files[-1])
-        plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
-
+## Plotting the emission pattern.
+#plot_3d_pattern = input("Plot 3d pattern? (Y/N)") or "N"
+#if plot_3d_pattern.upper() =="Y":
+#        log.info("Plotting 3D emission pattern for last loaded file: %s", sorted_files[-1])
+#        plot_pattern_3d(grid, data["intensity"][0], title= exp.label )
+#
 
 #
 ## Plotting one of the Cloud setups
@@ -506,23 +509,27 @@ if plot_3d_pattern.upper() =="Y":
 #
 
 
-# Tau vs temperature plot
-valid = np.isfinite(labels) & np.isfinite(tau_fits)
-
-temps = labels[valid].astype(float)
-taus = tau_fits[valid]
-
-order = np.argsort(temps)
-temps = temps[order]
-taus = taus[order]
-
-fig_tau, ax_tau = plt.subplots(figsize=(7, 4.8))
-
-ax_tau.plot(temps, taus, "o-")
-
-ax_tau.set_xlabel("Temperature")
-ax_tau.set_ylabel(f"Tau [{timeScale}]")
-ax_tau.set_title("Tau vs temperature")
-ax_tau.grid(True, alpha=0.25)
-
+## Tau vs temperature plot
+#valid = np.isfinite(labels) & np.isfinite(tau_fits)
+#
+#temps = labels[valid].astype(float)
+#taus = tau_fits[valid]
+#
+#order = np.argsort(temps)
+#temps = temps[order]
+#taus = taus[order]
+#
+#fig_tau, ax_tau = plt.subplots(figsize=(7, 4.8))
+#
+#ax_tau.plot(temps, taus, "o-")
+#
+#ax_tau.set_xlabel("Temperature")
+#ax_tau.set_ylabel(f"Tau [{timeScale}]")
+#ax_tau.set_title("Tau vs temperature")
+#ax_tau.grid(True, alpha=0.25)
+#
+print(file_hashes)
+print(file_hashes[arg_sorted])
 plt.show()
+
+

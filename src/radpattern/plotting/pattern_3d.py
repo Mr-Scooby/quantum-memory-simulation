@@ -16,7 +16,7 @@ import logging
 log = logging.getLogger(__name__)
 
 # Plotting
-def plot_pattern_3d(grid, I, title="", alpha=1.0, stride=2, cmap="viridis", info_text=None, sphere_map = True ,log_plot = True, clip_limit = True,
+def plot_pattern_3d(grid, I, title="", alpha=1.0, stride=2, cmap="viridis", info_text=None, sphere_map = True ,log_plot = True, clip_limit = True, I_ref=None,
     **kwargs ):
     """
     3D surface plot where radius = I^alpha.
@@ -55,7 +55,14 @@ def plot_pattern_3d(grid, I, title="", alpha=1.0, stride=2, cmap="viridis", info
 
 
     if log_plot: 
-        C = 10 * np.log10(I / np.max(I) + 1e-12)
+        
+        if I_ref is None: 
+            I_ref = np.max(I)
+        else:
+            I_ref= np.max(I_ref)
+
+    
+        C = 10 * np.log10(I / I_ref + 1e-12)
         norm = colors.Normalize(vmin=np.min(C), vmax=np.max(C))
         title = title + " Log_plot"
         clabel = "Intensity [dB]"
@@ -92,7 +99,7 @@ def plot_pattern_3d(grid, I, title="", alpha=1.0, stride=2, cmap="viridis", info
 
     # Create a colorbar showing the intensity scale
     mappable = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
-    mappable.set_array(I)
+    mappable.set_array(C)
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.7, pad=0.1)
     cbar.set_label(clabel)
 
