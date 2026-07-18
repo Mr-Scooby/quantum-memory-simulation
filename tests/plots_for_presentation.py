@@ -21,6 +21,7 @@ import numpy as np
 import re 
 from pathlib import Path
 
+from texfigure_generator import generate_texFile
 
 from radpattern.plotting import load_data, THESIS_STYLE
 
@@ -48,7 +49,7 @@ log.info("Reading simulation results from: %s", PATH)
 
 
 
-output_path =  "/Users/radek/Documents/universidad/clases/TFM/manuscript/Figures/"
+output_path =  Path("/Users/radek/Documents/universidad/clases/TFM/manuscript/Figures/")
 
 try:
         files = sorted(file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz") 
@@ -562,10 +563,10 @@ if filename == "no_name_provided":
 for name, label in zip(curve_names, labels):
     print(f"{name}: label = {label}")
     
-output_file = output_path + filename
+output_file = output_path.joinpath( filename) 
 
 np.savetxt(
-    output_file + ".dat",
+    output_file.with_suffix(".dat"),
     export_data,
     header=f"time_{timeScale} " + " ".join(curve_names),
     comments="",
@@ -574,16 +575,16 @@ np.savetxt(
 
 print(f"PGFPlots data saved to: {output_file}")
 
+generate_texFile(output_file.with_suffix(".dat"))
 
 log.info("Path to files = %s", output_path) 
 log.info("data save to file: %s.dat", filename)
-plt.savefig(output_file + ".pgf") 
+plt.savefig(output_file.with_suffix(".pgf")) 
 log.info("file name saved: %s.pgf", filename )
-plt.savefig(output_file + ".svg") 
+plt.savefig(output_file.with_suffix(".svg")) 
 log.info("file name: %s.svg", filename)
-plt.savefig(output_file + ".png") 
+plt.savefig(output_file.with_suffix(".png"))
 log.info("file name: %s.png", filename)
-
 
 plt.show()
 
