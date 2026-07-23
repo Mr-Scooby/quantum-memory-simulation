@@ -488,7 +488,7 @@ for idx, file in enumerate(sorted_files):
                     e,
                 )
 
-ax.set_xlabel(rf"time [$\mu s$]")
+ax.set_xlabel(rf"Time [$\mu s$]")
 ax.set_ylabel(r"Coupling $\eta$")
 #ax.set_title(title)
 #ax.set_xscale("log")
