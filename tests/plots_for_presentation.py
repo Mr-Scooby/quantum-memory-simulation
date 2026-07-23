@@ -49,7 +49,8 @@ log.info("Reading simulation results from: %s", PATH)
 
 
 
-output_path =  Path("/Users/radek/Documents/universidad/clases/TFM/manuscript/Figures/")
+#output_path =  Path("/Users/radek/Documents/universidad/clases/TFM/manuscript/Figures/")
+output_path =  Path(r"D:\radek\Figures\manuscript_figures_push\Figures")
 
 try:
         files = sorted(file.name for file in PATH.iterdir() if file.is_file() and file.suffix==".npz") 
