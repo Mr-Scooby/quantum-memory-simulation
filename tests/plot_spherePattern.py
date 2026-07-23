@@ -6,7 +6,19 @@ from pathlib import Path
 from cycler import cycler
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplot2tikz
+
+import logging
+log = logging.getLogger(__name__)
+
+
+try: 
+    import matplot2tikz
+    tikz = True
+except ModuleNotFoundError: 
+    log.warning(" Matplot2tikz module not imported.")
+    tikz = False
+    
+
 
 plt.style.use(THESIS_STYLE)
 
@@ -151,7 +163,10 @@ for i in [0,50,99]:
         fig.subplots_adjust(left=0.02, right=0.88, bottom=0.02, top=0.98)
         ax.view_init(elev=40, azim=-75)
         
-        matplot2tikz.save(f"test_AF_t{i}.tex", figure = fig )
+        if tikz: 
+            log.info("converting plot to tikz file tex...") 
+            matplot2tikz.save(f"test_AF_t{i}.tex", figure = fig )
+            log.info("File save as test_AF.tex")
 plt.show()
 
 
