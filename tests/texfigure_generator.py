@@ -68,7 +68,7 @@ def generate_texFile(data_file):
             r"        \addplot table[",
             rf"            x={x_column},",
             rf"            y={column}",
-            rf"        ]{{{PurePath("Figures",data_file.name).as_posix()}}};",
+            rf"        ]{{{Path('Figures',data_file.name).as_posix()}}};",
             rf"        \addlegendentry{{LABEL {index}}}",
             "",
         ])
@@ -92,5 +92,6 @@ if __name__ == "__main__":
     # input data
     data_file = Path(input("Data file path: "))
     generate_texFile(data_file)
+    log.info(f"File save as {data_file}.tex")
 
 
