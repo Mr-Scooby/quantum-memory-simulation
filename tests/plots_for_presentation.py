@@ -20,6 +20,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 import re 
 from pathlib import Path
+import shutil
 
 from texfigure_generator import generate_texFile
 
@@ -29,7 +30,6 @@ from debug_mcruns_plot import  coupling_from_AF2
 
 import matplotlib.pyplot as plt 
 plt.style.use(THESIS_STYLE)
-
 
 
 import logging
@@ -573,6 +573,10 @@ np.savetxt(
     comments="",
     fmt="%.10e"
 )
+# Copy dat file and save it to the original folder. 
+shutil.copy2(output_file.with_suffix(".dat"), PATH.parent.joinpath(filename).with_suffix(".dat")) 
+
+
 
 print(f"PGFPlots data saved to: {output_file}")
 
