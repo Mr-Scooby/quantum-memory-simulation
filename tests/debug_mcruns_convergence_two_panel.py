@@ -4,21 +4,50 @@
 """
 Monte Carlo convergence plot for the fibre-coupled retrieval curve.
 
-This script loads all saved MC runs from one simulation folder and forms
-nested averages using the first N runs.
-
-It produces one publication-style Matplotlib figure containing
+The script loads all saved MC runs from one simulation folder and produces
+one publication-style Matplotlib figure containing
 
     (a) mean retrieval curves with standard-error bands for
-        N_MC = 10, 30, 100 by default;
-    (b) one convergence curve epsilon_RMS(N_MC) versus
-        N_MC = 10, 20, 30, 50, 70, 100 by default.
+        N_MC = 10, 30, and 100;
+    (b) one RMS convergence curve epsilon_RMS(N_MC) for
+        N_MC = 10, 20, 30, 50, 70, and 100.
 
-The convergence curve is estimated from bootstrap-resampled subsets drawn
-with replacement from the available MC runs and compared against the grand
-mean of all loaded runs over the plotted time window.
+The convergence error is estimated by bootstrap resampling the available MC
+curves. For each N_MC, many samples of N_MC runs are drawn with replacement,
+their mean decay curve is compared with the full 100-run mean, and the RMS
+deviation is averaged over resamples and plotted times.
 
 No TikZ or matplot2tikz is used.
+
+Expected structure
+------------------
+
+Either
+
+result_sim/
+    cs133_ABC.npz
+    cs133_ABC/
+        mc_0000.npz
+        mc_0001.npz
+        ...
+
+or
+
+result_sim/
+    cs133_ABC.npz
+    cs133_ABC_mc_runs/
+        cs133_ABC.npz
+        mc_0000.npz
+        mc_0001.npz
+        ...
+
+Each MC file must contain
+
+    AF2
+
+and may optionally contain
+
+    times_code
 """
 
 from __future__ import annotations
@@ -30,6 +59,7 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 
 from radpattern.physics.experimetal_setup import ExperimentalParams
 from radpattern.physics.setup_params import SimParams
@@ -42,12 +72,12 @@ from radpattern.plotting import THESIS_STYLE
 plt.style.use(THESIS_STYLE)
 
 
-DEFAULT_SAMPLE_COUNTS = (10, 30, 100)
-DEFAULT_RMS_COUNTS = (10, 20, 30, 50, 70, 100)
-DEFAULT_BOOTSTRAP_SUBSETS = 250
-DEFAULT_RANDOM_SEED = 20260727
+DEFAULT_PANEL_COUNTS = (10, 30, 100)
+DEFAULT_CONVERGENCE_COUNTS = (10, 20, 30, 50, 70, 100)
+DEFAULT_BOOTSTRAP_RESAMPLES = 200
+DEFAULT_RANDOM_SEED = 12345
 DEFAULT_MAX_TIME_US = 200.0
-RESIDUAL_FLOOR = 1.0e-12
+PLOT_FLOOR = 1.0e-12
 
 
 # ---------------------------------------------------------------------
@@ -147,6 +177,8 @@ def build_sim_from_metadata(metadata: dict) -> SimParams:
 def natural_mc_key(path: Path):
     """
     Sort MC files by their trailing integer rather than lexicographically.
+
+    This ensures mc_2 comes before mc_10 when filenames are not padded.
     """
 
     match = re.search(r"(\d+)(?=\.npz$)", path.name)
@@ -176,6 +208,13 @@ def find_mc_files(mc_folder: Path) -> list[Path]:
 def resolve_result_paths(input_path: Path) -> tuple[Path, Path]:
     """
     Resolve the parent metadata file and the folder containing MC files.
+
+    Returns
+    -------
+    parent_npz_path
+        Main result file containing metadata.
+    mc_folder
+        Directory containing mc_*.npz files.
     """
 
     input_path = input_path.expanduser().resolve()
@@ -238,7 +277,23 @@ def coupling_from_AF2(
     E_fib: np.ndarray,
     theta0: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Calculate fibre power, total power, and instantaneous coupling."""
+    """
+    Calculate fibre power, total power, and instantaneous coupling.
+
+    Parameters
+    ----------
+    AF2_t
+        Array with shape (time, n_theta, n_phi).
+
+    Returns
+    -------
+    P_fib_t
+        Fibre-coupled power.
+    P_tot_t
+        Total power inside the angular integration aperture.
+    eta_t
+        Instantaneous ratio P_fib(t) / P_tot(t).
+    """
 
     AF2_t = np.asarray(AF2_t)
     AF2_t = np.squeeze(AF2_t)
@@ -293,7 +348,11 @@ def coupling_from_AF2(
     return P_fib_t, P_tot_t, eta_t
 
 
-def load_times_us(mc_data, parent_npz_path: Path, sim: SimParams) -> np.ndarray:
+def load_times_us(
+    mc_data,
+    parent_npz_path: Path,
+    sim: SimParams,
+) -> np.ndarray:
     """Load simulation time and convert it to microseconds."""
 
     if "times_code" in mc_data:
@@ -315,6 +374,10 @@ def load_mc_curves(
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Load each MC run and calculate P_fib(t) / P_tot(0).
+
+    The normalization P_tot(0) is calculated separately for every run.
+    This suppresses run-to-run differences in the absolute initial power
+    and tests convergence of the normalized retrieval curve.
     """
 
     mc_files = find_mc_files(mc_folder)
@@ -325,6 +388,7 @@ def load_mc_curves(
             f"{len(mc_files)} MC files were found in:\n  {mc_folder}"
         )
 
+    # Only the largest requested number is needed.
     mc_files = mc_files[:required_runs]
 
     dipole = single_dipole_E(
@@ -334,8 +398,13 @@ def load_mc_curves(
         np.array([1.0, 0.0, 0.0]),
     )
 
-    theta0 = 12.0 / (exp.atom.k_signal * exp.w0_signal)
-    E_fib = np.abs(gaussian_fiber_mode_on_sphere(grid, theta0)) ** 2
+    theta0 = 12.0 / (
+        exp.atom.k_signal * exp.w0_signal
+    )
+
+    E_fib = np.abs(
+        gaussian_fiber_mode_on_sphere(grid, theta0)
+    ) ** 2
 
     curves = []
     reference_times_us = None
@@ -343,6 +412,7 @@ def load_mc_curves(
     for run_index, mc_file in enumerate(mc_files, start=1):
         with np.load(mc_file, allow_pickle=True) as data:
             AF2_t = data["AF2"]
+
             times_us = load_times_us(
                 mc_data=data,
                 parent_npz_path=parent_npz_path,
@@ -363,7 +433,9 @@ def load_mc_curves(
             reference_times_us = times_us
         else:
             if times_us.shape != reference_times_us.shape:
-                raise ValueError(f"Time-array shape mismatch in {mc_file.name}.")
+                raise ValueError(
+                    f"Time-array shape mismatch in {mc_file.name}."
+                )
 
             if not np.allclose(
                 times_us,
@@ -371,7 +443,9 @@ def load_mc_curves(
                 rtol=1.0e-10,
                 atol=1.0e-12,
             ):
-                raise ValueError(f"Time-array values differ in {mc_file.name}.")
+                raise ValueError(
+                    f"Time-array values differ in {mc_file.name}."
+                )
 
         curves.append(curve)
 
@@ -394,7 +468,9 @@ def cumulative_statistics(
     curves: np.ndarray,
     sample_counts: tuple[int, ...],
 ) -> tuple[dict[int, np.ndarray], dict[int, np.ndarray]]:
-    """Calculate nested means and standard errors using the first N runs."""
+    """
+    Calculate nested means and standard errors using the first N runs.
+    """
 
     means = {}
     standard_errors = {}
@@ -402,77 +478,80 @@ def cumulative_statistics(
     for count in sample_counts:
         subset = curves[:count]
 
-        means[count] = np.mean(subset, axis=0)
+        means[count] = np.mean(
+            subset,
+            axis=0,
+        )
 
         if count > 1:
-            standard_errors[count] = np.std(subset, axis=0, ddof=1) / np.sqrt(count)
+            standard_errors[count] = np.std(
+                subset,
+                axis=0,
+                ddof=1,
+            ) / np.sqrt(count)
         else:
-            standard_errors[count] = np.zeros_like(means[count])
+            standard_errors[count] = np.zeros_like(
+                means[count]
+            )
 
     return means, standard_errors
 
 
-def bootstrap_rms_convergence(
+def bootstrap_rms_errors(
     curves: np.ndarray,
     sample_counts: tuple[int, ...],
+    reference_curve: np.ndarray,
     plot_mask: np.ndarray,
-    n_subsets: int,
+    n_resamples: int,
     random_seed: int,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]:
-    """Estimate RMS sampling error from bootstrap subsets."""
+) -> dict[int, float]:
+    """
+    Estimate epsilon_RMS(N_MC) by bootstrap resampling.
 
-    counts = np.asarray(sorted(set(int(value) for value in sample_counts)), dtype=int)
+    For every requested sample count, ``n_resamples`` bootstrap samples are
+    drawn from the available MC curves. Each bootstrap mean is compared with
+    the full-run reference mean. The reported value is
 
-    if counts.size == 0:
-        raise ValueError("At least one RMS sample count is required.")
-    if np.any(counts <= 0):
-        raise ValueError("Every RMS sample count must be positive.")
-    if n_subsets <= 0:
-        raise ValueError("The number of random subsets must be positive.")
-    if curves.ndim != 2:
-        raise ValueError(f"curves must have shape (runs, time); got {curves.shape}.")
-    if plot_mask.shape != (curves.shape[1],):
-        raise ValueError("plot_mask does not match the curve time axis.")
-    if not np.any(plot_mask):
-        raise ValueError("The RMS-error time window is empty.")
+        sqrt(mean[(mean_bootstrap(t) - mean_reference(t))**2])
+        ------------------------------------------------------,
+                      abs(mean_reference(0))
 
+    where the mean is taken over bootstrap resamples and plotted times.
+    """
+
+    if n_resamples <= 0:
+        raise ValueError("n_resamples must be positive.")
+
+    n_runs = curves.shape[0]
     rng = np.random.default_rng(random_seed)
-    reference = np.mean(curves[:, plot_mask], axis=0)
-    denominator = abs(reference[0]) + 1.0e-30
+    denominator = abs(reference_curve[0]) + 1.0e-30
+    reference_plot = reference_curve[plot_mask]
 
-    all_errors = np.empty((counts.size, n_subsets), dtype=float)
+    errors = {}
 
-    for count_index, count in enumerate(counts):
-        for subset_index in range(n_subsets):
-            indices = rng.integers(low=0, high=curves.shape[0], size=count)
-            subset_mean = np.mean(curves[indices][:, plot_mask], axis=0)
-            all_errors[count_index, subset_index] = (
-                np.sqrt(np.mean((subset_mean - reference) ** 2)) / denominator
-            )
-
-    mean_errors = np.mean(all_errors, axis=1)
-    std_errors = np.std(all_errors, axis=1, ddof=1)
-
-    positive = mean_errors > 0.0
-
-    if np.count_nonzero(positive) >= 2:
-        fitted_slope, _ = np.polyfit(
-            np.log(counts[positive]),
-            np.log(mean_errors[positive]),
-            deg=1,
+    for count in sample_counts:
+        bootstrap_indices = rng.integers(
+            0,
+            n_runs,
+            size=(n_resamples, count),
         )
-    else:
-        fitted_slope = np.nan
 
-    if np.any(positive):
-        log_amplitude = np.mean(
-            np.log(mean_errors[positive]) + 0.5 * np.log(counts[positive])
+        bootstrap_means = np.mean(
+            curves[bootstrap_indices],
+            axis=1,
         )
-        inverse_sqrt_guide = np.exp(log_amplitude) * counts.astype(float) ** (-0.5)
-    else:
-        inverse_sqrt_guide = np.full(counts.shape, np.nan, dtype=float)
 
-    return counts, mean_errors, std_errors, inverse_sqrt_guide, float(fitted_slope)
+        deviations = (
+            bootstrap_means[:, plot_mask]
+            - reference_plot[None, :]
+        )
+
+        errors[count] = (
+            np.sqrt(np.mean(deviations ** 2))
+            / denominator
+        )
+
+    return errors
 
 
 # ---------------------------------------------------------------------
@@ -482,86 +561,132 @@ def bootstrap_rms_convergence(
 def plot_convergence(
     times_us: np.ndarray,
     curves: np.ndarray,
-    sample_counts: tuple[int, ...],
-    rms_counts: tuple[int, ...],
-    bootstrap_subsets: int,
-    random_seed: int,
+    panel_counts: tuple[int, ...],
+    convergence_counts: tuple[int, ...],
     max_time_us: float | None,
     title: str,
     output_path: Path | None,
+    bootstrap_resamples: int = DEFAULT_BOOTSTRAP_RESAMPLES,
+    random_seed: int = DEFAULT_RANDOM_SEED,
     use_log_main_axis: bool = True,
 ) -> tuple[plt.Figure, tuple[plt.Axes, plt.Axes]]:
-    """Create the requested two-panel convergence figure."""
+    """
+    Create the two-panel Monte Carlo convergence figure.
 
-    sample_counts = tuple(sorted(set(int(value) for value in sample_counts)))
-    rms_counts = tuple(sorted(set(int(value) for value in rms_counts)))
+    Panel (a) contains the mean decay curves for ``panel_counts`` with
+    standard-error bands. Panel (b) contains one bootstrap RMS convergence
+    curve evaluated at ``convergence_counts``.
+    """
 
-    if any(value <= 0 for value in sample_counts):
-        raise ValueError("Every sample count must be positive.")
-    if any(value <= 0 for value in rms_counts):
-        raise ValueError("Every RMS sample count must be positive.")
-    if max(sample_counts) > curves.shape[0]:
+    panel_counts = tuple(
+        sorted(set(int(value) for value in panel_counts))
+    )
+    convergence_counts = tuple(
+        sorted(set(int(value) for value in convergence_counts))
+    )
+
+    all_counts = panel_counts + convergence_counts
+
+    if not panel_counts or not convergence_counts:
+        raise ValueError("Both count lists must contain at least one value.")
+
+    if any(value <= 0 for value in all_counts):
+        raise ValueError("Every MC sample count must be positive.")
+
+    if max(all_counts) > curves.shape[0]:
         raise ValueError(
-            f"Requested N_MC={max(sample_counts)}, but only {curves.shape[0]} curves are available."
+            f"Requested N_MC={max(all_counts)}, but only "
+            f"{curves.shape[0]} curves are available."
         )
 
-    means, standard_errors = cumulative_statistics(curves=curves, sample_counts=sample_counts)
+    panel_means, panel_standard_errors = cumulative_statistics(
+        curves=curves,
+        sample_counts=panel_counts,
+    )
+
+    reference_count = max(convergence_counts)
+    reference_curve = np.mean(
+        curves[:reference_count],
+        axis=0,
+    )
 
     if max_time_us is None:
         plot_mask = np.ones_like(times_us, dtype=bool)
     else:
         plot_mask = times_us <= max_time_us
+
         if not np.any(plot_mask):
-            raise ValueError(f"No time points lie below max_time_us={max_time_us}.")
+            raise ValueError(
+                f"No time points lie below max_time_us={max_time_us}."
+            )
 
     t_plot = times_us[plot_mask]
 
-    rms_count_array, rms_mean, rms_std, inverse_sqrt_guide, fitted_slope = bootstrap_rms_convergence(
-        curves=curves,
-        sample_counts=rms_counts,
+    rms_errors = bootstrap_rms_errors(
+        curves=curves[:reference_count],
+        sample_counts=convergence_counts,
+        reference_curve=reference_curve,
         plot_mask=plot_mask,
-        n_subsets=bootstrap_subsets,
+        n_resamples=bootstrap_resamples,
         random_seed=random_seed,
     )
 
-    fig = plt.figure(figsize=(8.0, 3.8), layout="constrained")
-    grid_spec = fig.add_gridspec(nrows=1, ncols=2, width_ratios=(2.2, 1.15))
-
-    ax_main = fig.add_subplot(grid_spec[0, 0])
-    ax_rms = fig.add_subplot(grid_spec[0, 1])
+    fig, (ax_main, ax_convergence) = plt.subplots(
+        nrows=2,
+        ncols=1,
+        figsize=(6.4, 5.4),
+        layout="constrained",
+        gridspec_kw={
+            "height_ratios": (2.15, 1.0),
+        },
+    )
 
     line_styles = (":", "--", "-")
 
-    for style_index, count in enumerate(sample_counts):
-        mean_curve = means[count][plot_mask]
-        sem_curve = standard_errors[count][plot_mask]
-        line_style = line_styles[min(style_index, len(line_styles) - 1)]
+    # Panel (a): mean decay curves and standard-error bands.
+    for style_index, count in enumerate(panel_counts):
+        mean_curve = panel_means[count][plot_mask]
+        sem_curve = panel_standard_errors[count][plot_mask]
 
         line, = ax_main.plot(
             t_plot,
             mean_curve,
-            linestyle=line_style,
-            linewidth=1.7 if count == max(sample_counts) else 1.5,
+            linestyle=line_styles[
+                min(style_index, len(line_styles) - 1)
+            ],
+            linewidth=1.5 if count != max(panel_counts) else 2.0,
             label=rf"$N_{{\mathrm{{MC}}}}={count}$",
+            zorder=3 if count == max(panel_counts) else 2,
         )
+
+        lower_band = mean_curve - sem_curve
+        if use_log_main_axis:
+            lower_band = np.maximum(lower_band, PLOT_FLOOR)
 
         ax_main.fill_between(
             t_plot,
-            np.maximum(mean_curve - sem_curve, RESIDUAL_FLOOR),
+            lower_band,
             mean_curve + sem_curve,
             alpha=0.13,
             color=line.get_color(),
             linewidth=0,
+            zorder=1,
         )
 
     if use_log_main_axis:
         ax_main.set_yscale("log")
 
     ax_main.set_xlabel(r"Time [$\mu$s]")
-    ax_main.set_ylabel(r"$P_{\mathrm{fib}}(t)/P_{\mathrm{tot}}(0)$")
+    ax_main.set_ylabel(
+        r"$P_{\mathrm{fib}}(t)/P_{\mathrm{tot}}(0)$"
+    )
     ax_main.set_title(title)
     ax_main.grid(True, which="both", alpha=0.25)
-    ax_main.legend(frameon=False, loc="best")
+    ax_main.legend(
+        frameon=False,
+        ncol=len(panel_counts),
+        loc="best",
+    )
     ax_main.text(
         0.015,
         0.95,
@@ -571,75 +696,71 @@ def plot_convergence(
         va="top",
     )
 
-    lower_error = np.minimum(rms_std, 0.95 * rms_mean)
-    asymmetric_error = np.vstack((lower_error, rms_std))
+    # Panel (b): one RMS convergence curve.
+    count_array = np.asarray(convergence_counts, dtype=float)
+    error_array = np.asarray(
+        [rms_errors[count] for count in convergence_counts],
+        dtype=float,
+    )
 
-    ax_rms.errorbar(
-        rms_count_array,
-        rms_mean,
-        yerr=asymmetric_error,
+    ax_convergence.plot(
+        count_array,
+        error_array,
         marker="o",
-        linestyle="-",
-        linewidth=1.4,
-        markersize=4.0,
-        capsize=2.5,
-        label=r"bootstrap mean $\pm$ SD",
+        linewidth=1.6,
+        markersize=4.5,
     )
 
-    ax_rms.plot(
-        rms_count_array,
-        inverse_sqrt_guide,
-        linestyle="--",
-        linewidth=1.2,
-        label=rf"$\propto N_{{\mathrm{{MC}}}}^{{-1/2}}$",
+    ax_convergence.set_xscale("log")
+    ax_convergence.set_yscale("log")
+    ax_convergence.set_xticks(convergence_counts)
+    ax_convergence.xaxis.set_major_formatter(
+        mticker.ScalarFormatter()
     )
-
-    ax_rms.set_xscale("log")
-    ax_rms.set_yscale("log")
-    ax_rms.set_xticks(rms_count_array)
-    ax_rms.set_xticklabels([str(value) for value in rms_count_array], rotation=30, ha="right")
-    ax_rms.set_xlabel(r"$N_{\mathrm{MC}}$")
-    ax_rms.set_ylabel(r"$\epsilon_{\mathrm{RMS}}(N_{\mathrm{MC}})$")
-    ax_rms.grid(True, which="both", alpha=0.25)
-    ax_rms.legend(frameon=False, loc="lower left", fontsize="x-small")
-    ax_rms.text(
+    ax_convergence.xaxis.set_minor_formatter(
+        mticker.NullFormatter()
+    )
+    ax_convergence.set_xlabel(r"$N_{\mathrm{MC}}$")
+    ax_convergence.set_ylabel(
+        r"$\epsilon_{\mathrm{RMS}}(N_{\mathrm{MC}})$"
+    )
+    ax_convergence.grid(True, which="both", alpha=0.25)
+    ax_convergence.text(
         0.015,
-        0.95,
+        0.93,
         r"$\mathbf{(b)}$",
-        transform=ax_rms.transAxes,
+        transform=ax_convergence.transAxes,
         ha="left",
         va="top",
     )
 
-    slope_text = (
-        rf"fit $\sim N_{{\mathrm{{MC}}}}^{{{fitted_slope:.2f}}}$"
-        if np.isfinite(fitted_slope)
-        else "fit unavailable"
-    )
-    ax_rms.text(
-        0.97,
-        0.08,
-        slope_text,
-        transform=ax_rms.transAxes,
-        ha="right",
-        va="bottom",
-        fontsize="x-small",
-    )
-
-    print(
-        "Bootstrap RMS convergence: "
-        f"{bootstrap_subsets} subsets per N, seed={random_seed}."
-    )
-    for count, mean_error, std_error in zip(rms_count_array, rms_mean, rms_std):
-        print(
-            f"N_MC={count:>4d}: mean RMS error = {mean_error:.6e} "
-            f"(subset SD = {std_error:.6e})"
+    if np.all(error_array > 0.0):
+        slope, _ = np.polyfit(
+            np.log(count_array),
+            np.log(error_array),
+            deg=1,
         )
-    print(f"Fitted log-log slope = {fitted_slope:.4f}")
+        ax_convergence.text(
+            0.98,
+            0.92,
+            rf"log--log slope $={slope:.2f}$",
+            transform=ax_convergence.transAxes,
+            ha="right",
+            va="top",
+        )
+
+    for count, rms_error in zip(convergence_counts, error_array):
+        print(
+            f"N_MC={count:>4d}: bootstrap normalized RMS error "
+            f"= {rms_error:.6e}"
+        )
+
+    fig.align_ylabels([ax_main, ax_convergence])
 
     if output_path is not None:
         output_path = output_path.expanduser().resolve()
         output_path.parent.mkdir(parents=True, exist_ok=True)
+
         fig.savefig(
             output_path,
             dpi=600,
@@ -647,9 +768,10 @@ def plot_convergence(
             pad_inches=0.03,
             facecolor="white",
         )
+
         print(f"Saved convergence figure to:\n  {output_path}")
 
-    return fig, (ax_main, ax_rms)
+    return fig, (ax_main, ax_convergence)
 
 
 # ---------------------------------------------------------------------
@@ -658,18 +780,29 @@ def plot_convergence(
 
 def run_convergence_plot(
     input_path: Path,
-    sample_counts: tuple[int, ...] = DEFAULT_SAMPLE_COUNTS,
-    rms_counts: tuple[int, ...] = DEFAULT_RMS_COUNTS,
-    bootstrap_subsets: int = DEFAULT_BOOTSTRAP_SUBSETS,
-    random_seed: int = DEFAULT_RANDOM_SEED,
+    panel_counts: tuple[int, ...] = DEFAULT_PANEL_COUNTS,
+    convergence_counts: tuple[int, ...] = DEFAULT_CONVERGENCE_COUNTS,
     max_time_us: float | None = DEFAULT_MAX_TIME_US,
     output_path: Path | None = None,
+    bootstrap_resamples: int = DEFAULT_BOOTSTRAP_RESAMPLES,
+    random_seed: int = DEFAULT_RANDOM_SEED,
     use_log_main_axis: bool = True,
 ):
-    """Load the MC data, calculate convergence statistics, and plot them."""
+    """
+    Load the MC data, calculate convergence statistics, and plot them.
+    """
 
-    sample_counts = tuple(sorted(set(int(value) for value in sample_counts)))
-    rms_counts = tuple(sorted(set(int(value) for value in rms_counts)))
+    panel_counts = tuple(
+        sorted(set(int(value) for value in panel_counts))
+    )
+    convergence_counts = tuple(
+        sorted(set(int(value) for value in convergence_counts))
+    )
+
+    required_runs = max(
+        max(panel_counts),
+        max(convergence_counts),
+    )
 
     parent_npz_path, mc_folder = resolve_result_paths(input_path)
     metadata = load_metadata(parent_npz_path)
@@ -677,12 +810,12 @@ def run_convergence_plot(
     sim = build_sim_from_metadata(metadata)
     grid = build_grid_from_metadata(metadata)
 
-    print(f"Parent result: {parent_npz_path}")
-    print(f"MC folder:     {mc_folder}")
-    print(f"Sample counts: {sample_counts}")
-    print(f"RMS counts:    {rms_counts}")
-
-    required_runs = max(max(sample_counts), max(rms_counts))
+    print(f"Parent result:       {parent_npz_path}")
+    print(f"MC folder:           {mc_folder}")
+    print(f"Panel-(a) counts:    {panel_counts}")
+    print(f"Panel-(b) counts:    {convergence_counts}")
+    print(f"Bootstrap resamples: {bootstrap_resamples}")
+    print(f"Random seed:         {random_seed}")
 
     times_us, curves = load_mc_curves(
         parent_npz_path=parent_npz_path,
@@ -694,18 +827,21 @@ def run_convergence_plot(
     )
 
     if output_path is None:
-        output_path = mc_folder / (parent_npz_path.stem + "_mc_convergence.pdf")
+        output_path = mc_folder / (
+            parent_npz_path.stem
+            + "_mc_convergence.pdf"
+        )
 
     return plot_convergence(
         times_us=times_us,
         curves=curves,
-        sample_counts=sample_counts,
-        rms_counts=rms_counts,
-        bootstrap_subsets=bootstrap_subsets,
-        random_seed=random_seed,
+        panel_counts=panel_counts,
+        convergence_counts=convergence_counts,
         max_time_us=max_time_us,
         title=parent_npz_path.stem,
         output_path=output_path,
+        bootstrap_resamples=bootstrap_resamples,
+        random_seed=random_seed,
         use_log_main_axis=use_log_main_axis,
     )
 
@@ -717,8 +853,8 @@ def run_convergence_plot(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Plot Monte Carlo convergence using mean decay curves and "
-            "one RMS-error convergence curve."
+            "Plot mean Monte Carlo decay curves and a bootstrap RMS "
+            "convergence curve."
         )
     )
 
@@ -733,36 +869,41 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--counts",
+        "--panel-counts",
         nargs="+",
         type=int,
-        default=list(DEFAULT_SAMPLE_COUNTS),
-        help="MC sample counts for panel (a), for example: --counts 10 30 100",
-    )
-
-    parser.add_argument(
-        "--rms-counts",
-        nargs="+",
-        type=int,
-        default=list(DEFAULT_RMS_COUNTS),
+        default=list(DEFAULT_PANEL_COUNTS),
         help=(
-            "Sample counts used in panel (b), for example: "
-            "--rms-counts 10 20 30 50 70 100"
+            "MC counts shown as mean decay curves in panel (a). "
+            "Default: 10 30 100"
         ),
     )
 
     parser.add_argument(
-        "--bootstrap-subsets",
+        "--convergence-counts",
+        nargs="+",
         type=int,
-        default=DEFAULT_BOOTSTRAP_SUBSETS,
-        help="Number of bootstrap subsets averaged at each RMS sample count.",
+        default=list(DEFAULT_CONVERGENCE_COUNTS),
+        help=(
+            "MC counts used for epsilon_RMS in panel (b). "
+            "Default: 10 20 30 50 70 100"
+        ),
+    )
+
+    parser.add_argument(
+        "--bootstrap-resamples",
+        type=int,
+        default=DEFAULT_BOOTSTRAP_RESAMPLES,
+        help=(
+            "Number of bootstrap resamples used for each convergence point."
+        ),
     )
 
     parser.add_argument(
         "--seed",
         type=int,
         default=DEFAULT_RANDOM_SEED,
-        help="Random seed used for the bootstrap subsets.",
+        help="Random seed used for bootstrap resampling.",
     )
 
     parser.add_argument(
@@ -788,7 +929,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--linear-main",
         action="store_true",
-        help="Use a linear rather than logarithmic y-axis in panel (a).",
+        help="Use a linear rather than logarithmic y-axis in the upper panel.",
     )
 
     return parser.parse_args()
@@ -798,22 +939,31 @@ def main() -> None:
     args = parse_args()
 
     input_path = args.input
+
     if input_path is None:
-        input_text = input("Parent NPZ file or MC folder: ").strip()
+        input_text = input(
+            "Parent NPZ file or MC folder: "
+        ).strip()
+
         if not input_text:
             raise ValueError("No input path was provided.")
+
         input_path = Path(input_text)
 
-    max_time_us = None if args.max_time < 0 else args.max_time
+    max_time_us = (
+        None
+        if args.max_time < 0
+        else args.max_time
+    )
 
     run_convergence_plot(
         input_path=input_path,
-        sample_counts=tuple(args.counts),
-        rms_counts=tuple(args.rms_counts),
-        bootstrap_subsets=args.bootstrap_subsets,
-        random_seed=args.seed,
+        panel_counts=tuple(args.panel_counts),
+        convergence_counts=tuple(args.convergence_counts),
         max_time_us=max_time_us,
         output_path=args.output,
+        bootstrap_resamples=args.bootstrap_resamples,
+        random_seed=args.seed,
         use_log_main_axis=not args.linear_main,
     )
 
