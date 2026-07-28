@@ -32,7 +32,8 @@ DB_MAX = 0
 
 CMAP = "viridis"
 
-FIGURE_SIZE = (11.5, 3.4)
+OUTPUT_STEM = "farFieldPattern_3panelsV2"
+FIGURE_SIZE = (5.11, 3.2)
 
 ELEVATION = 28
 AZIMUTH = -65
@@ -267,7 +268,7 @@ def main():
             frame_db
         )
 
-        ax.plot_surface(
+        surface = ax.plot_surface(
             sphere_x,
             sphere_y,
             sphere_z,
@@ -278,6 +279,7 @@ def main():
             antialiased=False,
             shade=False,
         )
+        surface.set_rasterized(True)
 
         format_axis(
             ax,
@@ -314,9 +316,19 @@ def main():
         width=0.7,
     )
 
-    colorbar.outline.set_linewidth(0.6)
+    if colorbar.solids is not None:
+       colorbar.solids.set_rasterized(True)
 
+    output_dir = Path.cwd()
+    pgf_path = output_dir / f"{OUTPUT_STEM}.pgf"
+
+    fig.savefig(
+        pgf_path,
+        format="pgf",
+        dpi=RASTER_DPI,
+    )
     plt.show()
+
 
 
 if __name__ == "__main__":
