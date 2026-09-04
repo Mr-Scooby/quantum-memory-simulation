@@ -1,85 +1,202 @@
-# Radiation Pattern Simulation Project
+# Quantum Memory Spin-Wave Simulation
 
-## Purpose
-This project simulates radiation patterns from collections of atoms or emitters.
-It includes tools for building angular grids, generating atom positions and velocities,
-computing array factors, converting fields to intensity, running Monte Carlo averages,
-and visualizing the resulting patterns and atom configurations.
+3D Monte Carlo simulation framework for studying the survival of the retrievable spin-wave mode in atomic-ensemble quantum memories.
 
-## Main workflow
-The codebase follows this general pipeline:
+This repository contains the numerical model developed for my Master's thesis:
 
-1. Define the geometry and observation grid.
-2. Generate atom positions and, when needed, atom velocities.
-3. Compute the array factor for the chosen configuration.
-4. Convert the field-like quantity into intensity.
-5. Average over Monte Carlo realizations for time-dependent simulations.
-6. Plot the pattern, planar cuts, or atom geometry.
+**Survival of the Retrievable Spin-Wave Mode in Atomic Ensembles: Effects of Motion, Geometry, and Dephasing**
 
-## Active files
-- `helpers.py` — support utilities for grids, sampling, weights, and intensity-related helpers.
-- `rpattern.py` — static array-factor and radiation-pattern calculations.
-- `mcpattern.py` — time-dependent Monte Carlo simulation for moving atoms.
-- `rplotting.py` — plotting utilities for patterns, cuts, and atom clouds.
+The work was carried out at the **Joint Lab Integrated Quantum Sensors (IQS), Humboldt-Universität zu Berlin**, within the Erasmus Mundus Master in Quantum Technologies and Engineering (QuanTEEM).
 
-## File responsibilities
-### `helpers.py`
-Contains reusable utilities used by the simulation and pattern modules, such as:
-- angle-grid construction
-- atom position sampling
-- thermal velocity sampling
-- Gaussian beam weights
-- field-to-intensity conversion helpers
+---
 
-### `rpattern.py`
-Contains the core pattern and array-factor calculations for a fixed configuration.
-This is the main physics/math module for the static pattern calculation.
+## Overview
 
-### `mcpattern.py`
-Contains the time-dependent Monte Carlo workflow.
-It samples realizations, evolves atom positions in time, computes the time-dependent
-array factor, converts it to intensity, and averages over realizations.
+In an atomic-ensemble quantum memory, preserving atomic coherence is not sufficient by itself: the stored collective excitation must also retain the spatial amplitude and phase structure required for retrieval into the desired optical mode.
 
-### `rplotting.py`
-Contains plotting functions only.
-It is responsible for visualizing:
-- 3D radiation patterns
-- planar angular cuts
-- atom positions, weights, dipole direction, incident direction, and velocities
+This project models how that retrievable mode evolves during storage.
 
-## Suggested usage pattern
-For a static calculation:
+The simulation starts after the spin wave has been written and propagates the atomic ensemble during the storage interval. At readout, the optical field is reconstructed from the coherent sum of the atomic contributions and evaluated in the selected collection mode.
 
-1. Build the angular grid.
-2. Generate atom positions.
-3. Compute the array factor with `rpattern.py`.
-4. Convert to intensity.
-5. Plot with `rplotting.py`.
+The framework compares two experimentally relevant regimes:
 
-For a time-dependent Monte Carlo calculation:
+- **Warm Cs vapour** — diffusive atomic motion in a buffer-gas cell
+- **Cold Rb ensemble** — ballistic expansion after release from a magneto-optical trap
 
-1. Build the angular grid.
-2. Set the number of atoms, realizations, and time points.
-3. Sample positions and velocities.
-4. Compute the time-dependent array factor for each realization.
-5. Convert to intensity and average across realizations.
-6. Plot one or more time slices.
+---
 
-## Data flow
-Typical data flow in the project is:
+## Modelled effects
 
-`parameters -> geometry/sampling -> array factor -> intensity -> average -> plots`
+The framework includes:
 
-For the Monte Carlo case:
+- 3D atomic position sampling
+- Diffusive motion in warm vapour
+- Ballistic thermal motion in cold ensembles
+- Gaussian signal and control beam profiles
+- Collective phase-matched optical emission
+- Magnetic-field-gradient dephasing
+- Wall collisions and effective coherence survival
+- Finite optical-mode overlap
+- Monte Carlo averaging
+- Fibre-coupled retrieval calculations
+- Parameter sweeps
+- Numerical convergence analysis
 
-`parameters -> sample atoms -> evolve atoms in time -> array factor -> intensity -> Monte Carlo average -> plots`
+The model focuses on the **relative survival of the retrievable collective mode** rather than the complete end-to-end memory efficiency.
 
-## Current structure goal
-The intended separation of responsibilities is:
+It does not simulate the full Maxwell-Bloch write process, detector losses, filtering losses, memory noise, or absolute storage-and-retrieval efficiency.
 
-- reusable support code in `helpers.py`
-- static physics calculations in `rpattern.py`
-- Monte Carlo and time dependence in `mcpattern.py`
-- visualization in `rplotting.py`
+---
 
-This separation should keep the project easier to navigate and reduces confusion about where new code should go.
+## Physical model
+
+Each atom carries a position-dependent spin-wave amplitude and phase.
+
+During storage, its position evolves according to the relevant transport model.
+
+For the warm-vapour system, motion is described diffusively. For the released cold ensemble, atomic velocities are sampled from a thermal distribution and the atoms evolve ballistically.
+
+At readout, the atomic electric-field contributions are summed coherently,
+
+\[
+E(\mathbf{k},t)
+\propto
+\sum_j A_j(t)e^{i\phi_j(t)},
+\]
+
+and the intensity is calculated only after the complete collective field has been formed,
+
+\[
+I(\mathbf{k},t)
+\propto
+|E(\mathbf{k},t)|^2.
+\]
+
+This allows loss of retrieval to arise naturally from two main mechanisms:
+
+1. **Spatial redistribution** of atoms away from the initially prepared optical mode.
+2. **Relative phase evolution** between atomic contributions, which reduces constructive collective interference.
+
+---
+
+## Numerical approach
+
+The physical atomic ensembles contain far more atoms than can be simulated individually.
+
+The code therefore uses Monte Carlo sampling with reduced numerical ensembles.
+
+Each realization samples an independent atomic configuration. Depending on the physical system, this includes:
+
+- initial atomic positions
+- thermal velocities
+- diffusive trajectories
+- wall interactions
+- accumulated magnetic phases
+
+Within each realization, all atomic field contributions are summed coherently before the intensity is calculated.
+
+Independent realizations are then averaged to suppress finite-sampling fluctuations.
+
+The numerical sampling density controls simulation resolution only and should not be interpreted as the physical atomic density.
+
+---
+
+## Repository structure
+
+```text
+src/radpattern/
+├── config/       # simulation parameters and default configurations
+├── geometry/     # ensemble and optical geometries
+├── helpers/      # sampling and numerical utilities
+├── physics/      # physical models and field calculations
+├── plotting/     # visualization tools
+└── simulation/   # Monte Carlo and time-evolution workflows
+
+scripts/          # simulation and analysis scripts
+tests/            # validation and convergence studies
+```
+
+The package is organized to keep the physical model, numerical simulation, geometry, configuration, and visualization layers separate.
+
+---
+
+## Installation
+
+Python 3.11 is currently supported.
+
+```bash
+git clone https://github.com/Mr-Scooby/quantum-memory-simulation.git
+cd quantum-memory-simulation
+
+python -m venv .venv
+source .venv/bin/activate
+
+pip install -e .
+```
+
+Main dependencies include:
+
+- NumPy
+- Matplotlib
+- CuPy
+- Joblib
+
+GPU acceleration is available through CuPy for compatible CUDA systems.
+
+---
+
+## Research applications
+
+The framework was used to study the sensitivity of the retrievable spin-wave mode to experimentally relevant parameters, including:
+
+- buffer-gas pressure
+- cold-atom temperature
+- signal beam diameter
+- control beam diameter
+- vapour-cell geometry
+- wall-collision survival
+- anti-relaxation coating quality
+- magnetic-field gradients
+
+The same framework can also be adapted to related problems involving coherent collective emission from moving or dephasing ensembles.
+
+---
+
+## Thesis
+
+**Radek Vasicek Ruiz**
+
+**Survival of the Retrievable Spin-Wave Mode in Atomic Ensembles: Effects of Motion, Geometry, and Dephasing**
+
+Erasmus Mundus Master in Quantum Technologies and Engineering (QuanTEEM), 2026
+
+Research performed at the **Joint Lab Integrated Quantum Sensors (IQS), Humboldt-Universität zu Berlin**.
+
+---
+
+## Scope and limitations
+
+The simulation begins after the spin wave has already been prepared.
+
+The following effects are therefore outside the present model:
+
+- full Maxwell-Bloch storage dynamics
+- absolute write efficiency
+- absolute readout efficiency
+- optical propagation losses
+- spectral-filtering losses
+- fibre-transmission losses
+- detector efficiency
+- memory noise
+- recurrent scattering
+- near-field dipole-dipole interactions
+
+The calculated observable should therefore be interpreted as the **relative survival of the retrievable collective optical mode**, not as the complete quantum-memory efficiency.
+
+---
+
+## Status
+
+Research code developed during the Master's thesis and subsequently reorganized into a reusable Python package.
+
+The repository is intended primarily for scientific reproducibility, model development, and further research rather than as a production software library.
