@@ -64,6 +64,7 @@ print(I.max(), I.min())
 
 k_in = np.round(sys.k_in_hat)
 
+
 pt.plot_pattern_3d(grid, I, title=f"Analitical result Cube.  bk  = 10, k_in [0,-4,7]", alpha=0.5) 
 #rpt.plot_analytic_pattern_3d(anp.sphere_af, sys.k_in_hat, {'kR':10})
 

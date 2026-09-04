@@ -14,16 +14,19 @@ from radpattern.physics.setup_params import ExperimentalParams
 from radpattern.physics.beam import BeamModel 
 from radpattern.geometry.cloud_model import CloudModel 
 
+from scipy.optimize import curve_fit
 
 import coupling_calcualtion as cp
 
 import matplotlib.pyplot as plt 
 import numpy as np
 
+
 PATH = "../data/results_sims/"
 #PATH = ""
 #test2DslabN100000_mc1_nt20_k001_a2cc34fd
-FILE = "Diffusive_exp_data_s_wave_reduce_cone_50ustimeSim_mc1_nt100_k001_d880dd5f"
+        #DiffusiveBufferN2_10Torr_simDens0.0e6_ExpData_Swave_reduce_cone_50ustimeSim_GeomSpace_simT50us_nt11_717e6837
+FILE = "ColdAtomRB87_simDens0e6_ExpData_Swave_reduce_cone_200000ustimeSim_GeomSpace__simT200000us_nt15_7c957ee9"
 print(f"showing file = {PATH+FILE}")
 
 npz = np.load(PATH+FILE+'.npz', allow_pickle=True)
@@ -53,6 +56,7 @@ print("========")
 
 nt = meta["sim"]["n_theta"]
 np_ = meta["sim"]["n_phi"]
+
 # crewates the grid 
 try: 
     grid = grids.AngleGrid(n_theta = nt, n_phi = np_, theta_max = meta["sim"]["theta_max"]) 
@@ -73,63 +77,6 @@ print( f" Max intensity {I_max}")
 
 imax = np.unravel_index(np.argmax(I), I.shape)
 
-
-
-#def azimuthal_average_vs_theta(I, grid, normalize=True):
-#    """
-#    Average intensity over phi for each theta.
-#    """
-#    I = np.asarray(I, dtype=float)
-#
-#    if I.shape != grid.shape:
-#        raise ValueError(f"I must have shape {grid.shape}, got {I.shape}")
-#
-#    # Simple average over phi.
-#    I_theta = np.mean(I, axis=1)
-#
-#    if normalize and np.max(I_theta) > 0:
-#        I_theta = I_theta / np.max(I_theta)
-#
-#    return grid.theta, I_theta
-#def report_theta_peak(theta, I_theta):
-#    """
-#    Print the peak direction of the azimuthally averaged curve.
-#    """
-#    i_max = int(np.argmax(I_theta))
-#    th_max = theta[i_max]
-#
-#    print("\n=== Azimuthally averaged pattern ===")
-#    print(f"Peak theta index = {i_max}")
-#    print(f"Peak theta [rad] = {th_max:.6f}")
-#    print(f"Peak theta [deg] = {np.rad2deg(th_max):.6f}")
-#    print(f"Peak averaged intensity = {I_theta[i_max]:.6g}")
-#
-#
-#theta, I_theta = azimuthal_average_vs_theta(I, grid, normalize=True)
-#report_theta_peak(theta, I_theta)
-#
-#
-#print(f"Max intensity = {I_max}")
-#print(f"Grid index of max = {imax}")
-#
-#print("Direction of max:")
-#print(f"nx = {grid.nx[imax]}")
-#print(f"ny = {grid.ny[imax]}")
-#print(f"nz = {grid.nz[imax]}")
-#I_max_vec = np.round([grid.nx[imax], grid.ny[imax], grid.nz[imax]])
-#print(f"normalize max intensity vector = {I_max_vec}")
-
-
-
-#
-## normalize each frame by its own max
-#frame_max = np.max(I, axis=tuple(range(1, I.ndim)), keepdims=True)
-#frame_max[frame_max == 0] = 1.0
-#I = I / frame_max
-#
-##k_inhat =np.round( meta.get('k_in_hat', 'missing'), 3)
-#
-#
 ## Report of the simulation. 
 try: 
     exp = ExperimentalParams(
@@ -138,19 +85,25 @@ try:
             delta_f_hz = meta['regime']['delta_f_hz'], 
             cell_length_m = meta['regime']['cell_length_m'], 
             cell_diameter_m = meta['regime']['cell_diameter_m'], 
+            temperature = meta['regime']['temperature'],
             signal_fwhm_diameter_m = meta['regime']['signal_fwhm_diameter_m'], 
             control_fwhm_diameter_m = meta['regime']['control_fwhm_diameter_m'], 
-            density = meta['regime']['density'], 
-            scalling = meta['regime']['scalling']
+            density_cm3 = meta['regime']['density_cm3'], 
+            scalling = meta['regime']['scalling'],
+            buffer_pressure_Torr = meta['regime']['buffer_pressure_Torr'],
+            label = meta['regime']['label']
             ) 
+    print(f"label: {exp.label.upper()}")
     print(exp)
+
+
 
     cloud = CloudModel( "cylinder", 
                        "random", 
                        exp.atom, 
                        Lz = exp.Lz,
                        R = 3 * exp.w0_control, 
-                       density = exp.density_rescalled, 
+                       sim_density = 1e6, 
                        )
 
     beam = BeamModel(
@@ -169,6 +122,7 @@ try:
     char_time = exp.char_time          # [s] = ref_length / ref_velocity
     times_si = times_code * char_time  # [s]
     times_us = times_si * 1e6          # [µs]
+    print(f"CHAR_TIMEm{char_time}")
 except KeyError: 
     print(" unable to generate objet from metadata... keyerror") 
 
@@ -194,7 +148,6 @@ try:
     F = w0**2 / Lz if Lz != 0 else np.nan
     sigma_long = fill * Lz
     long_fill = sigma_long / Lz if Lz != 0 else np.nan
-
 except KeyError:
     pass 
 try: 
@@ -266,9 +219,11 @@ except KeyError:
     print("No speed array found")
 
 
-
+##############################
 ### Coupling to gaussian mode calculation.
 theta0 = (2) / ( exp.atom.k_signal * exp.w0_signal)
+print(f"theta0 = {theta0}, forwardLobe = {exp.forwardlobe_angular_width}, equal? {theta0 == exp.forwardlobe_angular_width}") 
+
 E_fib = cp.gaussian_fiber_mode_on_sphere(grid, theta0)#* np.exp(1j * np.angle(AF))
 
 eta_t = np.zeros(AF.shape[0])
@@ -313,12 +268,25 @@ for it in range(AF.shape[0]):
         eta = np.nan
         amp = np.nan
 
+### 
+## fitting of coupling. 
+def exp_decay(t, A, tau, C):
+    return A * np.exp(-t/ tau) + C
+
+# fits
+#p0 = [0.9, 2.0, 0.1]
+#popt_erased, pcov_erased = curve_fit(exp_decay, times_us, eta_abs_t, p0=p0, maxfev=10000)
+#A_e, tau_e, C_e = popt_erased
+## smooth curves
+##t_fit = np.linspace(times_us.min(), times_us.max(), 400)
+
 ########################################
 ##### coupling / dephasing plot ---
 fig, ax = plt.subplots(figsize=(7, 4.8))
 
 ax.plot(times_us, eta_t, "o-", label="coherent")
 ax.plot(times_us, eta_abs_t, "o-", label="phase-erased")
+#ax.plot(t_fit, exp_decay(t_fit, *popt_erased), ":",color="k", label="phase-erased fit")
 
 ax.set_xlabel("time [$\mu$s]")
 ax.set_ylabel(r"coupling $\eta$")
@@ -328,6 +296,17 @@ info = (
     f"file: {FILE}\n"
 )
 
+text = (
+    r"Fit: $\eta(t)=A e^{-t/\tau}+C$" "\n"
+    #rf"phase-erased: $A={A_e:.3f}$, $\tau={tau_e:.2f}\,\mu s$, $C={C_e:.3f}$"
+)
+
+plt.text(
+    0.03, 0.05, text,
+    transform=plt.gca().transAxes,
+    fontsize=10,
+    bbox=dict(facecolor="white", alpha=0.85, edgecolor="gray")
+)
 ax.text(
     0.93, 0.03, info,
     transform=ax.transAxes,

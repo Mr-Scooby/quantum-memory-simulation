@@ -1,0 +1,6 @@
+PWD /Users/radek/Documents/universidad/clases/TFM/codes/tests
+INPUT /usr/local/texlive/2022/texmf.cnf
+INPUT /usr/local/texlive/2022/texmf-dist/web2c/texmf.cnf
+INPUT /usr/local/texlive/2022/texmf-var/web2c/pdftex/pdflatex.fmt
+INPUT /usr/local/texlive/2022/texmf-dist/tex/latex/tools/q.tex
+OUTPUT q.log

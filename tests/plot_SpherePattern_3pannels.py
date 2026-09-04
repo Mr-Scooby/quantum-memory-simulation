@@ -33,8 +33,10 @@ DB_MAX = 0
 CMAP = "viridis"
 
 OUTPUT_STEM = "farFieldPattern_3panelsV2"
-FIGURE_SIZE = (5.11, 3.2)
+FIGURE_SIZE = (5.30, 3.2)
+RASTER_DPI = 300
 
+SPHERE_SCALE = 1.2
 ELEVATION = 28
 AZIMUTH = -65
 
@@ -91,7 +93,7 @@ def convert_to_db(intensity, reference_intensity):
     )
 
 
-def format_axis(ax, time_us):
+def format_axis(ax, time_us, show_axis_labels=True):
     """Apply the same formatting to every sphere panel."""
 
     ax.set_title(
@@ -113,32 +115,58 @@ def format_axis(ax, time_us):
 
     ticks = [-1, 0, 1]
 
+    ax.tick_params(
+        axis="both",
+        labelsize=7,
+        pad=-3,
+        length=2.5,
+        width=0.6,
+    )
     ax.set_xticks(ticks)
     ax.set_yticks(ticks)
     ax.set_zticks(ticks)
 
-    ax.set_xlabel(
-        r"$\hat{k}_x$",
-        labelpad=0,
-    )
+    if show_axis_labels:
+        ax.set_xlabel(
+            r"$\hat{k}_x$",
+            labelpad=-5,
+        )
 
-    ax.set_ylabel(
-        r"$\hat{k}_y$",
-        labelpad=0,
-    )
+        ax.set_ylabel(
+            r"$\hat{k}_y$",
+            labelpad=-5,
+        )
 
-    ax.set_zlabel(
-        r"$\hat{k}_z$",
-        labelpad=0,
-    )
+        ax.set_zlabel(
+            r"$\hat{k}_z$",
+            labelpad=-8,
+        )
+    else:
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.set_zlabel("")
+        ax.set_xlabel(
+            r"$\hat{k}_x$",
+            labelpad=0,
+        )
 
-    ax.tick_params(
-        axis="both",
-        labelsize=7,
-        pad=-1,
-        length=2.5,
-        width=0.6,
-    )
+    #ax.set_ylabel(
+    #    r"$\hat{k}_y$",
+    #    labelpad=0,
+    #)
+
+    #ax.set_zlabel(
+    #    r"$\hat{k}_z$",
+    #    labelpad=0,
+    #)
+
+    #ax.tick_params(
+    #    axis="both",
+    #    labelsize=7,
+    #    pad=-1,
+    #    length=2.5,
+    #    width=0.6,
+    #)
 
     # Remove pane backgrounds and grid lines.
     ax.xaxis.pane.set_visible(False)
@@ -155,10 +183,11 @@ def format_axis(ax, time_us):
 def main():
 
     # Load data.
-    input_file = Path(
-        input("Input NPZ file: ").strip()
-    ).expanduser()
-
+    #input_file = Path(
+    #    input("Input NPZ file: ").strip()
+    #).expanduser()
+    
+    input_file = Path("test_data.npz")
     data, grid, _, _ = load_data(input_file)
 
     if "intensity" not in data:
@@ -203,9 +232,9 @@ def main():
     )
 
     # Close the azimuthal seam of the sphere coordinates.
-    sphere_x = close_phi(grid.nx)
-    sphere_y = close_phi(grid.ny)
-    sphere_z = close_phi(grid.nz)
+    sphere_x = SPHERE_SCALE * close_phi(grid.nx)
+    sphere_y = SPHERE_SCALE * close_phi(grid.ny)
+    sphere_z = SPHERE_SCALE * close_phi(grid.nz)
 
     # Create figure.
     fig = plt.figure(
@@ -224,10 +253,10 @@ def main():
             1.0,
             1.0,
             1.0,
-            0.12,   # padding between third sphere and colorbar
+            0.15,   # padding between third sphere and colorbar
             0.045,  # colorbar width
         ),
-        left=0.015,
+        left=0.0,
         right=0.965,
         bottom=0.02,
         top=0.98,
@@ -302,7 +331,7 @@ def main():
     colorbar.set_label(
         r"Relative intensity [dB]",
         fontsize=9,
-        labelpad=7,
+        labelpad=4,
     )
 
     colorbar.set_ticks(
