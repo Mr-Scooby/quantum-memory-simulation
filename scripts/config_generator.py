@@ -109,41 +109,6 @@ def loop_over_variable(folder, system):
         save_config(config, filename, folder, preview=False)
 
 
-def loop_over_many_variables(folder, system):
-
-    base_config = load_default_config(system) 
-    gradients = [0, 1e-8, 1e-7]
-    sim_densities = [1_000_000, 10_000_000]
-    n_mcs = [20, 50, 100]
-
-    for grad in gradients:
-        for sim_density in sim_densities:
-            for n_mc in n_mcs:
-
-                config = deepcopy(base_config)
-
-                # Values changed for this run
-                config["exp"]["B_gradient"] = grad
-                config["sim"]["sim_density"] = sim_density
-                config["sim"]["n_mc"] = n_mc
-
-                config["exp"]["label"] = (
-                    f"cs133_jutisz_"
-                    f"gradient{grad:g}_"
-                    f"simD{sim_density:.0e}_"
-                    f"MC{n_mc}"
-                ).replace("+", "")
-
-                filename = (
-                    f"cs133_"
-                    f"gradient{grad:g}_"
-                    f"simD{sim_density:.0e}_"
-                    f"MC{n_mc}.json"
-                ).replace("+", "")
-
-                save_config(config, filename, preview=False)
-
-
 # 
 if __name__ == "__main__":
 
@@ -155,4 +120,3 @@ if __name__ == "__main__":
     
     loop_over_variable(folder, system)
     
-    # loop_over_many_variables(folder, system)

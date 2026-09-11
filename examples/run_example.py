@@ -10,7 +10,7 @@ from radpattern.simulation.runner import run_one_config
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = ROOT / "example_cs133.json"
+CONFIG = ROOT / "examples/example_cs133.json"
 OUTPUT = ROOT / "results"
 
 

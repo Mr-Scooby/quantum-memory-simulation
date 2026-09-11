@@ -113,7 +113,7 @@ src/radpattern/
 └── simulation/   # Monte Carlo and time-evolution workflows
 
 scripts/          # simulation and analysis scripts
-example/          # Minimal executable example 
+examples/         # Minimal executable example
 ```
 
 The package is organized to keep the physical model, numerical simulation, geometry, configuration, and visualization layers separate.
@@ -143,6 +143,8 @@ pip install -e ".[gpu]"
 ```
 
 The simulation automatically falls back to the NumPy CPU backend when CuPy or a compatible CUDA device is not available.
+
+
 ---
 
 ## Usage
@@ -172,6 +174,14 @@ src/radpattern/config/defaults/
 ```
 
 These include the warm-vapour Cs-133 and cold-atom Rb-87 models.
+
+#### Minimal example
+
+Run a small Cs-133 simulation with:
+
+```bash
+python examples/run_example.py
+```
 
 
 ## Research applications
