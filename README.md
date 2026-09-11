@@ -119,31 +119,60 @@ tests/            # validation and convergence studies
 The package is organized to keep the physical model, numerical simulation, geometry, configuration, and visualization layers separate.
 
 ---
-
 ## Installation
 
 Python 3.11 is currently supported.
 
+Clone the repository and create a virtual environment:
+
 ```bash
 git clone https://github.com/Mr-Scooby/quantum-memory-simulation.git
 cd quantum-memory-simulation
+```
 
-python -m venv .venv
-source .venv/bin/activate
+For CPU-only use:
 
+```bash
 pip install -e .
 ```
 
-Main dependencies include:
+For optional NVIDIA GPU acceleration with CUDA 11.x:
 
-- NumPy
-- Matplotlib
-- CuPy
-- Joblib
+```bash
+pip install -e ".[gpu]"
+```
 
-GPU acceleration is available through CuPy for compatible CUDA systems.
-
+The simulation automatically falls back to the NumPy CPU backend when CuPy or a compatible CUDA device is not available.
 ---
+
+## Usage
+
+Simulation runs are defined through JSON configuration files.
+
+To generate configuration files for a parameter study, run:
+
+```bash
+python scripts/config_generator.py
+```
+
+The generated files are stored in the local `queue/` directory.
+
+To execute all queued simulations, run:
+
+```bash
+python scripts/run_queue.py
+```
+
+Each configuration is converted into the corresponding atomic ensemble, optical geometry, and numerical parameters. Simulation outputs and metadata are written to `results/`, while failed runs are moved to `failed/`.
+
+Template configurations for the supported systems are provided in:
+
+```text
+src/radpattern/config/defaults/
+```
+
+These include the warm-vapour Cs-133 and cold-atom Rb-87 models.
+
 
 ## Research applications
 

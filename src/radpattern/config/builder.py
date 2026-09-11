@@ -346,8 +346,8 @@ def default_configPath(system):
     log.info("Building Sim SetUp by default json files") 
     DEFAULT_PACKAGE = "radpattern.config.defaults"
     DEFAULT_FILES = {
-        "cs133": "cs133_default.json",
-        "rb87": "rb87_default.json",
+        "cs133": "Cs133_default.json",
+        "rb87": "Rb87_default.json",
     }
     system = system.lower()
 

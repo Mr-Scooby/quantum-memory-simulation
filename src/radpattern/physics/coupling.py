@@ -12,14 +12,16 @@ def overlap_on_sphere(grid, E_emit, E_mode, theta_max = 0.1):
     Normalized mode overlap on a spherical angular grid.
     E_emit, E_mode : (Nt, Np) complex fields
     """
+    if theta_max <= 0:
+        raise ValueError("theta_max must be positive.")
+
     E_emit = np.asarray(E_emit, np.complex128)
     E_mode = np.asarray(E_mode, np.complex128)
 
-    # deifining the angular space for the coupling. 
-    if theta_max > 2*np.pi: 
-        theta_max % 2*np.pi
-        print(f"Theta_max > 2 pi. refactoring to theta_max %2*pi. = {theta_max}")
     mask = grid.TH <= theta_max
+
+    E_emit = np.where(mask, E_emit, 0.0)
+    E_mode = np.where(mask, E_mode, 0.0)
 
     theta = grid.TH[:, 0]   # 1D theta, shape (n_theta,)
     phi   = grid.PH[0, :]   # 1D phi,   shape (n_phi,)
@@ -148,10 +150,11 @@ def run_overlap_test_protocol(
     grid,
     overlap_fn,
     fiber_mode_fn,
-    theta_max = 0.1,
-    seed = np.random.rand(),
+    theta_max=0.1,
+    seed=1234,
+    atol=1e-5,
     verbose=True,
-):
+    ):
     """
     Basic validation protocol for spherical-overlap code.
 
@@ -181,16 +184,12 @@ def run_overlap_test_protocol(
     results : dict
         Dictionary with measured and expected values.
     """
-    np.random.seed(seed)
+    rng = np.random.default_rng(seed)
 
-    theta_ref   = theta_max * np.random.rand()
-    theta_wide  = theta_max * np.random.rand()
-    phase_shift = 2*np.pi * np.random.rand() 
+    theta_ref = theta_max * rng.random()
+    phase_shift = 2 * np.pi * rng.random()
 
-    atol=1e-5,
-    results = {}
-
-    # Build reference mode
+    # Build  mode
     E_ref = fiber_mode_fn(grid, theta_f=theta_ref)
 
     # Test 1: self-overlap
@@ -218,7 +217,7 @@ def run_overlap_test_protocol(
 
     # Test 3: width mismatch against analytic result
     for i in range(4):
-        theta_wide  = theta_max * np.random.rand()
+        theta_wide = theta_max * rng.random()
         E_wide = fiber_mode_fn(grid, theta_f=theta_wide)
         eta_mismatch, a_mismatch = overlap_fn(grid, E_ref, E_wide)
         eta_expected = analytic_eta_gaussian_width_mismatch(theta_ref, theta_wide)

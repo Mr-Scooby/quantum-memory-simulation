@@ -25,6 +25,17 @@ from radpattern.simulation.runner import run_one_config
 import logging 
 import sys
 
+
+ROOT = Path(__file__).resolve().parents[1]
+queue_dir = ROOT/ "queue"
+failed_dir = ROOT / "failed"
+output_dir = ROOT/ "results"
+
+history_path = ROOT/"history_runs.log"
+hist_log = setup_history_logger(history_path)
+
+
+
 class ShortNameFilter(logging.Filter):
     def filter(self, record):
         record.shortname = record.name.replace("radpattern.", "")
@@ -109,15 +120,6 @@ def move_file(src, dst_dir):
 
 def main():
 
-    queue_dir = Path(r"D:\radek\queue")
-    #done_dir = Path(r"C:\Users\local_admin\radek\simulations\tests\locals_runs\done")
-    failed_dir = Path(r"D:\radek\failed")
-    #output_dir = Path(r"C:\Users\local_admin\radek\simulations\data\test")
-    output_dir = Path(r"D:\radek\sims")
-    
-    history_path = Path(r"D:\radek\history.log")
-    hist_log = setup_history_logger(history_path)
-
     print(queue_dir.glob)
     for config_path in sorted(queue_dir.glob("*.json")):
         print("running:", config_path)
@@ -147,9 +149,9 @@ def main():
             # final runtime logs
             log.info("Finished config: %s", config_path)
             dt_mcsim = time.perf_counter() - t0_mcsim 
-            log.info("Simulation runtime : %.3f s | %.3f min | %.3f h ", dt_mcsim, dt_mcsim / 60 , dt_mcsim / 1440) 
+            log.info("Simulation runtime : %.3f s | %.3f min | %.3f h ", dt_mcsim, dt_mcsim / 60 , dt_mcsim / 3600) 
             avetime = dt_mcsim / objs.sim.n_mc
-            log.info("Simulated %d runs. Average runtime : %2.f s, %3.f min, %3.f h", objs.sim.n_mc, avetime, avetime / 60, avetime/ 1440)
+            log.info("Simulated %d runs. Average runtime : %2.f s, %3.f min, %3.f h", objs.sim.n_mc, avetime, avetime / 60, avetime/ 3600)
 
             hist_log.info("%s -> %s", config_path.name, mc_folder.name) # Logging runs to history. 
             print("done:", config_path)

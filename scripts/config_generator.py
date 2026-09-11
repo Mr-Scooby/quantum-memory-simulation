@@ -17,9 +17,9 @@ import numpy as np
 DEFAULT_PACKAGE = "radpattern.config.defaults"
 
 DEFAULT_FILES = {
-    "cs133": "cs133_default.json",
+    "cs133": "Cs133_default.json",
     "ncs133": "N_Cs133_default.json",
-    "rb87": "rb87_default.json",
+    "rb87": "Rb87_default.json",
 }
 
 
@@ -145,8 +145,8 @@ def loop_over_many_variables():
 # 
 if __name__ == "__main__":
 
-    #folder = r"C:\Users\local_admin\radek\simulations\tests\locals_runs\queue"
-    folder = r"D:\radek\queue"
+    ROOT = Path(__file__).resolve().parents[1]
+    folder = ROOT/ "queue"
     system = "cs133" # or rb87
     # Use only ONE of these at a time:
     #make_single_file(folder, system, filename = f"{system}test_default_config.json" )
