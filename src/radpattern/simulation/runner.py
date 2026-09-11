@@ -23,6 +23,7 @@ def run_one_config(objs, output_dir, **kwargs):
     output_dir = Path(output_dir)
     path = output_dir/ setp.run_name
     mc_dir = output_dir / f"{setp.run_name}_mc_runs"
+    mc_dir.mkdir(parents=True, exist_ok=True)
 
     result = run_monte_carlo_gpu(
         objs=objs,
