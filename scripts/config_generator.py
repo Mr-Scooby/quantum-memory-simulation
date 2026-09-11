@@ -109,7 +109,9 @@ def loop_over_variable(folder, system):
         save_config(config, filename, folder, preview=False)
 
 
-def loop_over_many_variables():
+def loop_over_many_variables(folder, system):
+
+    base_config = load_default_config(system) 
     gradients = [0, 1e-8, 1e-7]
     sim_densities = [1_000_000, 10_000_000]
     n_mcs = [20, 50, 100]
@@ -153,4 +155,4 @@ if __name__ == "__main__":
     
     loop_over_variable(folder, system)
     
-    # loop_over_many_variables()
+    # loop_over_many_variables(folder, system)

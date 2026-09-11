@@ -32,7 +32,6 @@ failed_dir = ROOT / "failed"
 output_dir = ROOT/ "results"
 
 history_path = ROOT/"history_runs.log"
-hist_log = setup_history_logger(history_path)
 
 
 
@@ -120,7 +119,7 @@ def move_file(src, dst_dir):
 
 def main():
 
-    print(queue_dir.glob)
+    hist_log = setup_history_logger(history_path)
     for config_path in sorted(queue_dir.glob("*.json")):
         print("running:", config_path)
 
@@ -169,7 +168,7 @@ def main():
         except Exception:
             print("failed:", config_path)
             
-            hist_log.info("[FAILED] %s -> %s" , config_path.name, mc_folder.name) # Logging runs to history. 
+            hist_log.info("[FAILED] %s" , config_path.name) # Logging runs to history. 
             failed_path = move_file(config_path, failed_dir)
 
             error_path = failed_path.with_suffix(".error.txt")

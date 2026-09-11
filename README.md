@@ -113,7 +113,7 @@ src/radpattern/
 └── simulation/   # Monte Carlo and time-evolution workflows
 
 scripts/          # simulation and analysis scripts
-tests/            # validation and convergence studies
+example/          # Minimal executable example 
 ```
 
 The package is organized to keep the physical model, numerical simulation, geometry, configuration, and visualization layers separate.

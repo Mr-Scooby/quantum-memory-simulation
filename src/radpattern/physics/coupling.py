@@ -189,6 +189,8 @@ def run_overlap_test_protocol(
     theta_ref = theta_max * rng.random()
     phase_shift = 2 * np.pi * rng.random()
 
+    results = {}
+
     # Build  mode
     E_ref = fiber_mode_fn(grid, theta_f=theta_ref)
 
